@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browse Listings — 4Kautos</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<nav class="navbar">
+  <a href="index.html" class="nav-logo"></a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="listings.html" class="active">Listings</a></li>
+    <li><a href="index.html#how-it-works">How It Works</a></li>
+  </ul>
+  <div class="nav-search">
+    <div class="nav-search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="nav-q" placeholder="Search make, model…">
+    </div>
+  </div>
+  <div class="nav-actions">
+    <button class="nav-btn nav-btn-ghost" id="nav-login-btn">Sign In</button>
+    <button class="nav-btn nav-btn-accent" id="nav-signup-btn">List Your Car</button>
+    <button class="nav-btn nav-btn-ghost hidden" id="nav-profile-btn" onclick="location.href='profile.html'">👤 <span class="nav-user-label">Profile</span></button>
+  </div>
+</nav>
+
+<div class="listings-layout">
+  <!-- Sidebar -->
+  <aside class="filter-sidebar">
+    <h3>🔍 Filter Cars</h3>
+
+    <div class="filter-group">
+      <label class="filter-label">Make</label>
+      <select class="sf-select" id="f-make">
+        <option value="">Any Make</option>
+        <option>Toyota</option><option>Honda</option><option>Ford</option>
+        <option>BMW</option><option>Mercedes-Benz</option><option>Hyundai</option>
+        <option>Kia</option><option>Lexus</option><option>Nissan</option><option>Volkswagen</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Model</label>
+      <input class="sf-input" type="text" id="f-model" placeholder="e.g. Camry">
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Year</label>
+      <div class="price-row">
+        <input class="sf-input" type="number" id="f-year-min" placeholder="From" min="1990" max="2025">
+        <input class="sf-input" type="number" id="f-year-max" placeholder="To"   min="1990" max="2025">
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Price (₦)</label>
+      <div class="price-row">
+        <input class="sf-input" type="number" id="f-price-min" placeholder="Min">
+        <input class="sf-input" type="number" id="f-price-max" placeholder="Max">
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Condition</label>
+      <label class="filter-check"><input type="checkbox" value="excellent"> Excellent</label>
+      <label class="filter-check"><input type="checkbox" value="good"> Good</label>
+      <label class="filter-check"><input type="checkbox" value="fair"> Fair</label>
+    </div>
+
+    <button class="filter-apply" id="f-apply">Apply Filters</button>
+    <button class="filter-reset" id="f-reset">Clear All</button>
+  </aside>
+
+  <!-- Main -->
+  <main class="listings-main">
+    <div class="listings-topbar">
+      <div class="listings-count">Showing <strong id="results-count">0</strong> vehicles</div>
+      <div class="sort-row">
+        <span class="sort-label">Sort:</span>
+        <select class="sort-select" id="sort-select">
+          <option value="-createdAt">Newest First</option>
+          <option value="price">Price: Low → High</option>
+          <option value="-price">Price: High → Low</option>
+          <option value="mileage">Lowest Mileage</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="listings-spinner" class="spinner-wrap"><div class="spinner"></div></div>
+    <div class="cars-grid hidden" id="listings-grid"></div>
+    <div class="empty-state hidden" id="listings-empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><path d="M5 17H3v-4l2-5h14l2 5v4h-2"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg>
+      <h3>No Cars Found</h3>
+      <p>Try adjusting your filters or <a href="listings.html" style="color:var(--accent)">clear all filters</a></p>
+    </div>
+    <div class="pagination hidden" id="pagination"></div>
+  </main>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+<script>
+  // Read URL params
+  const urlP = new URLSearchParams(location.search);
+  if (urlP.get('make'))  document.getElementById('f-make').value = urlP.get('make');
+  if (urlP.get('model')) document.getElementById('f-model').value = urlP.get('model');
+  if (urlP.get('maxPrice')) document.getElementById('f-price-max').value = urlP.get('maxPrice');
+  if (urlP.get('q'))    document.getElementById('f-model').value = urlP.get('q');
+
+  async function loadListings() {
+    const spinner = document.getElementById('listings-spinner');
+    const grid    = document.getElementById('listings-grid');
+    const empty   = document.getElementById('listings-empty');
+    spinner.classList.remove('hidden');
+    grid.classList.add('hidden');
+    empty.classList.add('hidden');
+
+    const params = {};
+    const make    = document.getElementById('f-make').value;
+    const model   = document.getElementById('f-model').value;
+    const priceMin= document.getElementById('f-price-min').value;
+    const priceMax= document.getElementById('f-price-max').value;
+    const conditions = [...document.querySelectorAll('.filter-check input:checked')].map(c=>c.value);
+
+    if (make)     params.make      = make;
+    if (model)    params.model     = model;
+    if (priceMin) params.minPrice  = priceMin;
+    if (priceMax) params.maxPrice  = priceMax;
+    if (conditions.length) params.condition = conditions.join(',');
+    if (urlP.get('q')) params.q = urlP.get('q');
+
+    try {
+      const cars = await API.getCars(params);
+      spinner.classList.add('hidden');
+      document.getElementById('results-count').textContent = cars.length;
+
+      if (!cars.length) { empty.classList.remove('hidden'); return; }
+
+      grid.classList.remove('hidden');
+      grid.innerHTML = cars.map(c => carCard(c)).join('');
+      grid.querySelectorAll('.car-card').forEach(card => {
+        card.addEventListener('click', () => location.href = `detail.html?id=${card.dataset.id}`);
+      });
+      grid.querySelectorAll('.card-saves').forEach(btn => {
+        btn.addEventListener('click', e => { e.stopPropagation(); btn.classList.toggle('saved'); btn.textContent = btn.classList.contains('saved') ? '♥' : '♡'; });
+      });
+    } catch(e) {
+      spinner.innerHTML = `<p class="empty-state">Backend offline. Start the server with <code>npm start</code></p>`;
+    }
+  }
+
+  function carCard(c) {
+    const price = c.price ? `₦${Number(c.price).toLocaleString()}` : 'Price on Request';
+    const img   = c.photos?.[0] || `https://placehold.co/600x400/18181d/f59e0b?text=${encodeURIComponent((c.make||'Car'))}`;
+    return `
+      <div class="car-card" data-id="${c._id}">
+        <div class="card-img-wrap">
+          <img class="card-img" src="${img}" alt="${c.title||''}" loading="lazy" onerror="this.src='https://placehold.co/600x400/18181d/f59e0b?text=No+Photo'">
+          ${c.condition==='excellent'?'<span class="card-badge new">Excellent</span>':''}
+          <button class="card-saves">♡</button>
+        </div>
+        <div class="card-body">
+          <div class="card-title">${c.title||`${c.year||''} ${c.make||''} ${c.model||''}`}</div>
+          <div class="card-specs">
+            ${c.mileage?`<span class="spec-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="11" height="11"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${Number(c.mileage).toLocaleString()} km</span>`:''}
+            ${c.condition?`<span class="spec-chip">${c.condition}</span>`:''}
+            ${c.year?`<span class="spec-chip">${c.year}</span>`:''}
+          </div>
+          <div class="card-footer">
+            <div class="card-price">${price}</div>
+            <button class="card-cta">View Details</button>
+          </div>
+        </div>
+      </div>`;
+  }
+  window.carCard = carCard;
+
+  document.getElementById('f-apply').addEventListener('click', loadListings);
+  document.getElementById('f-reset').addEventListener('click', () => { location.href = 'listings.html'; });
+  document.getElementById('nav-q').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { urlP.set('q', e.target.value); location.href = `listings.html?${urlP}`; }
+  });
+
+  loadListings();
+</script>
+</body>
+</html>

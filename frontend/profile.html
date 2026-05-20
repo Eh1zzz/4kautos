@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Dashboard — 4Kautos</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<nav class="navbar">
+  <a href="index.html" class="nav-logo"></a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="listings.html">Listings</a></li>
+    <li><a href="profile.html" class="active">Dashboard</a></li>
+  </ul>
+  <div class="nav-actions">
+    <button class="nav-btn nav-btn-ghost" id="nav-login-btn">Sign In</button>
+    <button class="nav-btn nav-btn-accent" id="nav-signup-btn">List Your Car</button>
+    <button class="nav-btn nav-btn-ghost hidden" id="nav-profile-btn">👤 <span class="nav-user-label">Profile</span></button>
+    <button class="nav-btn nav-btn-ghost" id="logout-btn" onclick="API.logout()" style="display:none">Sign Out</button>
+  </div>
+</nav>
+
+<div id="auth-gate" style="display:flex;align-items:center;justify-content:center;min-height:60vh;flex-direction:column;gap:1rem">
+  <h2 style="font-family:'Oswald',sans-serif;font-size:1.5rem">Sign in to access your dashboard</h2>
+  <p style="color:var(--text2)">Manage your listings, track purchases, and update your profile.</p>
+  <button class="nav-btn nav-btn-accent" onclick="openAuth('login')">Sign In</button>
+</div>
+
+<div class="profile-layout hidden" id="profile-layout">
+  <!-- Sidebar -->
+  <aside class="profile-sidebar">
+    <div class="profile-cover"></div>
+    <div class="profile-identity">
+      <div class="profile-ava" id="p-ava">?</div>
+      <div class="profile-name" id="p-name">—</div>
+      <div class="profile-role" id="p-role">—</div>
+    </div>
+    <nav class="profile-nav">
+      <div class="profile-nav-link active" data-tab="overview">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Overview
+      </div>
+      <div class="profile-nav-link" data-tab="listings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 17H3v-4l2-5h14l2 5v4h-2"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg>
+        My Listings
+      </div>
+      <div class="profile-nav-link" data-tab="transactions">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        Transactions
+      </div>
+      <div class="profile-nav-link" data-tab="add-car" id="add-car-nav" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        Add Listing
+      </div>
+      <div class="profile-nav-link" style="color:var(--red)" onclick="API.logout()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sign Out
+      </div>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="profile-main">
+
+    <!-- Overview Tab -->
+    <div class="profile-tab active" id="tab-overview">
+      <div class="panel">
+        <div class="panel-head"><h3>Welcome Back 👋</h3></div>
+        <div class="panel-body">
+          <p style="color:var(--text2);font-size:.9rem">Your 4Kautos dashboard. Manage your listings, track transactions, and keep your profile up to date.</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1.25rem">
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1.25rem">
+              <div style="font-family:'Oswald',sans-serif;font-size:2rem;color:var(--accent)" id="stat-listings">—</div>
+              <div style="font-size:.75rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:2px">Active Listings</div>
+            </div>
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1.25rem">
+              <div style="font-family:'Oswald',sans-serif;font-size:2rem;color:var(--accent)" id="stat-tx">—</div>
+              <div style="font-size:.75rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:2px">Transactions</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Listings Tab -->
+    <div class="profile-tab hidden" id="tab-listings">
+      <div class="panel">
+        <div class="panel-head">
+          <h3>My Listings</h3>
+          <button class="nav-btn nav-btn-accent" onclick="switchTab('add-car')" id="new-listing-btn" style="display:none;padding:6px 14px;font-size:.78rem">+ New Listing</button>
+        </div>
+        <div id="my-listings-content"><div class="spinner-wrap"><div class="spinner"></div></div></div>
+      </div>
+    </div>
+
+    <!-- Transactions Tab -->
+    <div class="profile-tab hidden" id="tab-transactions">
+      <div class="panel">
+        <div class="panel-head"><h3>Transaction History</h3></div>
+        <div id="tx-content"><div class="spinner-wrap"><div class="spinner"></div></div></div>
+      </div>
+    </div>
+
+    <!-- Add Listing Tab (sellers only) -->
+    <div class="profile-tab hidden" id="tab-add-car">
+      <div class="panel">
+        <div class="panel-head"><h3>Add New Listing</h3></div>
+        <div class="panel-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Title</label>
+              <input class="form-input" type="text" id="car-title" placeholder="e.g. 2019 Toyota Camry XSE">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Make</label>
+              <input class="form-input" type="text" id="car-make" placeholder="Toyota">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Model</label>
+              <input class="form-input" type="text" id="car-model" placeholder="Camry">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Year</label>
+              <input class="form-input" type="number" id="car-year" placeholder="2019" min="1990" max="2025">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Price (₦)</label>
+              <input class="form-input" type="number" id="car-price" placeholder="5000000">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Mileage (km)</label>
+              <input class="form-input" type="number" id="car-mileage" placeholder="45000">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">VIN</label>
+              <input class="form-input" type="text" id="car-vin" placeholder="Vehicle ID Number">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Condition</label>
+              <select class="form-select" id="car-condition">
+                <option value="excellent">Excellent</option>
+                <option value="good" selected>Good</option>
+                <option value="fair">Fair</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea class="form-input" id="car-desc" rows="4" placeholder="Describe the vehicle's history, features, and any known issues…" style="resize:vertical;min-height:100px"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Photo URLs (one per line)</label>
+            <textarea class="form-input" id="car-photos" rows="3" placeholder="https://example.com/photo1.jpg&#10;https://example.com/photo2.jpg" style="resize:vertical"></textarea>
+          </div>
+          <div class="form-error hidden" id="car-form-error"></div>
+          <button class="form-submit" id="submit-car-btn">📋 Submit Listing</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+<script>
+  function switchTab(name) {
+    document.querySelectorAll('.profile-tab').forEach(t => t.classList.toggle('active', t.id === `tab-${name}`));
+    document.querySelectorAll('.profile-tab').forEach(t => { if (t.id !== `tab-${name}`) t.classList.add('hidden'); else t.classList.remove('hidden'); });
+    document.querySelectorAll('.profile-nav-link').forEach(l => l.classList.toggle('active', l.dataset.tab === name));
+  }
+
+  document.querySelectorAll('.profile-nav-link[data-tab]').forEach(link => {
+    link.addEventListener('click', () => {
+      switchTab(link.dataset.tab);
+      if (link.dataset.tab === 'listings')     loadMyListings();
+      if (link.dataset.tab === 'transactions') loadTransactions();
+    });
+  });
+
+  async function init() {
+    const user = API.getUser();
+    if (!API.isLoggedIn() || !user) {
+      document.getElementById('auth-gate').style.display = 'flex';
+      return;
+    }
+    document.getElementById('auth-gate').style.display = 'none';
+    document.getElementById('profile-layout').classList.remove('hidden');
+    document.getElementById('logout-btn').style.display = '';
+    document.getElementById('nav-login-btn').classList.add('hidden');
+    document.getElementById('nav-signup-btn').classList.add('hidden');
+
+    const initials = user.name?.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2) || '?';
+    document.getElementById('p-ava').textContent  = initials;
+    document.getElementById('p-name').textContent = user.name || '—';
+    document.getElementById('p-role').textContent = user.role?.toUpperCase() || 'BUYER';
+
+    if (user.role === 'seller') {
+      document.getElementById('add-car-nav').style.display = 'flex';
+      document.getElementById('new-listing-btn').style.display = '';
+    }
+
+    // Load overview counts
+    try {
+      const [listings, txs] = await Promise.allSettled([API.getCars({ sellerId: user.id }), API.getMyTx()]);
+      document.getElementById('stat-listings').textContent = listings.value?.length ?? '—';
+      document.getElementById('stat-tx').textContent = txs.value?.length ?? '—';
+    } catch {}
+  }
+
+  async function loadMyListings() {
+    const el = document.getElementById('my-listings-content');
+    el.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div></div>';
+    try {
+      const cars = await API.getCars();
+      if (!cars.length) { el.innerHTML = '<div class="empty-state" style="padding:2.5rem"><p>No listings yet.</p></div>'; return; }
+      const user = API.getUser();
+      const mine = cars.filter(c => (c.sellerId?._id || c.sellerId) === user?.id);
+      if (!mine.length) { el.innerHTML = `<div class="empty-state" style="padding:2.5rem"><p>You have no active listings. <a href="#" onclick="switchTab('add-car')" style="color:var(--accent)">Add one!</a></p></div>`; return; }
+      el.innerHTML = mine.map(c => `
+        <div class="tx-row">
+          <div>
+            <div class="tx-car">${c.title || `${c.year} ${c.make} ${c.model}`}</div>
+            <div class="tx-meta">₦${Number(c.price).toLocaleString()} · ${c.condition} · ${Number(c.mileage).toLocaleString()} km</div>
+          </div>
+          <a href="detail.html?id=${c._id}" class="card-cta" style="text-decoration:none;font-size:.75rem">View</a>
+          <button onclick="deleteCar('${c._id}')" style="color:var(--red);font-size:.78rem;padding:4px 10px;border-radius:6px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2)">Delete</button>
+        </div>`).join('');
+    } catch(e) { el.innerHTML = `<p class="empty-state">Failed: ${e.message}</p>`; }
+  }
+
+  async function deleteCar(id) {
+    if (!confirm('Delete this listing?')) return;
+    try { await API.deleteCar(id); toast('Listing deleted', 'success'); loadMyListings(); }
+    catch(e) { toast(e.message, 'error'); }
+  }
+
+  async function loadTransactions() {
+    const el = document.getElementById('tx-content');
+    el.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div></div>';
+    try {
+      const txs = await API.getMyTx();
+      if (!txs.length) { el.innerHTML = '<div class="empty-state" style="padding:2.5rem"><p>No transactions yet.</p></div>'; return; }
+      el.innerHTML = txs.map(t => {
+        const car  = t.carId;
+        const other = API.getUser()?.id === t.buyerId?._id ? t.sellerId?.name : t.buyerId?.name;
+        return `<div class="tx-row">
+          <div>
+            <div class="tx-car">${car?.title || 'Car Listing'}</div>
+            <div class="tx-meta">${other ? `with ${other}` : ''} · ₦${Number(car?.price||0).toLocaleString()}</div>
+          </div>
+          <span class="tx-status status-${t.status}">${t.status.replace(/_/g,' ')}</span>
+          <select onchange="updateTx('${t._id}', this.value)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:6px;font-size:.75rem">
+            <option value="">Update…</option>
+            <option value="pending_inspection">Inspection</option>
+            <option value="payment_in_escrow">Pay Escrow</option>
+            <option value="completed">Complete</option>
+            <option value="cancelled">Cancel</option>
+          </select>
+        </div>`;
+      }).join('');
+    } catch(e) { el.innerHTML = `<p class="empty-state">Failed: ${e.message}</p>`; }
+  }
+
+  async function updateTx(id, status) {
+    if (!status) return;
+    try { await API.updateTxStatus(id, status); toast('Status updated', 'success'); loadTransactions(); }
+    catch(e) { toast(e.message, 'error'); }
+  }
+
+  // Add listing form
+  document.getElementById('submit-car-btn').addEventListener('click', async () => {
+    const photos = document.getElementById('car-photos').value.trim().split('\n').map(u=>u.trim()).filter(Boolean);
+    const data = {
+      title:       document.getElementById('car-title').value.trim(),
+      make:        document.getElementById('car-make').value.trim(),
+      model:       document.getElementById('car-model').value.trim(),
+      year:        parseInt(document.getElementById('car-year').value) || undefined,
+      price:       parseFloat(document.getElementById('car-price').value) || undefined,
+      mileage:     parseInt(document.getElementById('car-mileage').value) || undefined,
+      vin:         document.getElementById('car-vin').value.trim(),
+      condition:   document.getElementById('car-condition').value,
+      description: document.getElementById('car-desc').value.trim(),
+      photos,
+    };
+    const errEl = document.getElementById('car-form-error');
+    errEl.classList.add('hidden');
+    if (!data.make || !data.model || !data.price) {
+      errEl.textContent = 'Make, model, and price are required.';
+      errEl.classList.remove('hidden'); return;
+    }
+    try {
+      await API.createCar(data);
+      toast('Listing created! 🚗', 'success');
+      switchTab('listings'); loadMyListings();
+    } catch(e) {
+      errEl.textContent = e.message; errEl.classList.remove('hidden');
+    }
+  });
+
+  init();
+</script>
+</body>
+</html>

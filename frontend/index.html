@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>4Kautos — Premium Preowned Car Marketplace</title>
+  <meta name="description" content="Find your perfect preowned car. Browse thousands of verified listings with full history reports and secure escrow payments.">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- ── NAVBAR ─────────────────────────────── -->
+<nav class="navbar">
+  <a href="index.html" class="nav-logo"></a>
+  <ul class="nav-links">
+    <li><a href="index.html" class="active">Home</a></li>
+    <li><a href="listings.html">Listings</a></li>
+    <li><a href="#how-it-works">How It Works</a></li>
+  </ul>
+  <div class="nav-search">
+    <div class="nav-search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="nav-q" placeholder="Search make, model…" autocomplete="off">
+    </div>
+  </div>
+  <div class="nav-actions">
+    <button class="nav-btn nav-btn-ghost" id="nav-login-btn">Sign In</button>
+    <button class="nav-btn nav-btn-accent" id="nav-signup-btn">List Your Car</button>
+    <button class="nav-btn nav-btn-ghost hidden" id="nav-profile-btn" onclick="location.href='profile.html'">
+      👤 <span class="nav-user-label">Profile</span>
+    </button>
+    <button class="nav-hamburger" id="nav-hamburger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ── HERO ───────────────────────────────── -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">Nigeria's #1 Preowned Car Platform</div>
+    <h1 class="hero-title">Drive Your <em>Dream</em><br>Without Breaking The Bank</h1>
+    <p class="hero-sub">Browse thousands of verified preowned vehicles. Secure escrow payments. Full inspection reports. Zero hassle.</p>
+
+    <div class="hero-search-card">
+      <div class="search-tabs">
+        <button class="search-tab active" data-type="buy">Buy a Car</button>
+        <button class="search-tab" data-type="sell">Sell Your Car</button>
+      </div>
+      <div class="search-fields" id="search-fields">
+        <div class="sf-group">
+          <label class="sf-label">Make</label>
+          <select class="sf-select" id="sf-make">
+            <option value="">Any Make</option>
+            <option>Toyota</option><option>Honda</option><option>Ford</option>
+            <option>BMW</option><option>Mercedes-Benz</option><option>Hyundai</option>
+            <option>Kia</option><option>Lexus</option><option>Nissan</option>
+            <option>Volkswagen</option>
+          </select>
+        </div>
+        <div class="sf-group">
+          <label class="sf-label">Model</label>
+          <input class="sf-input" type="text" id="sf-model" placeholder="Any Model">
+        </div>
+        <div class="sf-group">
+          <label class="sf-label">Max Price (₦)</label>
+          <select class="sf-select" id="sf-price">
+            <option value="">Any Price</option>
+            <option value="2000000">Under ₦2M</option>
+            <option value="5000000">Under ₦5M</option>
+            <option value="10000000">Under ₦10M</option>
+            <option value="20000000">Under ₦20M</option>
+          </select>
+        </div>
+        <button class="search-btn" id="hero-search-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Search Cars
+        </button>
+      </div>
+    </div>
+
+    <div class="hero-stats">
+      <div>
+        <div class="hero-stat-n" id="stat-cars">—</div>
+        <div class="hero-stat-l">Cars Listed</div>
+      </div>
+      <div>
+        <div class="hero-stat-n">98%</div>
+        <div class="hero-stat-l">Buyer Satisfaction</div>
+      </div>
+      <div>
+        <div class="hero-stat-n">₦0</div>
+        <div class="hero-stat-l">Hidden Fees</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FEATURED LISTINGS ───────────────────── -->
+<section>
+  <div class="section-inner">
+    <div class="section-head">
+      <div>
+        <div class="section-label">Fresh Inventory</div>
+        <h2 class="section-title">Featured Listings</h2>
+      </div>
+      <a href="listings.html" class="view-all">View All Cars →</a>
+    </div>
+    <div id="featured-spinner" class="spinner-wrap"><div class="spinner"></div></div>
+    <div class="cars-grid hidden" id="featured-grid"></div>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ───────────────────────── -->
+<section class="how-section" id="how-it-works">
+  <div class="section-inner">
+    <div class="section-head">
+      <div>
+        <div class="section-label">Process</div>
+        <h2 class="section-title">How 4Kautos Works</h2>
+        <p class="section-sub">Our secure process protects buyers and sellers from listing to handover.</p>
+      </div>
+    </div>
+    <div class="steps-grid">
+      <div class="step-card" data-step="1">
+        <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
+        <div class="step-title">Browse & Search</div>
+        <p class="step-desc">Filter by make, model, year, price and condition to find your perfect match from our verified inventory.</p>
+      </div>
+      <div class="step-card" data-step="2">
+        <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 5-4 9-9 9s-9-4-9-9 4-9 9-9c2.4 0 4.6.9 6.2 2.4"/></svg></div>
+        <div class="step-title">Request Inspection</div>
+        <p class="step-desc">Initiate a purchase and our certified inspectors verify the vehicle's condition before you commit.</p>
+      </div>
+      <div class="step-card" data-step="3">
+        <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>
+        <div class="step-title">Pay Into Escrow</div>
+        <p class="step-desc">Your funds are held securely in our escrow system — released to the seller only when you're satisfied.</p>
+      </div>
+      <div class="step-card" data-step="4">
+        <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+        <div class="step-title">Drive Away</div>
+        <p class="step-desc">Title is transferred, keys handed over. Your new car is ready. We handle all the paperwork.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ─────────────────────────────── -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="index.html" class="nav-logo" style="display:inline-flex;margin-bottom:.5rem"></a>
+        <p>Nigeria's trusted preowned car marketplace. Verified listings, secure payments, zero hidden fees.</p>
+      </div>
+      <div class="footer-col">
+        <h5>Buy</h5>
+        <a href="listings.html">Browse Listings</a>
+        <a href="listings.html?condition=excellent">Premium Cars</a>
+        <a href="#how-it-works">How It Works</a>
+      </div>
+      <div class="footer-col">
+        <h5>Sell</h5>
+        <a href="#" onclick="openAuth('signup')">List Your Car</a>
+        <a href="profile.html">Seller Dashboard</a>
+      </div>
+      <div class="footer-col">
+        <h5>Support</h5>
+        <a href="#">FAQs</a>
+        <a href="#">Contact Us</a>
+        <a href="#">Terms of Service</a>
+        <a href="#">Privacy Policy</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2025 4Kautos. All rights reserved.</span>
+      <span>Built with ❤️ in Nigeria</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+<script>
+  // Hero search tab switch
+  document.querySelectorAll('.search-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.search-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (btn.dataset.type === 'sell') {
+        openAuth('signup');
+        document.querySelectorAll('.search-tab')[0].classList.add('active');
+        btn.classList.remove('active');
+      }
+    });
+  });
+
+  // Hero search
+  document.getElementById('hero-search-btn').addEventListener('click', () => {
+    const make  = document.getElementById('sf-make').value;
+    const model = document.getElementById('sf-model').value;
+    const price = document.getElementById('sf-price').value;
+    const p = new URLSearchParams();
+    if (make)  p.set('make', make);
+    if (model) p.set('model', model);
+    if (price) p.set('maxPrice', price);
+    location.href = 'listings.html?' + p.toString();
+  });
+
+  // Nav quick search
+  document.getElementById('nav-q').addEventListener('keydown', e => {
+    if (e.key === 'Enter') location.href = `listings.html?q=${encodeURIComponent(e.target.value)}`;
+  });
+
+  // Load featured listings
+  async function loadFeatured() {
+    try {
+      const cars = await API.getCars({ limit: 8 });
+      const grid = document.getElementById('featured-grid');
+      document.getElementById('featured-spinner').classList.add('hidden');
+      grid.classList.remove('hidden');
+      document.getElementById('stat-cars').textContent = cars.length >= 8 ? '500+' : cars.length;
+
+      if (!cars.length) {
+        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 17H3v-4l2-5h14l2 5v4h-2"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg>
+          <h3>No Listings Yet</h3><p>Be the first to list a car!</p>
+        </div>`;
+        return;
+      }
+
+      grid.innerHTML = cars.slice(0,8).map(c => carCard(c)).join('');
+      grid.querySelectorAll('.car-card').forEach(card => {
+        card.addEventListener('click', () => { location.href = `detail.html?id=${card.dataset.id}`; });
+      });
+      grid.querySelectorAll('.card-saves').forEach(btn => {
+        btn.addEventListener('click', e => { e.stopPropagation(); btn.classList.toggle('saved'); btn.textContent = btn.classList.contains('saved') ? '♥' : '♡'; });
+      });
+    } catch {
+      document.getElementById('featured-spinner').innerHTML = '<p class="empty-state">Could not load listings. Start the backend server.</p>';
+    }
+  }
+
+  function carCard(c) {
+    const price = c.price ? `₦${Number(c.price).toLocaleString()}` : 'Price on Request';
+    const img   = c.photos?.[0] || `https://placehold.co/600x400/18181d/f59e0b?text=${encodeURIComponent((c.make||'Car'))}`;
+    return `
+      <div class="car-card" data-id="${c._id}">
+        <div class="card-img-wrap">
+          <img class="card-img" src="${img}" alt="${c.title||''}" loading="lazy" onerror="this.src='https://placehold.co/600x400/18181d/f59e0b?text=No+Photo'">
+          ${c.featured ? '<span class="card-badge featured">Featured</span>' : ''}
+          <button class="card-saves" title="Save">♡</button>
+        </div>
+        <div class="card-body">
+          <div class="card-title">${c.title || `${c.year||''} ${c.make||''} ${c.model||''}`}</div>
+          <div class="card-specs">
+            ${c.mileage ? `<span class="spec-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${Number(c.mileage).toLocaleString()} km</span>` : ''}
+            ${c.condition ? `<span class="spec-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 12l2 2 4-4"/></svg>${c.condition}</span>` : ''}
+            ${c.year ? `<span class="spec-chip">${c.year}</span>` : ''}
+          </div>
+          <div class="card-footer">
+            <div class="card-price">${price}</div>
+            <button class="card-cta">View Details</button>
+          </div>
+        </div>
+      </div>`;
+  }
+  window.carCard = carCard;
+  loadFeatured();
+</script>
+</body>
+</html>
