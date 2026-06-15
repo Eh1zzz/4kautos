@@ -1,61 +1,62 @@
-import pg from 'pg';
+import mysql  from 'mysql2/promise';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const { Pool } = pg;
-
-export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL &&
-    !process.env.DATABASE_URL.includes('localhost') &&
-    !process.env.DATABASE_URL.includes('127.0.0.1')
-      ? { rejectUnauthorized: false }
-      : false,
-});
+export const pool = mysql.createPool(
+  process.env.DATABASE_URL || 'mysql://root:password@localhost:3306/4kautos'
+);
 
 export async function connectDB() {
   await pool.query('SELECT 1'); // verify connection
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
-      id          SERIAL PRIMARY KEY,
+      id          INT           AUTO_INCREMENT PRIMARY KEY,
       name        VARCHAR(255)  NOT NULL,
-      email       VARCHAR(255)  UNIQUE NOT NULL,
+      email       VARCHAR(255)  NOT NULL UNIQUE,
       password    VARCHAR(255)  NOT NULL,
-      role        VARCHAR(20)   NOT NULL DEFAULT 'buyer'
-                  CHECK (role IN ('buyer','seller','admin')),
-      verified    BOOLEAN       NOT NULL DEFAULT false,
-      created_at  TIMESTAMPTZ   NOT NULL DEFAULT NOW()
-    );
+      role        VARCHAR(20)   NOT NULL DEFAULT 'buyer',
+      verified    BOOLEAN       NOT NULL DEFAULT FALSE,
+      created_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CHECK (role IN ('buyer','seller','admin'))
+    )
+  `);
 
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS cars (
-      id          SERIAL PRIMARY KEY,
+      id          INT           AUTO_INCREMENT PRIMARY KEY,
       title       VARCHAR(255),
       make        VARCHAR(100),
       model       VARCHAR(100),
-      year        INTEGER       CHECK (year >= 1900),
-      mileage     INTEGER       CHECK (mileage >= 0),
+      year        INT,
+      mileage     INT,
       vin         VARCHAR(100),
-      condition   VARCHAR(20)   NOT NULL DEFAULT 'good'
-                  CHECK (condition IN ('excellent','good','fair','poor')),
+      \`condition\` VARCHAR(20)  NOT NULL DEFAULT 'good',
       description TEXT,
-      photos      TEXT[]        NOT NULL DEFAULT '{}',
-      price       NUMERIC(15,2) CHECK (price >= 0),
-      featured    BOOLEAN       NOT NULL DEFAULT false,
-      seller_id   INTEGER       NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      created_at  TIMESTAMPTZ   NOT NULL DEFAULT NOW()
-    );
-
-    CREATE TABLE IF NOT EXISTS transactions (
-      id          SERIAL PRIMARY KEY,
-      buyer_id    INTEGER       NOT NULL REFERENCES users(id),
-      seller_id   INTEGER       NOT NULL REFERENCES users(id),
-      car_id      INTEGER       REFERENCES cars(id) ON DELETE SET NULL,
-      status      VARCHAR(30)   NOT NULL DEFAULT 'initiated'
-                  CHECK (status IN ('initiated','pending_inspection','payment_in_escrow','completed','cancelled','disputed')),
-      created_at  TIMESTAMPTZ   NOT NULL DEFAULT NOW()
-    );
+      photos      JSON,
+      price       DECIMAL(15,2),
+      featured    BOOLEAN       NOT NULL DEFAULT FALSE,
+      seller_id   INT           NOT NULL,
+      created_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CHECK (\`condition\` IN ('excellent','good','fair','poor')),
+      FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
+    )
   `);
 
-  console.log('✅ PostgreSQL connected and tables ready');
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS transactions (
+      id          INT           AUTO_INCREMENT PRIMARY KEY,
+      buyer_id    INT           NOT NULL,
+      seller_id   INT           NOT NULL,
+      car_id      INT,
+      status      VARCHAR(30)   NOT NULL DEFAULT 'initiated',
+      created_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CHECK (status IN ('initiated','pending_inspection','payment_in_escrow','completed','cancelled','disputed')),
+      FOREIGN KEY (buyer_id)  REFERENCES users(id),
+      FOREIGN KEY (seller_id) REFERENCES users(id),
+      FOREIGN KEY (car_id)    REFERENCES cars(id) ON DELETE SET NULL
+    )
+  `);
+
+  console.log('✅ MySQL connected and tables ready');
 }

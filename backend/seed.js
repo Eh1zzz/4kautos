@@ -17,42 +17,49 @@ const CARS = [
 
 async function seed() {
   await connectDB();
-  console.log('Connected to PostgreSQL');
+  console.log('Connected to MySQL');
 
-  // Clear all data and reset sequences
-  await pool.query('TRUNCATE transactions, cars, users RESTART IDENTITY CASCADE');
+  // Clear all data and reset AUTO_INCREMENT counters
+  await pool.query('SET FOREIGN_KEY_CHECKS = 0');
+  await pool.query('TRUNCATE TABLE transactions');
+  await pool.query('TRUNCATE TABLE cars');
+  await pool.query('TRUNCATE TABLE users');
+  await pool.query('SET FOREIGN_KEY_CHECKS = 1');
   console.log('Cleared existing data');
 
   const hash = p => bcrypt.hash(p, 12);
 
-  const { rows: [seller] } = await pool.query(
-    `INSERT INTO users (name, email, password, role, verified) VALUES ($1,$2,$3,$4,$5) RETURNING id`,
+  const [sellerRes] = await pool.query(
+    'INSERT INTO users (name, email, password, role, verified) VALUES (?,?,?,?,?)',
     ['Demo Seller', 'seller@4kautos.com', await hash('password123'), 'seller', true]
   );
-  const { rows: [buyer] } = await pool.query(
-    `INSERT INTO users (name, email, password, role, verified) VALUES ($1,$2,$3,$4,$5) RETURNING id`,
+  const sellerId = sellerRes.insertId;
+
+  const [buyerRes] = await pool.query(
+    'INSERT INTO users (name, email, password, role, verified) VALUES (?,?,?,?,?)',
     ['Demo Buyer', 'buyer@4kautos.com', await hash('password123'), 'buyer', true]
   );
+  const buyerId = buyerRes.insertId;
+
   await pool.query(
-    `INSERT INTO users (name, email, password, role, verified) VALUES ($1,$2,$3,$4,$5)`,
+    'INSERT INTO users (name, email, password, role, verified) VALUES (?,?,?,?,?)',
     ['Admin', 'admin@4kautos.com', await hash('admin1234'), 'admin', true]
   );
   console.log('Created users: seller, buyer, admin');
 
   let firstCarId;
   for (const c of CARS) {
-    const { rows: [car] } = await pool.query(
-      `INSERT INTO cars (title, make, model, year, mileage, price, condition, description, photos, featured, seller_id)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
-      [c.title, c.make, c.model, c.year, c.mileage, c.price, c.condition, c.description, c.photos, c.featured, seller.id]
+    const [carRes] = await pool.query(
+      'INSERT INTO cars (title, make, model, year, mileage, price, `condition`, description, photos, featured, seller_id) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
+      [c.title, c.make, c.model, c.year, c.mileage, c.price, c.condition, c.description, JSON.stringify(c.photos), c.featured, sellerId]
     );
-    if (!firstCarId) firstCarId = car.id;
+    if (!firstCarId) firstCarId = carRes.insertId;
   }
   console.log(`Created ${CARS.length} car listings`);
 
   await pool.query(
-    `INSERT INTO transactions (buyer_id, seller_id, car_id, status) VALUES ($1,$2,$3,$4)`,
-    [buyer.id, seller.id, firstCarId, 'pending_inspection']
+    'INSERT INTO transactions (buyer_id, seller_id, car_id, status) VALUES (?,?,?,?)',
+    [buyerId, sellerId, firstCarId, 'pending_inspection']
   );
   console.log('Created sample transaction');
 

@@ -7,10 +7,10 @@ export const VALID_STATUSES = [
 
 const WITH_RELATIONS = `
   SELECT t.*,
-    json_build_object('id', b.id, 'name', b.name) AS buyer,
-    json_build_object('id', s.id, 'name', s.name) AS seller,
+    JSON_OBJECT('id', b.id, 'name', b.name) AS buyer,
+    JSON_OBJECT('id', s.id, 'name', s.name) AS seller,
     CASE WHEN c.id IS NOT NULL
-      THEN json_build_object('id', c.id, 'title', c.title, 'price', c.price)
+      THEN JSON_OBJECT('id', c.id, 'title', c.title, 'price', c.price)
       ELSE NULL
     END AS car
   FROM transactions t
@@ -21,10 +21,10 @@ const WITH_RELATIONS = `
 
 const WITH_RELATIONS_EMAIL = `
   SELECT t.*,
-    json_build_object('id', b.id, 'name', b.name, 'email', b.email) AS buyer,
-    json_build_object('id', s.id, 'name', s.name, 'email', s.email) AS seller,
+    JSON_OBJECT('id', b.id, 'name', b.name, 'email', b.email) AS buyer,
+    JSON_OBJECT('id', s.id, 'name', s.name, 'email', s.email) AS seller,
     CASE WHEN c.id IS NOT NULL
-      THEN json_build_object('id', c.id, 'title', c.title, 'price', c.price)
+      THEN JSON_OBJECT('id', c.id, 'title', c.title, 'price', c.price)
       ELSE NULL
     END AS car
   FROM transactions t
@@ -33,49 +33,59 @@ const WITH_RELATIONS_EMAIL = `
   LEFT JOIN cars c ON c.id = t.car_id
 `;
 
+// mysql2 usually parses JSON, but normalize defensively.
+function normalize(row) {
+  if (!row) return row;
+  for (const k of ['buyer', 'seller', 'car']) {
+    if (typeof row[k] === 'string') {
+      try { row[k] = JSON.parse(row[k]); } catch { /* leave as-is */ }
+    }
+  }
+  return row;
+}
+
 export async function create(buyerId, sellerId, carId) {
-  const { rows } = await pool.query(
-    `INSERT INTO transactions (buyer_id, seller_id, car_id)
-     VALUES ($1, $2, $3) RETURNING *`,
+  const [result] = await pool.query(
+    'INSERT INTO transactions (buyer_id, seller_id, car_id) VALUES (?, ?, ?)',
     [buyerId, parseInt(sellerId, 10), parseInt(carId, 10)]
   );
+  const [rows] = await pool.query('SELECT * FROM transactions WHERE id = ?', [result.insertId]);
   return rows[0];
 }
 
 export async function findByUser(userId) {
-  const { rows } = await pool.query(
+  const [rows] = await pool.query(
     `${WITH_RELATIONS}
-     WHERE t.buyer_id = $1 OR t.seller_id = $1
+     WHERE t.buyer_id = ? OR t.seller_id = ?
      ORDER BY t.created_at DESC`,
-    [userId]
+    [userId, userId]
   );
-  return rows;
+  return rows.map(normalize);
 }
 
 export async function findById(id) {
   const numId = parseInt(id, 10);
   if (isNaN(numId)) return null;
-  const { rows } = await pool.query(
-    `${WITH_RELATIONS_EMAIL} WHERE t.id = $1`,
-    [numId]
-  );
-  return rows[0] || null;
+  const [rows] = await pool.query(`${WITH_RELATIONS_EMAIL} WHERE t.id = ?`, [numId]);
+  return rows[0] ? normalize(rows[0]) : null;
 }
 
 export async function updateStatus(id, status) {
   const numId = parseInt(id, 10);
   if (isNaN(numId)) return null;
-  const { rows } = await pool.query(
-    `UPDATE transactions SET status = $1 WHERE id = $2 RETURNING *`,
+  const [result] = await pool.query(
+    'UPDATE transactions SET status = ? WHERE id = ?',
     [status, numId]
   );
+  if (result.affectedRows === 0) return null;
+  const [rows] = await pool.query('SELECT * FROM transactions WHERE id = ?', [numId]);
   return rows[0] || null;
 }
 
 export async function findExisting(buyerId, carId) {
-  const { rows } = await pool.query(
+  const [rows] = await pool.query(
     `SELECT id FROM transactions
-     WHERE buyer_id = $1 AND car_id = $2
+     WHERE buyer_id = ? AND car_id = ?
        AND status NOT IN ('cancelled','completed')`,
     [buyerId, parseInt(carId, 10)]
   );
@@ -83,18 +93,18 @@ export async function findExisting(buyerId, carId) {
 }
 
 export async function findAll() {
-  const { rows } = await pool.query(
-    `${WITH_RELATIONS} ORDER BY t.created_at DESC`
-  );
-  return rows;
+  const [rows] = await pool.query(`${WITH_RELATIONS} ORDER BY t.created_at DESC`);
+  return rows.map(normalize);
 }
 
 export async function setDisputed(id) {
   const numId = parseInt(id, 10);
   if (isNaN(numId)) return null;
-  const { rows } = await pool.query(
-    `UPDATE transactions SET status = 'disputed' WHERE id = $1 RETURNING *`,
+  const [result] = await pool.query(
+    "UPDATE transactions SET status = 'disputed' WHERE id = ?",
     [numId]
   );
+  if (result.affectedRows === 0) return null;
+  const [rows] = await pool.query('SELECT * FROM transactions WHERE id = ?', [numId]);
   return rows[0] || null;
 }

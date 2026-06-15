@@ -4,7 +4,10 @@ import { pool, connectDB } from '../config/db.js';
 
 beforeAll(async () => { await connectDB(); });
 afterEach(async () => {
-  await pool.query('TRUNCATE transactions, cars, users RESTART IDENTITY CASCADE');
+  // Delete in FK-safe order (children before parents)
+  await pool.query('DELETE FROM transactions');
+  await pool.query('DELETE FROM cars');
+  await pool.query('DELETE FROM users');
 });
 afterAll(async () => { await pool.end(); });
 
