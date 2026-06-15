@@ -221,19 +221,17 @@
     const el = document.getElementById('my-listings-content');
     el.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div></div>';
     try {
-      const cars = await API.getCars();
-      if (!cars.length) { el.innerHTML = '<div class="empty-state" style="padding:2.5rem"><p>No listings yet.</p></div>'; return; }
       const user = API.getUser();
-      const mine = cars.filter(c => (c.sellerId?._id || c.sellerId) === user?.id);
-      if (!mine.length) { el.innerHTML = `<div class="empty-state" style="padding:2.5rem"><p>You have no active listings. <a href="#" onclick="switchTab('add-car')" style="color:var(--accent)">Add one!</a></p></div>`; return; }
-      el.innerHTML = mine.map(c => `
+      const cars = await API.getCars({ sellerId: user?.id });
+      if (!cars.length) { el.innerHTML = `<div class="empty-state" style="padding:2.5rem"><p>You have no active listings. <a href="#" onclick="switchTab('add-car')" style="color:var(--accent)">Add one!</a></p></div>`; return; }
+      el.innerHTML = cars.map(c => `
         <div class="tx-row">
           <div>
             <div class="tx-car">${c.title || `${c.year} ${c.make} ${c.model}`}</div>
             <div class="tx-meta">₦${Number(c.price).toLocaleString()} · ${c.condition} · ${Number(c.mileage).toLocaleString()} km</div>
           </div>
-          <a href="detail.html?id=${c._id}" class="card-cta" style="text-decoration:none;font-size:.75rem">View</a>
-          <button onclick="deleteCar('${c._id}')" style="color:var(--red);font-size:.78rem;padding:4px 10px;border-radius:6px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2)">Delete</button>
+          <a href="detail.html?id=${c.id}" class="card-cta" style="text-decoration:none;font-size:.75rem">View</a>
+          <button onclick="deleteCar('${c.id}')" style="color:var(--red);font-size:.78rem;padding:4px 10px;border-radius:6px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2)">Delete</button>
         </div>`).join('');
     } catch(e) { el.innerHTML = `<p class="empty-state">Failed: ${e.message}</p>`; }
   }
@@ -250,16 +248,17 @@
     try {
       const txs = await API.getMyTx();
       if (!txs.length) { el.innerHTML = '<div class="empty-state" style="padding:2.5rem"><p>No transactions yet.</p></div>'; return; }
+      const me = API.getUser();
       el.innerHTML = txs.map(t => {
-        const car  = t.carId;
-        const other = API.getUser()?.id === t.buyerId?._id ? t.sellerId?.name : t.buyerId?.name;
+        const car   = t.car;
+        const other = me?.id === t.buyer_id ? t.seller?.name : t.buyer?.name;
         return `<div class="tx-row">
           <div>
             <div class="tx-car">${car?.title || 'Car Listing'}</div>
             <div class="tx-meta">${other ? `with ${other}` : ''} · ₦${Number(car?.price||0).toLocaleString()}</div>
           </div>
           <span class="tx-status status-${t.status}">${t.status.replace(/_/g,' ')}</span>
-          <select onchange="updateTx('${t._id}', this.value)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:6px;font-size:.75rem">
+          <select onchange="updateTx('${t.id}', this.value)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:6px;font-size:.75rem">
             <option value="">Update…</option>
             <option value="pending_inspection">Inspection</option>
             <option value="payment_in_escrow">Pay Escrow</option>

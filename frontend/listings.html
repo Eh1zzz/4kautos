@@ -157,7 +157,7 @@
     const price = c.price ? `₦${Number(c.price).toLocaleString()}` : 'Price on Request';
     const img   = c.photos?.[0] || `https://placehold.co/600x400/18181d/f59e0b?text=${encodeURIComponent((c.make||'Car'))}`;
     return `
-      <div class="car-card" data-id="${c._id}">
+      <div class="car-card" data-id="${c.id}">
         <div class="card-img-wrap">
           <img class="card-img" src="${img}" alt="${c.title||''}" loading="lazy" onerror="this.src='https://placehold.co/600x400/18181d/f59e0b?text=No+Photo'">
           ${c.condition==='excellent'?'<span class="card-badge new">Excellent</span>':''}

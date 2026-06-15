@@ -211,12 +211,21 @@ document.getElementById('nav-signup-btn')?.addEventListener('click', () => openA
     isOpen = false; fab.classList.remove('open'); win.classList.remove('open');
   });
 
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
   function addBotMsg(text) {
     const el = document.createElement('div');
     el.className = 'chat-msg bot';
     el.innerHTML = `
       <div class="msg-avatar bot-avatar-sm">🤖</div>
-      <div class="msg-bubble">${text.replace(/\n/g,'<br>')}</div>`;
+      <div class="msg-bubble">${escHtml(text).replace(/\n/g,'<br>')}</div>`;
     msgs.appendChild(el);
     msgs.scrollTop = msgs.scrollHeight;
   }
@@ -226,7 +235,7 @@ document.getElementById('nav-signup-btn')?.addEventListener('click', () => openA
     el.className = 'chat-msg user';
     el.innerHTML = `
       <div class="msg-avatar user-avatar-sm">You</div>
-      <div class="msg-bubble">${text}</div>`;
+      <div class="msg-bubble">${escHtml(text)}</div>`;
     msgs.appendChild(el);
     msgs.scrollTop = msgs.scrollHeight;
   }

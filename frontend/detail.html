@@ -135,7 +135,7 @@
       document.getElementById('car-desc').textContent = car.description || 'No description provided.';
 
       // Seller
-      const seller = car.sellerId;
+      const seller = car.seller;
       const initials = seller?.name ? seller.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2) : '?';
       document.getElementById('seller-ava').textContent  = initials;
       document.getElementById('seller-name').textContent = seller?.name || 'Unknown Seller';
@@ -183,7 +183,7 @@
     const user = API.getUser();
     if (user.role !== 'buyer') { toast('Only buyers can initiate purchases', 'error'); return; }
     try {
-      await API.initTx(car._id, car.sellerId._id || car.sellerId);
+      await API.initTx(car.id, car.seller?.id);
       toast('Purchase initiated! Check your profile for status.', 'success');
     } catch(e) {
       toast(e.message, 'error');
