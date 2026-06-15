@@ -1,41 +1,42 @@
 # 4Kautos — Premium Preowned Car Marketplace
 
-A full-stack web application for buying and selling preowned vehicles, with a Node.js/Express backend, MongoDB database, and a premium static frontend featuring an AI-powered chatbot.
+A full-stack web application for buying and selling preowned vehicles, with a Node.js/Express backend, **MySQL** database, and a premium static frontend featuring an AI-powered chatbot.
 
 ---
 
-## What Was Improved (v1 → v2)
+## Tech Stack
 
-### Backend Bug Fixes
-| Issue | Fix |
-|-------|-----|
-| Missing `"type":"module"` in package.json | Added — ESM now works correctly |
-| `cars.js` had triple duplicate route handlers | Removed duplicates — single clean implementation |
-| `transactions.js` had duplicate handlers | Same fix |
-| `admin.js` imported from `../middleware/authorize.js` (doesn't exist) | Fixed to `../middleware/auth.js` |
-| `upload.js` was empty | Implemented multer with file-type validation and 10MB limit |
-| Auth route double-hashed passwords | Pre-save hook now handles hashing; route removed manual call |
-| `auth/login` returned no user object | Now returns `{ token, user: { id, name, email, role } }` |
-| No CORS middleware | Added with configurable allowed origins |
-| No rate limiting | Added 200 req/15min global limit, 20 req/min on chatbot |
-| No global error handler | Added |
+| Layer | Technology |
+|-------|------------|
+| Runtime | Node.js ≥ 18 (ESM) |
+| Server | Express 4 |
+| Database | MySQL 8 (via `mysql2/promise`) |
+| Auth | JWT (7-day tokens) + bcrypt |
+| AI Chatbot | Anthropic Claude (`claude-haiku-4-5-20251001`) |
+| Frontend | Vanilla HTML / CSS / JS (no framework) |
+| Tests | Jest + Supertest |
 
-### New Features
-- **AI Chatbot** (`/chat`) — AutoBot powered by Claude, with local fallback responses when backend is offline
-- **Seed script** (`node backend/seed.js`) — 8 realistic car listings + buyer/seller/admin demo accounts
-- **Text search index** on Car model (make, model, title, description)
+---
 
-### Frontend — Complete Redesign
-- **4Kautos logo** — wordmark with car icon in navbar and footer
-- **Favicon** — SVG car/brand icon
-- **Design system** — Anthracite + Amber palette, Oswald + Jost typography
-- **Hero** with animated search form and live stats
-- **Listings page** with filter sidebar (make, model, year range, price range, condition)
-- **Detail page** with photo gallery (thumbnail nav + prev/next), specs table, seller card, escrow safety note
-- **Profile/Dashboard** — tabs for Overview, My Listings (sellers), Transactions, Add Listing
-- **Auth modal** — login/signup with role selection, inline validation, no page redirect
-- **Chatbot widget** — floating FAB, typing indicator, quick reply chips, graceful offline fallback
-- **Toast notifications** system-wide
+## Recent Changes
+
+### Database — migrated from MongoDB to MySQL
+- Replaced Mongoose/MongoDB with the `mysql2` driver and a connection pool
+- Models are now thin, parameterised SQL query modules (no ORM) — every query uses `?` placeholders, so there is no SQL-injection surface
+- Schema is auto-created on startup (`connectDB()` runs `CREATE TABLE IF NOT EXISTS …`)
+- The app connects as a **dedicated least-privilege user** (`kautos_app`), never as root
+- `condition` is a reserved word in MySQL, so it is backticked throughout
+- `photos` are stored in a native `JSON` column; seller/buyer/car relations are composed with `JSON_OBJECT(...)`
+
+### Security & bug fixes
+- **XSS fixed** — chatbot messages are now HTML-escaped before rendering (`frontend/js/app.js`)
+- **Chatbot model ID corrected** — the previous ID was invalid; now uses `claude-haiku-4-5-20251001`
+- **Image uploads work** — the upload directory is created on startup and served at `/uploads`
+- **Transaction status validated** — invalid values return `400` instead of a generic `500`
+- **Duplicate transactions blocked** — a buyer cannot open two active transactions for the same car (`409`)
+- **Correct 404s** — deleting/verifying a non-existent record now returns `404` instead of a misleading `200`
+- **Sellers can delete their own listings** — `DELETE /cars/:id` allows a seller to remove their own car (admins can remove any)
+- **Test isolation fixed** — the Jest script now passes `--experimental-vm-modules` to Node (not Jest) and runs serially (`--runInBand`) against a separate test database
 
 ---
 
@@ -51,21 +52,24 @@ A full-stack web application for buying and selling preowned vehicles, with a No
 │   ├── server.js              ← Express app entry point
 │   ├── seed.js                ← Demo data seeder
 │   ├── config/
-│   │   └── db.js              ← MongoDB connection
+│   │   └── db.js              ← MySQL pool + schema bootstrap
+│   ├── sql/
+│   │   └── setup.sql          ← One-time DB + app-user creation (run as root)
 │   ├── middleware/
-│   │   ├── auth.js            ← JWT authenticate + authorize
-│   │   └── upload.js          ← Multer image upload config
-│   ├── models/
-│   │   ├── User.js            ← bcrypt pre-save, comparePassword, toJSON strip
-│   │   ├── Car.js             ← text search index, featured flag, description
-│   │   └── Transaction.js     ← 6 status values including disputed
+│   │   ├── auth.js            ← JWT authenticate + role authorize
+│   │   └── upload.js          ← Multer image upload (creates ./public/uploads)
+│   ├── models/                ← Parameterised SQL query helpers (no ORM)
+│   │   ├── User.js
+│   │   ├── Car.js
+│   │   └── Transaction.js     ← exports VALID_STATUSES
 │   ├── routes/
-│   │   ├── auth.js            ← POST /auth/signup, /auth/login
+│   │   ├── auth.js            ← POST /auth/signup, /auth/login (bcrypt)
 │   │   ├── cars.js            ← CRUD + photo upload
 │   │   ├── transactions.js    ← initiate, list, update status
 │   │   ├── admin.js           ← admin-only management
 │   │   └── chatbot.js         ← POST /chat → AutoBot (Claude)
 │   └── tests/
+│       ├── setup.js           ← points the app at the test database
 │       ├── auth.test.js
 │       └── car.test.js
 │
@@ -76,7 +80,7 @@ A full-stack web application for buying and selling preowned vehicles, with a No
     ├── detail.html            ← Gallery, specs, CTA, chatbot enquiry
     ├── profile.html           ← Dashboard: listings, transactions, add car
     ├── css/
-    │   └── styles.css         ← Complete design system (798 lines)
+    │   └── styles.css         ← Complete design system
     └── js/
         ├── api.js             ← Fetch wrapper: auth, cars, transactions, chat
         └── app.js             ← Auth modal, chatbot widget, toasts, nav
@@ -88,7 +92,7 @@ A full-stack web application for buying and selling preowned vehicles, with a No
 
 ### 1. Prerequisites
 - Node.js ≥ 18
-- MongoDB running locally or a MongoDB Atlas URI
+- MySQL 8 running locally (or a remote MySQL instance)
 - (Optional) Anthropic API key for the AI chatbot
 
 ### 2. Install dependencies
@@ -96,30 +100,51 @@ A full-stack web application for buying and selling preowned vehicles, with a No
 npm install
 ```
 
-### 3. Configure environment
+### 3. Create the databases and app user
+Run the setup script **once** as your MySQL root user. It creates the `4kautos`
+and `4kautos_test` databases plus a dedicated `kautos_app` user scoped to them:
+
+```bash
+# Linux/macOS (cmd.exe-style redirect)
+mysql -u root -p < backend/sql/setup.sql
+```
+
+```powershell
+# Windows PowerShell
+Get-Content "backend\sql\setup.sql" -Raw | & "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -u root -p
+```
+
+> The script creates user `kautos_app` with password `Kautos4DevLocalOnly`.
+> Change this in `backend/sql/setup.sql` (and in your `.env`) for anything beyond local dev.
+
+### 4. Configure environment
 ```bash
 cp .env.example .env
-# Edit .env — set MONGO_DB_URI and JWT_SECRET at minimum
+```
+Set at minimum `DATABASE_URL`, `DATABASE_URL_TEST`, and `JWT_SECRET`:
+```env
+DATABASE_URL=mysql://kautos_app:Kautos4DevLocalOnly@localhost:3306/4kautos
+DATABASE_URL_TEST=mysql://kautos_app:Kautos4DevLocalOnly@localhost:3306/4kautos_test
+JWT_SECRET=<a long random secret, at least 32 chars>
 ```
 
-### 4. Seed demo data (recommended for first run)
+### 5. Seed demo data (recommended for first run)
 ```bash
 node backend/seed.js
-# Creates 8 car listings + 3 demo accounts
+# Creates the tables, 8 car listings, and 3 demo accounts
 ```
 
-### 5. Start the server
+### 6. Start the server
 ```bash
 npm start          # production
 npm run dev        # with nodemon auto-restart
 ```
 The server runs on `http://localhost:3000` and also serves the frontend statically.
 
-### 6. Open in browser
+### 7. Open in browser
 ```
 http://localhost:3000
 ```
-
 Or serve the frontend separately with Live Server / `npx serve frontend`.
 
 ---
@@ -143,13 +168,13 @@ Or serve the frontend separately with Live Server / `npx serve frontend`.
 | POST   | /auth/login    | —    | `{ email, password }` |
 
 ### Cars
-| Method | Path              | Auth         | Notes |
-|--------|-------------------|--------------|-------|
-| GET    | /cars             | —            | `?make=&model=&year=&minPrice=&maxPrice=&condition=` |
-| GET    | /cars/:id         | —            | |
-| POST   | /cars             | seller       | |
-| POST   | /cars/:id/photos  | seller       | multipart form |
-| DELETE | /cars/:id         | admin        | |
+| Method | Path              | Auth          | Notes |
+|--------|-------------------|---------------|-------|
+| GET    | /cars             | —             | `?q=&make=&model=&year=&minPrice=&maxPrice=&condition=&sellerId=` |
+| GET    | /cars/:id         | —             | |
+| POST   | /cars             | seller        | |
+| POST   | /cars/:id/photos  | seller (owner)| multipart form |
+| DELETE | /cars/:id         | seller (owner) or admin | |
 
 ### Transactions
 | Method | Path                     | Auth   | Body |
@@ -157,7 +182,9 @@ Or serve the frontend separately with Live Server / `npx serve frontend`.
 | POST   | /transactions            | buyer  | `{ carId, sellerId }` |
 | GET    | /transactions            | any    | Returns own transactions |
 | GET    | /transactions/:id        | any    | |
-| PATCH  | /transactions/:id/status | any    | `{ status }` |
+| PATCH  | /transactions/:id/status | buyer/seller | `{ status }` — validated against allowed values |
+
+Valid statuses: `initiated`, `pending_inspection`, `payment_in_escrow`, `completed`, `cancelled`, `disputed`.
 
 ### Chatbot
 | Method | Path  | Auth | Body |
@@ -178,9 +205,11 @@ Or serve the frontend separately with Live Server / `npx serve frontend`.
 
 ## Running Tests
 ```bash
-# Requires a running MongoDB instance (test DB is separate)
+# Requires a running MySQL instance — uses DATABASE_URL_TEST (a separate database)
 npm test
 ```
+Tests run serially (`--runInBand`) against the `4kautos_test` database so the
+two suites don't interfere with each other's data.
 
 ---
 
@@ -199,12 +228,16 @@ ANTHROPIC_API_KEY=sk-ant-...
 
 ## Deployment
 
-### Backend — Render.com
+### Backend — Render.com / Railway / any Node host
 1. Push to GitHub
 2. New Web Service → connect repo
 3. Build command: `npm install`
 4. Start command: `npm start`
-5. Add env vars: `PORT`, `MONGO_DB_URI`, `JWT_SECRET`, `ALLOWED_ORIGINS`, `ANTHROPIC_API_KEY`
+5. Provision a MySQL database (PlanetScale, Railway, RDS, etc.)
+6. Add env vars: `PORT`, `DATABASE_URL`, `JWT_SECRET`, `ALLOWED_ORIGINS`, `ANTHROPIC_API_KEY`
+
+> For managed MySQL that requires TLS, append the appropriate SSL parameters to
+> `DATABASE_URL` (e.g. `?ssl={"rejectUnauthorized":true}`).
 
 ### Frontend — Netlify / Vercel
 Drag the `frontend/` folder to Netlify, or set `window.API_BASE` in each HTML file to point to your deployed backend URL before `api.js` loads.
