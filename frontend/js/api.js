@@ -1,5 +1,9 @@
 /* ── 4Kautos API Client ─────────────────── */
-const BASE = window.API_BASE || 'http://localhost:3000';
+// Default to the SAME origin that served the page (the backend serves this
+// frontend), so it works on any host/port with no CORS. Opened from a file://
+// path we fall back to the local dev server. For a separately-hosted frontend
+// (e.g. Netlify), set `window.API_BASE = 'https://your-api'` before this loads.
+const BASE = window.API_BASE ?? (location.protocol.startsWith('http') ? '' : 'http://localhost:3000');
 
 function getToken() { return localStorage.getItem('4k_token'); }
 function setToken(t) { localStorage.setItem('4k_token', t); }
@@ -60,6 +64,26 @@ const API = {
   /* ── CHATBOT ── */
   async chat(message, history = []) {
     return req('POST', '/chat', { message, history });
+  },
+
+  /* ── FX (USD ↔ NGN) ── */
+  getRate() { return req('GET', '/fx'); },
+
+  /* ── CUSTOMS CLEARANCE ── */
+  getClearanceAgents()      { return req('GET', '/clearance/agents'); },
+  estimateClearance(data)   { return req('POST', '/clearance/estimate', data); },
+
+  /* ── SAVED / FAVOURITES (client-side) ── */
+  getSaved() {
+    try { return JSON.parse(localStorage.getItem('4k_saved')) || []; } catch { return []; }
+  },
+  isSaved(id) { return API.getSaved().includes(String(id)); },
+  toggleSaved(id) {
+    id = String(id);
+    const set = new Set(API.getSaved());
+    set.has(id) ? set.delete(id) : set.add(id);
+    localStorage.setItem('4k_saved', JSON.stringify([...set]));
+    return set.has(id);
   },
 };
 

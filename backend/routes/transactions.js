@@ -1,15 +1,27 @@
 import express from 'express';
 import { create, findByUser, findById, updateStatus, findExisting, VALID_STATUSES } from '../models/Transaction.js';
+import { findById as findCarById } from '../models/Car.js';
 import { authenticate, authorize } from '../middleware/auth.js';
+import { toId } from '../utils/validation.js';
 
 const router = express.Router();
 
 // POST /transactions — buyer initiates
 router.post('/', authenticate, authorize('buyer'), async (req, res) => {
   try {
-    const { carId, sellerId } = req.body;
-    if (!carId || !sellerId)
-      return res.status(400).json({ message: 'carId and sellerId are required' });
+    const carId = toId(req.body.carId);
+    if (!carId)
+      return res.status(400).json({ message: 'A valid carId is required' });
+
+    const car = await findCarById(carId);
+    if (!car)
+      return res.status(404).json({ message: 'Car not found' });
+
+    // Derive the seller from the car record — never trust a client-supplied
+    // sellerId (a buyer could otherwise open a transaction against any user).
+    const sellerId = car.seller_id;
+    if (sellerId === req.user.id)
+      return res.status(400).json({ message: 'You cannot purchase your own listing' });
 
     // Prevent duplicate active transactions on the same car
     const existing = await findExisting(req.user.id, carId);
@@ -19,6 +31,7 @@ router.post('/', authenticate, authorize('buyer'), async (req, res) => {
     const transaction = await create(req.user.id, sellerId, carId);
     res.status(201).json({ message: 'Transaction initiated', transaction });
   } catch (err) {
+    console.error('POST /transactions:', err.message);
     res.status(500).json({ message: 'Failed to initiate transaction' });
   }
 });

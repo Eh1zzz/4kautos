@@ -4,6 +4,22 @@ import { pool, connectDB } from '../config/db.js';
 
 let sellerToken, buyerToken;
 
+// A fully valid listing payload that satisfies the upload validation rules.
+const validCar = (over = {}) => ({
+  title: '2020 Toyota Camry XSE',
+  make: 'Toyota', model: 'Camry', year: 2020,
+  mileage: 42000, price: 9500000, condition: 'good',
+  vin: '1HGCM82633A004352',
+  photos: [
+    'https://example.com/front.jpg',
+    'https://example.com/rear.jpg',
+    'https://example.com/interior.jpg',
+    'https://example.com/odometer.jpg',
+    'https://example.com/engine.jpg',
+  ],
+  ...over,
+});
+
 beforeAll(async () => {
   await connectDB();
   const s = await request(app).post('/auth/signup')
@@ -36,37 +52,54 @@ describe('GET /cars', () => {
 });
 
 describe('POST /cars', () => {
-  it('lets a seller create a listing', async () => {
+  it('lets a seller create a valid listing', async () => {
+    const res = await request(app).post('/cars')
+      .set('Authorization', `Bearer ${sellerToken}`)
+      .send(validCar());
+    expect(res.status).toBe(201);
+    expect(res.body.car.make).toBe('Toyota');
+    expect(res.body.car.vin).toBe('1HGCM82633A004352');
+  });
+
+  it('rejects a listing missing VIN / photos', async () => {
     const res = await request(app).post('/cars')
       .set('Authorization', `Bearer ${sellerToken}`)
       .send({ make:'Toyota', model:'Camry', year:2020, price:5000000, condition:'good' });
-    expect(res.status).toBe(201);
-    expect(res.body.car.make).toBe('Toyota');
+    expect(res.status).toBe(400);
+    expect(Array.isArray(res.body.errors)).toBe(true);
+  });
+
+  it('rejects an invalid VIN', async () => {
+    const res = await request(app).post('/cars')
+      .set('Authorization', `Bearer ${sellerToken}`)
+      .send(validCar({ vin: 'NOTAVIN' }));
+    expect(res.status).toBe(400);
   });
 
   it('blocks buyers', async () => {
     const res = await request(app).post('/cars')
       .set('Authorization', `Bearer ${buyerToken}`)
-      .send({ make:'Honda', model:'Civic', year:2019, price:3000000 });
+      .send(validCar({ make:'Honda', model:'Civic' }));
     expect(res.status).toBe(403);
   });
 
   it('blocks unauthenticated', async () => {
-    const res = await request(app).post('/cars')
-      .send({ make:'Ford', model:'Ranger', year:2021 });
+    const res = await request(app).post('/cars').send(validCar());
     expect(res.status).toBe(401);
   });
 });
 
 describe('GET /cars/:id', () => {
-  it('returns a car by id', async () => {
+  it('returns a car by id without leaking seller email', async () => {
     const create = await request(app).post('/cars')
       .set('Authorization', `Bearer ${sellerToken}`)
-      .send({ make:'BMW', model:'X5', year:2018, price:15000000 });
+      .send(validCar({ make:'BMW', model:'X5', year:2018, vin:'WBADT43403G023549' }));
     const id = create.body.car.id;
     const res = await request(app).get(`/cars/${id}`);
     expect(res.status).toBe(200);
     expect(res.body.id).toBe(id);
+    expect(res.body.seller).toBeDefined();
+    expect(res.body.seller.email).toBeUndefined();
   });
 
   it('returns 404 for unknown id', async () => {

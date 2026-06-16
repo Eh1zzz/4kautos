@@ -13,6 +13,7 @@
   <ul class="nav-links">
     <li><a href="index.html">Home</a></li>
     <li><a href="listings.html">Listings</a></li>
+    <li><a href="clearance.html">Clearance</a></li>
   </ul>
   <div class="nav-actions">
     <button class="nav-btn nav-btn-ghost" id="nav-login-btn">Sign In</button>
@@ -81,6 +82,10 @@
         <button class="cta-btn cta-btn-secondary" id="chat-enquire-btn">
           💬 Ask AutoBot about this car
         </button>
+        <a class="cta-btn cta-btn-secondary" id="clearance-btn" href="clearance.html">
+          🛃 Estimate import clearance
+        </a>
+        <button class="cta-btn cta-btn-ghost" id="save-btn" type="button">♡ Save this car</button>
 
         <div class="seller-info">
           <h5>Seller</h5>
@@ -129,7 +134,16 @@
       document.title = `${car.title || car.make + ' ' + car.model} — 4Kautos`;
       document.getElementById('bc-title').textContent = car.title || `${car.year} ${car.make} ${car.model}`;
       document.getElementById('d-title').textContent  = car.title || `${car.year} ${car.make} ${car.model}`;
-      document.getElementById('d-price').textContent  = car.price ? `₦${Number(car.price).toLocaleString()}` : 'Price on Request';
+      const priceEl = document.getElementById('d-price');
+      if (car.price != null) {
+        priceEl.classList.add('js-price');
+        priceEl.dataset.amount = car.price;
+        priceEl.dataset.native = car.currency || 'NGN';
+        priceEl.innerHTML = Money.fmt(car.price, car.currency || 'NGN');
+      } else { priceEl.textContent = 'Price on Request'; }
+      // Prefill the clearance estimator with this car's value.
+      document.getElementById('clearance-btn').href =
+        `clearance.html?cif=${encodeURIComponent(car.price || '')}&cur=${encodeURIComponent(car.currency || 'NGN')}`;
       document.getElementById('d-condition').textContent = car.condition || 'N/A';
       document.getElementById('d-year').textContent   = car.year || '';
       document.getElementById('car-desc').textContent = car.description || 'No description provided.';
@@ -154,7 +168,7 @@
         );
       }
 
-      // Specs table
+      // Specs table (values escaped — they come from seller-supplied data)
       const specs = [
         ['Make',       car.make],
         ['Model',      car.model],
@@ -162,13 +176,22 @@
         ['Mileage',    car.mileage ? `${Number(car.mileage).toLocaleString()} km` : null],
         ['Condition',  car.condition],
         ['VIN',        car.vin],
-        ['Price',      car.price ? `₦${Number(car.price).toLocaleString()}` : null],
         ['Listed',     car.createdAt ? new Date(car.createdAt).toLocaleDateString() : null],
       ].filter(([,v]) => v);
 
       document.getElementById('specs-dl').innerHTML = specs.map(([k,v]) =>
-        `<div class="spec-row"><dt>${k}</dt><dd>${v}</dd></div>`
+        `<div class="spec-row"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`
       ).join('');
+
+      // Save button state
+      const saveBtn = document.getElementById('save-btn');
+      const renderSave = () => {
+        const on = API.isSaved(car.id);
+        saveBtn.classList.toggle('saved', on);
+        saveBtn.textContent = on ? '♥ Saved' : '♡ Save this car';
+      };
+      renderSave();
+      saveBtn.addEventListener('click', () => { API.toggleSaved(car.id); renderSave(); });
 
       document.getElementById('detail-spinner').classList.add('hidden');
       document.getElementById('detail-content').classList.remove('hidden');

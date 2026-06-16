@@ -31,6 +31,19 @@ describe('POST /auth/signup', () => {
     const res = await request(app).post('/auth/signup').send({ name:'B', email:'dup@x.com', password:'pass123' });
     expect(res.status).toBe(409);
   });
+
+  it('rejects an invalid email', async () => {
+    const res = await request(app).post('/auth/signup')
+      .send({ name:'Bad', email:'not-an-email', password:'password123' });
+    expect(res.status).toBe(400);
+  });
+
+  it('never grants admin via the signup body (privilege escalation)', async () => {
+    const res = await request(app).post('/auth/signup')
+      .send({ name:'Sneaky', email:'sneaky@x.com', password:'password123', role:'admin' });
+    expect(res.status).toBe(201);
+    expect(res.body.user.role).toBe('buyer');
+  });
 });
 
 describe('POST /auth/login', () => {

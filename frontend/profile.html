@@ -13,6 +13,7 @@
   <ul class="nav-links">
     <li><a href="index.html">Home</a></li>
     <li><a href="listings.html">Listings</a></li>
+    <li><a href="clearance.html">Clearance</a></li>
     <li><a href="profile.html" class="active">Dashboard</a></li>
   </ul>
   <div class="nav-actions">
@@ -109,47 +110,59 @@
       <div class="panel">
         <div class="panel-head"><h3>Add New Listing</h3></div>
         <div class="panel-body">
+          <div class="upload-help">
+            <strong>Listing standards.</strong> Every car needs a valid 17-character VIN, accurate mileage, and clear photos of the required angles below (minimum 800×600). Listings that don't meet these standards can't be published.
+          </div>
+
           <div class="form-row">
             <div class="form-group">
               <label class="form-label">Title</label>
-              <input class="form-input" type="text" id="car-title" placeholder="e.g. 2019 Toyota Camry XSE">
+              <input class="form-input" type="text" id="car-title" placeholder="e.g. 2019 Toyota Camry XSE (optional)">
             </div>
             <div class="form-group">
-              <label class="form-label">Make</label>
+              <label class="form-label req">Make</label>
               <input class="form-input" type="text" id="car-make" placeholder="Toyota">
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Model</label>
+              <label class="form-label req">Model</label>
               <input class="form-input" type="text" id="car-model" placeholder="Camry">
             </div>
             <div class="form-group">
-              <label class="form-label">Year</label>
-              <input class="form-input" type="number" id="car-year" placeholder="2019" min="1990" max="2025">
+              <label class="form-label req">Year</label>
+              <input class="form-input" type="number" id="car-year" placeholder="2019" min="1980" max="2027">
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Price (₦)</label>
-              <input class="form-input" type="number" id="car-price" placeholder="5000000">
+              <label class="form-label req">Price</label>
+              <div class="price-currency">
+                <input class="form-input" type="number" id="car-price" placeholder="5000000" min="1">
+                <select class="form-select" id="car-currency">
+                  <option value="NGN">₦ NGN</option>
+                  <option value="USD">$ USD</option>
+                </select>
+              </div>
             </div>
             <div class="form-group">
-              <label class="form-label">Mileage (km)</label>
-              <input class="form-input" type="number" id="car-mileage" placeholder="45000">
+              <label class="form-label req">Mileage (km)</label>
+              <input class="form-input" type="number" id="car-mileage" placeholder="45000" min="0">
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">VIN</label>
-              <input class="form-input" type="text" id="car-vin" placeholder="Vehicle ID Number">
+              <label class="form-label req">VIN</label>
+              <input class="form-input" type="text" id="car-vin" placeholder="17-character VIN" maxlength="17" autocomplete="off" style="text-transform:uppercase">
+              <div class="field-hint" id="vin-hint">17 characters · letters I, O, Q are not allowed</div>
             </div>
             <div class="form-group">
-              <label class="form-label">Condition</label>
+              <label class="form-label req">Condition</label>
               <select class="form-select" id="car-condition">
                 <option value="excellent">Excellent</option>
                 <option value="good" selected>Good</option>
                 <option value="fair">Fair</option>
+                <option value="poor">Poor</option>
               </select>
             </div>
           </div>
@@ -157,12 +170,17 @@
             <label class="form-label">Description</label>
             <textarea class="form-input" id="car-desc" rows="4" placeholder="Describe the vehicle's history, features, and any known issues…" style="resize:vertical;min-height:100px"></textarea>
           </div>
+
           <div class="form-group">
-            <label class="form-label">Photo URLs (one per line)</label>
-            <textarea class="form-input" id="car-photos" rows="3" placeholder="https://example.com/photo1.jpg&#10;https://example.com/photo2.jpg" style="resize:vertical"></textarea>
+            <label class="form-label req">Required photos</label>
+            <div class="photo-checklist" id="photo-checklist"></div>
+            <label class="form-label" style="margin-top:1rem">Additional photos (optional, one URL per line)</label>
+            <textarea class="form-input" id="car-photos-extra" rows="2" placeholder="https://example.com/extra1.jpg" style="resize:vertical"></textarea>
           </div>
+
+          <div class="req-summary" id="req-summary"></div>
           <div class="form-error hidden" id="car-form-error"></div>
-          <button class="form-submit" id="submit-car-btn">📋 Submit Listing</button>
+          <button class="form-submit" id="submit-car-btn" disabled>📋 Submit Listing</button>
         </div>
       </div>
     </div>
@@ -227,11 +245,11 @@
       el.innerHTML = cars.map(c => `
         <div class="tx-row">
           <div>
-            <div class="tx-car">${c.title || `${c.year} ${c.make} ${c.model}`}</div>
-            <div class="tx-meta">₦${Number(c.price).toLocaleString()} · ${c.condition} · ${Number(c.mileage).toLocaleString()} km</div>
+            <div class="tx-car">${esc(c.title || `${c.year} ${c.make} ${c.model}`)}</div>
+            <div class="tx-meta"><span class="js-price" data-amount="${esc(c.price)}" data-native="${esc(c.currency||'NGN')}">${Money.fmt(c.price, c.currency||'NGN')}</span> · ${esc(c.condition)} · ${Number(c.mileage||0).toLocaleString()} km</div>
           </div>
-          <a href="detail.html?id=${c.id}" class="card-cta" style="text-decoration:none;font-size:.75rem">View</a>
-          <button onclick="deleteCar('${c.id}')" style="color:var(--red);font-size:.78rem;padding:4px 10px;border-radius:6px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2)">Delete</button>
+          <a href="detail.html?id=${esc(c.id)}" class="card-cta" style="text-decoration:none;font-size:.75rem">View</a>
+          <button onclick="deleteCar('${esc(c.id)}')" style="color:var(--red);font-size:.78rem;padding:4px 10px;border-radius:6px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2)">Delete</button>
         </div>`).join('');
     } catch(e) { el.innerHTML = `<p class="empty-state">Failed: ${e.message}</p>`; }
   }
@@ -254,8 +272,8 @@
         const other = me?.id === t.buyer_id ? t.seller?.name : t.buyer?.name;
         return `<div class="tx-row">
           <div>
-            <div class="tx-car">${car?.title || 'Car Listing'}</div>
-            <div class="tx-meta">${other ? `with ${other}` : ''} · ₦${Number(car?.price||0).toLocaleString()}</div>
+            <div class="tx-car">${esc(car?.title || 'Car Listing')}</div>
+            <div class="tx-meta">${other ? `with ${esc(other)}` : ''} · <span class="js-price" data-amount="${esc(car?.price ?? '')}" data-native="${esc(car?.currency||'NGN')}">${car?.price!=null ? Money.fmt(car.price, car.currency||'NGN') : '—'}</span></div>
           </div>
           <span class="tx-status status-${t.status}">${t.status.replace(/_/g,' ')}</span>
           <select onchange="updateTx('${t.id}', this.value)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:6px;font-size:.75rem">
@@ -276,33 +294,116 @@
     catch(e) { toast(e.message, 'error'); }
   }
 
-  // Add listing form
-  document.getElementById('submit-car-btn').addEventListener('click', async () => {
-    const photos = document.getElementById('car-photos').value.trim().split('\n').map(u=>u.trim()).filter(Boolean);
-    const data = {
-      title:       document.getElementById('car-title').value.trim(),
-      make:        document.getElementById('car-make').value.trim(),
-      model:       document.getElementById('car-model').value.trim(),
-      year:        parseInt(document.getElementById('car-year').value) || undefined,
-      price:       parseFloat(document.getElementById('car-price').value) || undefined,
-      mileage:     parseInt(document.getElementById('car-mileage').value) || undefined,
-      vin:         document.getElementById('car-vin').value.trim(),
-      condition:   document.getElementById('car-condition').value,
-      description: document.getElementById('car-desc').value.trim(),
-      photos,
+  /* ── Add Listing: standards-enforced form ── */
+  const REQUIRED_SHOTS = [
+    { key:'front',    label:'Front 3/4 view' },
+    { key:'rear',     label:'Rear 3/4 view' },
+    { key:'interior', label:'Interior / seats' },
+    { key:'odometer', label:'Dashboard / odometer' },
+    { key:'engine',   label:'Engine bay' },
+  ];
+  const VIN_RE = /^[A-HJ-NPR-Z0-9]{17}$/;
+  const val = id => (document.getElementById(id)?.value || '').trim();
+
+  document.getElementById('photo-checklist').innerHTML = REQUIRED_SHOTS.map(s => `
+    <div class="shot-row" data-key="${s.key}">
+      <div class="shot-label"><span class="shot-dot"></span>${s.label}</div>
+      <input class="form-input shot-url" id="shot-${s.key}" type="url" placeholder="https://…  image URL">
+      <span class="shot-badge" id="badge-${s.key}"></span>
+    </div>`).join('');
+
+  // Verify a photo actually loads and meets a minimum resolution (quality gate).
+  function checkImageQuality(url, badge) {
+    if (!url) { badge.className = 'shot-badge'; badge.textContent = ''; return; }
+    badge.className = 'shot-badge checking'; badge.textContent = '…';
+    const img = new Image();
+    img.onload = () => {
+      const ok = img.naturalWidth >= 800 && img.naturalHeight >= 600;
+      badge.className = 'shot-badge ' + (ok ? 'ok' : 'warn');
+      badge.textContent = ok ? `✓ ${img.naturalWidth}×${img.naturalHeight}` : `⚠ low-res ${img.naturalWidth}×${img.naturalHeight}`;
     };
+    img.onerror = () => { badge.className = 'shot-badge bad'; badge.textContent = '✗ can’t load'; };
+    img.src = url;
+  }
+
+  function collectPhotos() {
+    const required = REQUIRED_SHOTS.map(s => val('shot-' + s.key)).filter(Boolean);
+    const extra = (document.getElementById('car-photos-extra').value || '')
+      .split('\n').map(u => u.trim()).filter(Boolean);
+    return [...required, ...extra];
+  }
+
+  function formState() {
+    const year = parseInt(val('car-year'), 10);
+    const mileage = val('car-mileage');
+    const price = parseFloat(val('car-price'));
+    const vin = val('car-vin').toUpperCase();
+    const shotsFilled = REQUIRED_SHOTS.every(s => val('shot-' + s.key));
+    const checks = [
+      ['Make', !!val('car-make')],
+      ['Model', !!val('car-model')],
+      ['Valid year (1980–2027)', Number.isInteger(year) && year >= 1980 && year <= 2027],
+      ['Mileage entered', mileage !== '' && Number(mileage) >= 0],
+      ['Valid 17-char VIN', VIN_RE.test(vin)],
+      ['Price greater than 0', price > 0],
+      [`All ${REQUIRED_SHOTS.length} required photos`, shotsFilled],
+    ];
+    return { checks, valid: checks.every(c => c[1]) };
+  }
+
+  function refreshForm() {
+    const { checks, valid } = formState();
+    document.getElementById('req-summary').innerHTML = checks.map(([label, ok]) =>
+      `<span class="req-item ${ok ? 'ok' : ''}">${ok ? '✓' : '○'} ${label}</span>`).join('');
+    document.getElementById('submit-car-btn').disabled = !valid;
+    const vin = val('car-vin').toUpperCase();
+    const hint = document.getElementById('vin-hint');
+    hint.className = 'field-hint ' + (vin === '' ? '' : (VIN_RE.test(vin) ? 'ok' : 'bad'));
+    hint.textContent = vin === '' ? '17 characters · letters I, O, Q are not allowed'
+      : (VIN_RE.test(vin) ? '✓ Valid VIN format' : `✗ ${vin.length}/17 — check length & characters`);
+  }
+
+  document.getElementById('tab-add-car').addEventListener('input', e => {
+    refreshForm();
+    if (e.target.classList.contains('shot-url')) {
+      const key = e.target.id.replace('shot-', '');
+      clearTimeout(e.target._t);
+      e.target._t = setTimeout(() => checkImageQuality(e.target.value.trim(), document.getElementById('badge-' + key)), 500);
+    }
+  });
+  refreshForm();
+
+  document.getElementById('submit-car-btn').addEventListener('click', async () => {
     const errEl = document.getElementById('car-form-error');
     errEl.classList.add('hidden');
-    if (!data.make || !data.model || !data.price) {
-      errEl.textContent = 'Make, model, and price are required.';
+    if (!formState().valid) {
+      errEl.textContent = 'Please complete all required fields and the required photos.';
       errEl.classList.remove('hidden'); return;
     }
+    const data = {
+      title:       val('car-title') || undefined,
+      make:        val('car-make'),
+      model:       val('car-model'),
+      year:        parseInt(val('car-year'), 10),
+      price:       parseFloat(val('car-price')),
+      currency:    document.getElementById('car-currency').value,
+      mileage:     parseInt(val('car-mileage'), 10),
+      vin:         val('car-vin').toUpperCase(),
+      condition:   document.getElementById('car-condition').value,
+      description: val('car-desc') || undefined,
+      photos:      collectPhotos(),
+    };
+    const btn = document.getElementById('submit-car-btn');
+    const orig = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Submitting…';
     try {
       await API.createCar(data);
       toast('Listing created! 🚗', 'success');
       switchTab('listings'); loadMyListings();
     } catch(e) {
       errEl.textContent = e.message; errEl.classList.remove('hidden');
+    } finally {
+      btn.textContent = orig; refreshForm();
     }
   });
 

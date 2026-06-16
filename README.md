@@ -1,6 +1,6 @@
 # 4Kautos — Premium Preowned Car Marketplace
 
-A full-stack web application for buying and selling preowned vehicles, with a Node.js/Express backend, **MySQL** database, and a premium static frontend featuring an AI-powered chatbot.
+A full-stack web application for buying preowned vehicles from **international sellers**, with **customs clearance handled in Nigeria**. Node.js/Express backend, **MySQL** database, and a premium static frontend featuring an AI-powered chatbot, **dual USD/NGN pricing at the live exchange rate**, brand browsing, and a **customs-duty estimator with agent rate comparison**.
 
 ---
 
@@ -19,6 +19,21 @@ A full-stack web application for buying and selling preowned vehicles, with a No
 ---
 
 ## Recent Changes
+
+### v2.1 — Security hardening, FX & customs clearance
+- **Security fixes**
+  - **Privilege escalation closed** — `/auth/signup` no longer accepts an arbitrary `role`; only `buyer`/`seller` can be self-assigned (never `admin`).
+  - **Transactions no longer trust the client** — the seller is derived from the car record, not a `sellerId` in the request body; self-purchase is blocked.
+  - **Stored XSS closed** — all seller-supplied fields are HTML-escaped on render (cards, listings, detail specs).
+  - **Seller PII** — email is no longer exposed on public car endpoints.
+  - Added a stricter **auth rate limiter**, **security headers** (no new deps), email-format validation, and a **JWT_SECRET** strength check at startup.
+- **Listing standards** — `POST /cars` now validates make/model, year range, mileage, a real **17-char VIN**, price, condition, and a **minimum of 5 photos**. The seller form is a guided checklist (front/rear/interior/odometer/engine) with live VIN validation and a client-side image-quality (resolution) check.
+- **Dual-currency pricing** — listings carry a `currency` (`NGN`/`USD`); every price shows both currencies using a **live USD↔NGN rate** (`GET /fx`, cached server-side). A nav toggle switches the headline currency.
+- **Customs clearance** — new `clearance.html` + `GET /clearance/agents` and `POST /clearance/estimate`: estimates Nigerian import duty and compares verified clearing agents, flagging the **best all-in rate**.
+- **Shop by brand** — clickable brand-logo strip on the home and listings pages filters by make.
+- **Mobile nav fixed** — the hamburger now opens a working drawer (it previously did nothing); injected consistently across all pages.
+- **Same-origin API base** — the frontend now calls the origin that served it (no hard-coded `localhost:3000`), eliminating the cross-origin CORS failure. Override with `window.API_BASE` for a separately-hosted frontend.
+- Working listings **sort**, persistent **saved/favourites**, Esc-to-close modal/chat, and the footer year auto-updates.
 
 ### Database — migrated from MongoDB to MySQL
 - Replaced Mongoose/MongoDB with the `mysql2` driver and a connection pool
@@ -57,17 +72,22 @@ A full-stack web application for buying and selling preowned vehicles, with a No
 │   │   └── setup.sql          ← One-time DB + app-user creation (run as root)
 │   ├── middleware/
 │   │   ├── auth.js            ← JWT authenticate + role authorize
+│   │   ├── security.js        ← security headers + auth rate limiter
 │   │   └── upload.js          ← Multer image upload (creates ./public/uploads)
+│   ├── utils/
+│   │   └── validation.js      ← shared validators (VIN, car input, toId, email)
 │   ├── models/                ← Parameterised SQL query helpers (no ORM)
 │   │   ├── User.js
 │   │   ├── Car.js
 │   │   └── Transaction.js     ← exports VALID_STATUSES
 │   ├── routes/
 │   │   ├── auth.js            ← POST /auth/signup, /auth/login (bcrypt)
-│   │   ├── cars.js            ← CRUD + photo upload
+│   │   ├── cars.js            ← CRUD + photo upload (validated)
 │   │   ├── transactions.js    ← initiate, list, update status
 │   │   ├── admin.js           ← admin-only management
-│   │   └── chatbot.js         ← POST /chat → AutoBot (Claude)
+│   │   ├── chatbot.js         ← POST /chat → AutoBot (Claude)
+│   │   ├── fx.js              ← GET /fx → live USD↔NGN rate (cached)
+│   │   └── clearance.js       ← agents directory + duty estimate
 │   └── tests/
 │       ├── setup.js           ← points the app at the test database
 │       ├── auth.test.js
@@ -75,10 +95,11 @@ A full-stack web application for buying and selling preowned vehicles, with a No
 │
 └── frontend/
     ├── favicon.svg
-    ├── index.html             ← Home: hero, featured listings, how-it-works
-    ├── listings.html          ← Browse with sidebar filters + sort
-    ├── detail.html            ← Gallery, specs, CTA, chatbot enquiry
-    ├── profile.html           ← Dashboard: listings, transactions, add car
+    ├── index.html             ← Home: hero, shop-by-brand, featured listings
+    ├── listings.html          ← Browse with sidebar filters + working sort
+    ├── detail.html            ← Gallery, specs, CTA, clearance estimate, chatbot
+    ├── profile.html           ← Dashboard: listings, transactions, guided add-car
+    ├── clearance.html         ← Customs duty estimator + agent rate comparison
     ├── css/
     │   └── styles.css         ← Complete design system
     └── js/
@@ -172,7 +193,7 @@ Or serve the frontend separately with Live Server / `npx serve frontend`.
 |--------|-------------------|---------------|-------|
 | GET    | /cars             | —             | `?q=&make=&model=&year=&minPrice=&maxPrice=&condition=&sellerId=` |
 | GET    | /cars/:id         | —             | |
-| POST   | /cars             | seller        | |
+| POST   | /cars             | seller        | Validated: `{ make, model, year, mileage, vin(17), price, currency('NGN'\|'USD'), condition, photos[≥5], description? }` |
 | POST   | /cars/:id/photos  | seller (owner)| multipart form |
 | DELETE | /cars/:id         | seller (owner) or admin | |
 
@@ -189,7 +210,14 @@ Valid statuses: `initiated`, `pending_inspection`, `payment_in_escrow`, `complet
 ### Chatbot
 | Method | Path  | Auth | Body |
 |--------|-------|------|------|
-| POST   | /chat | —    | `{ message, history? }` |
+| POST   | /chat | —    | `{ message, history? }` — falls back to built-in answers when no `ANTHROPIC_API_KEY` is set |
+
+### FX & Customs Clearance
+| Method | Path                   | Auth | Notes |
+|--------|------------------------|------|-------|
+| GET    | /fx                    | —    | Live USD↔NGN rate (cached 1h, offline fallback) |
+| GET    | /clearance/agents      | —    | Directory of clearing agents |
+| POST   | /clearance/estimate    | —    | `{ cifValueUsd \| cifValueNgn, year? }` → duty breakdown + agents ranked by best rate |
 
 ### Admin (all require admin role)
 | Method | Path                            |
@@ -243,4 +271,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 > `DATABASE_URL` (e.g. `?ssl={"rejectUnauthorized":true}`).
 
 ### Frontend — Netlify / Vercel
-Drag the `frontend/` folder to Netlify, or set `window.API_BASE` in each HTML file to point to your deployed backend URL before `api.js` loads.
+By default the frontend calls the **same origin** that served it (the backend serves it),
+so no config is needed when running `npm start`. To host the frontend separately
+(Netlify/Vercel) pointing at a remote backend, set `window.API_BASE = 'https://your-api'`
+in each HTML file before `api.js` loads.

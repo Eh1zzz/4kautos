@@ -1,10 +1,10 @@
 import { pool } from '../config/db.js';
+import { toId, CURRENCIES } from '../utils/validation.js';
 
+// Public seller projection — deliberately omits email so listings/detail don't
+// leak seller PII to anonymous visitors. Contact happens through a transaction.
 const SELLER_JSON =
   `JSON_OBJECT('id', u.id, 'name', u.name, 'verified', u.verified) AS seller`;
-
-const SELLER_JSON_EMAIL =
-  `JSON_OBJECT('id', u.id, 'name', u.name, 'email', u.email, 'verified', u.verified) AS seller`;
 
 // mysql2 usually parses JSON columns automatically, but normalize defensively
 // so the API always returns photos as an array and seller as an object.
@@ -17,6 +17,7 @@ function normalize(row) {
   if (typeof row.seller === 'string') {
     try { row.seller = JSON.parse(row.seller); } catch { /* leave as-is */ }
   }
+  if (row.currency == null) row.currency = 'NGN';
   // Frontend reads `createdAt`; expose an alias for the snake_case column.
   if (row.created_at != null) row.createdAt = row.created_at;
   return row;
@@ -57,10 +58,10 @@ export async function findAll({ q, make, model, year, minPrice, maxPrice, condit
 }
 
 export async function findById(id) {
-  const numId = parseInt(id, 10);
-  if (isNaN(numId)) return null;
+  const numId = toId(id);
+  if (!numId) return null;
   const [rows] = await pool.query(
-    `SELECT c.*, ${SELLER_JSON_EMAIL}
+    `SELECT c.*, ${SELLER_JSON}
      FROM cars c JOIN users u ON u.id = c.seller_id
      WHERE c.id = ?`,
     [numId]
@@ -68,20 +69,21 @@ export async function findById(id) {
   return rows[0] ? normalize(rows[0]) : null;
 }
 
-export async function create({ title, make, model, year, mileage, vin, condition, description, photos, price, sellerId }) {
+export async function create({ title, make, model, year, mileage, vin, condition, description, photos, price, currency, sellerId }) {
   const [result] = await pool.query(
-    'INSERT INTO cars (title, make, model, year, mileage, vin, `condition`, description, photos, price, seller_id) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
+    'INSERT INTO cars (title, make, model, year, mileage, vin, `condition`, description, photos, price, currency, seller_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
     [
       title || null,
       make  || null,
       model || null,
       year    ? parseInt(year, 10)    : null,
-      mileage ? parseInt(mileage, 10) : null,
+      mileage != null ? parseInt(mileage, 10) : null,
       vin   || null,
       condition || 'good',
       description || null,
       JSON.stringify(photos || []),
       price ? parseFloat(price) : null,
+      CURRENCIES.includes(currency) ? currency : 'NGN',
       sellerId,
     ]
   );
@@ -89,15 +91,15 @@ export async function create({ title, make, model, year, mileage, vin, condition
 }
 
 export async function deleteById(id) {
-  const numId = parseInt(id, 10);
-  if (isNaN(numId)) return null;
+  const numId = toId(id);
+  if (!numId) return null;
   const [result] = await pool.query('DELETE FROM cars WHERE id = ?', [numId]);
   return result.affectedRows > 0 ? { id: numId } : null;
 }
 
 export async function deleteByIdAndSeller(id, sellerId) {
-  const numId = parseInt(id, 10);
-  if (isNaN(numId)) return null;
+  const numId = toId(id);
+  if (!numId) return null;
   const [result] = await pool.query(
     'DELETE FROM cars WHERE id = ? AND seller_id = ?',
     [numId, sellerId]
@@ -106,8 +108,8 @@ export async function deleteByIdAndSeller(id, sellerId) {
 }
 
 export async function addPhotos(id, sellerId, urls) {
-  const numId = parseInt(id, 10);
-  if (isNaN(numId)) return null;
+  const numId = toId(id);
+  if (!numId) return null;
   const [result] = await pool.query(
     `UPDATE cars
      SET photos = JSON_MERGE_PRESERVE(COALESCE(photos, JSON_ARRAY()), CAST(? AS JSON))

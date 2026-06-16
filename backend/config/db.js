@@ -35,13 +35,19 @@ export async function connectDB() {
       description TEXT,
       photos      JSON,
       price       DECIMAL(15,2),
+      currency    VARCHAR(3)    NOT NULL DEFAULT 'NGN',
       featured    BOOLEAN       NOT NULL DEFAULT FALSE,
       seller_id   INT           NOT NULL,
       created_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
       CHECK (\`condition\` IN ('excellent','good','fair','poor')),
+      CHECK (currency IN ('NGN','USD')),
       FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
     )
   `);
+
+  // Migrate databases created before the currency column existed.
+  // (MySQL has no ADD COLUMN IF NOT EXISTS, so check information_schema first.)
+  await ensureColumn('cars', 'currency', "VARCHAR(3) NOT NULL DEFAULT 'NGN'");
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS transactions (
@@ -59,4 +65,17 @@ export async function connectDB() {
   `);
 
   console.log('✅ MySQL connected and tables ready');
+}
+
+/** Add a column only if it is missing — a tiny idempotent migration helper. */
+async function ensureColumn(table, column, definition) {
+  const [rows] = await pool.query(
+    `SELECT 1 FROM information_schema.columns
+     WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ?`,
+    [table, column]
+  );
+  if (rows.length === 0) {
+    await pool.query(`ALTER TABLE \`${table}\` ADD COLUMN \`${column}\` ${definition}`);
+    console.log(`🔧 Migrated: added ${table}.${column}`);
+  }
 }

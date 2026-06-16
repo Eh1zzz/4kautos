@@ -321,6 +321,239 @@ document.querySelectorAll('.nav-logo').forEach(el => {
     </div>
     <div class="logo-text">
       <span class="logo-4k">4KAUTOS</span>
-      <span class="logo-autos">Premium Marketplace</span>
+      <span class="logo-autos">Global Marketplace</span>
     </div>`;
 });
+
+/* ── HTML ESCAPE (shared) ─────────────────── */
+// Prevent stored XSS from seller-supplied fields (title/make/model/vin/etc.)
+window.esc = function (str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+};
+
+/* ── MONEY / FX (USD ⇄ NGN) ───────────────── */
+// Prices are stored in a native currency per listing; we display the user's
+// chosen currency as the headline and the converted value underneath.
+const Money = (function () {
+  const CACHE_KEY = '4k_fx';
+  const TTL = 60 * 60 * 1000; // 1h
+  let usdToNgn = 1600;        // safe default until the live rate loads
+  let updatedAt = 0;
+
+  // Seed from localStorage so the first paint isn't wrong.
+  try {
+    const c = JSON.parse(localStorage.getItem(CACHE_KEY));
+    if (c && c.usdToNgn) { usdToNgn = c.usdToNgn; updatedAt = c.updatedAt; }
+  } catch {}
+
+  function display() { return localStorage.getItem('4k_currency') || 'NGN'; }
+  function setDisplay(c) { localStorage.setItem('4k_currency', c === 'USD' ? 'USD' : 'NGN'); }
+  const symbol = c => (c === 'USD' ? '$' : '₦');
+  const fmtNum = n => Math.round(n).toLocaleString('en-US');
+
+  function convert(amount, native) {
+    const ngn = native === 'NGN' ? amount : amount * usdToNgn;
+    const usd = native === 'USD' ? amount : amount / usdToNgn;
+    return { NGN: ngn, USD: usd };
+  }
+
+  // Returns HTML: headline in the display currency + converted subline.
+  function fmt(amount, native = 'NGN') {
+    amount = Number(amount);
+    if (!Number.isFinite(amount)) return 'Price on Request';
+    const v = convert(amount, native);
+    const primary = display();
+    const secondary = primary === 'NGN' ? 'USD' : 'NGN';
+    return `<span class="price-main">${symbol(primary)}${fmtNum(v[primary])}</span>` +
+           `<span class="price-sub">≈ ${symbol(secondary)}${fmtNum(v[secondary])}</span>`;
+  }
+
+  // Re-render every element carrying price data attributes.
+  function repriceAll() {
+    document.querySelectorAll('.js-price').forEach(el => {
+      const amt = el.dataset.amount;
+      if (amt != null && amt !== '') el.innerHTML = fmt(+amt, el.dataset.native || 'NGN');
+    });
+    document.querySelectorAll('.js-cur-label').forEach(el => { el.textContent = display(); });
+  }
+
+  async function load() {
+    try {
+      const r = await API.getRate();
+      if (r && r.usdToNgn) {
+        usdToNgn = r.usdToNgn; updatedAt = r.updatedAt || Date.now();
+        localStorage.setItem(CACHE_KEY, JSON.stringify({ usdToNgn, updatedAt }));
+        repriceAll();
+      }
+    } catch { /* keep cached/default rate */ }
+  }
+
+  function toggle() {
+    setDisplay(display() === 'NGN' ? 'USD' : 'NGN');
+    repriceAll();
+  }
+
+  return { fmt, repriceAll, load, toggle, display, get usdToNgn() { return usdToNgn; } };
+})();
+window.Money = Money;
+
+/* ── SHARED CAR CARD ──────────────────────── */
+window.carCard = function (c) {
+  const native = c.currency || 'NGN';
+  const img = c.photos?.[0] || `https://placehold.co/600x400/18181d/f59e0b?text=${encodeURIComponent(c.make || 'Car')}`;
+  const saved = API.isSaved(c.id);
+  const title = c.title || `${c.year || ''} ${c.make || ''} ${c.model || ''}`.trim();
+  const badge = c.featured ? '<span class="card-badge featured">Featured</span>'
+              : (c.condition === 'excellent' ? '<span class="card-badge new">Excellent</span>' : '');
+  const priceHtml = (c.price != null && c.price !== '')
+    ? `<div class="card-price js-price" data-amount="${esc(c.price)}" data-native="${esc(native)}">${Money.fmt(c.price, native)}</div>`
+    : `<div class="card-price">Price on Request</div>`;
+
+  return `
+    <div class="car-card" data-id="${esc(c.id)}">
+      <div class="card-img-wrap">
+        <img class="card-img" src="${esc(img)}" alt="${esc(title)}" loading="lazy" onerror="this.src='https://placehold.co/600x400/18181d/f59e0b?text=No+Photo'">
+        ${badge}
+        <button class="card-saves ${saved ? 'saved' : ''}" title="Save" data-save="${esc(c.id)}">${saved ? '♥' : '♡'}</button>
+      </div>
+      <div class="card-body">
+        <div class="card-title">${esc(title)}</div>
+        <div class="card-specs">
+          ${c.mileage ? `<span class="spec-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${Number(c.mileage).toLocaleString()} km</span>` : ''}
+          ${c.condition ? `<span class="spec-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 12l2 2 4-4"/></svg>${esc(c.condition)}</span>` : ''}
+          ${c.year ? `<span class="spec-chip">${esc(c.year)}</span>` : ''}
+        </div>
+        <div class="card-footer">
+          ${priceHtml}
+          <button class="card-cta">View Details</button>
+        </div>
+      </div>
+    </div>`;
+};
+
+// Delegated handlers so cards work no matter who renders them.
+document.addEventListener('click', e => {
+  const save = e.target.closest('.card-saves');
+  if (save) {
+    e.stopPropagation(); e.preventDefault();
+    const on = API.toggleSaved(save.dataset.save);
+    save.classList.toggle('saved', on);
+    save.textContent = on ? '♥' : '♡';
+    return;
+  }
+  const card = e.target.closest('.car-card');
+  if (card && card.dataset.id) location.href = `detail.html?id=${card.dataset.id}`;
+});
+
+/* ── BRAND STRIP (shop by brand) ──────────── */
+// Logos via simple-icons CDN with a monogram fallback when a logo is missing.
+const BRANDS = [
+  { name: 'Toyota', slug: 'toyota' }, { name: 'Honda', slug: 'honda' },
+  { name: 'BMW', slug: 'bmw' }, { name: 'Mercedes-Benz', slug: 'mercedes' },
+  { name: 'Ford', slug: 'ford' }, { name: 'Hyundai', slug: 'hyundai' },
+  { name: 'Kia', slug: 'kia' }, { name: 'Lexus', slug: 'lexus' },
+  { name: 'Nissan', slug: 'nissan' }, { name: 'Volkswagen', slug: 'volkswagen' },
+  { name: 'Audi', slug: 'audi' }, { name: 'Mazda', slug: 'mazda' },
+];
+window.renderBrandStrip = function (selector) {
+  const host = document.querySelector(selector);
+  if (!host) return;
+  host.innerHTML = BRANDS.map(b => `
+    <a class="brand-tile" href="listings.html?make=${encodeURIComponent(b.name)}" title="${esc(b.name)} for sale">
+      <span class="brand-logo">
+        <img src="https://cdn.simpleicons.org/${b.slug}/f5f5f4" alt="${esc(b.name)}" loading="lazy"
+             onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'brand-mono',textContent:'${esc(b.name[0])}'}))">
+      </span>
+      <span class="brand-name">${esc(b.name)}</span>
+    </a>`).join('');
+};
+
+/* ── MOBILE NAV (hamburger + drawer) ──────── */
+(function () {
+  document.querySelectorAll('.navbar .nav-actions').forEach(actions => {
+    if (!actions.querySelector('.nav-hamburger')) {
+      const btn = document.createElement('button');
+      btn.className = 'nav-hamburger';
+      btn.setAttribute('aria-label', 'Menu');
+      btn.setAttribute('aria-expanded', 'false');
+      btn.innerHTML = '<span></span><span></span><span></span>';
+      actions.appendChild(btn);
+    }
+  });
+  const ham = document.querySelector('.nav-hamburger');
+  if (!ham) return;
+
+  const drawer = document.createElement('div');
+  drawer.className = 'mobile-menu';
+  drawer.innerHTML = `
+    <a href="index.html">Home</a>
+    <a href="listings.html">Listings</a>
+    <a href="clearance.html">Customs Clearance</a>
+    <a href="index.html#how-it-works">How It Works</a>
+    <div class="mobile-menu-divider"></div>
+    <button class="mm-currency" type="button">Currency: <strong class="js-cur-label">NGN</strong> · tap to switch</button>
+    <a href="profile.html" id="mm-dashboard" class="hidden">My Dashboard</a>
+    <button id="mm-login" type="button">Sign In</button>
+    <a href="#" id="mm-signup">List Your Car</a>
+    <button id="mm-logout" type="button" class="hidden mm-danger">Sign Out</button>`;
+  document.body.appendChild(drawer);
+
+  function setMenu(open) {
+    ham.classList.toggle('open', open);
+    drawer.classList.toggle('open', open);
+    document.body.classList.toggle('menu-open', open);
+    ham.setAttribute('aria-expanded', String(open));
+  }
+  ham.addEventListener('click', () => setMenu(!drawer.classList.contains('open')));
+  drawer.querySelectorAll('a').forEach(a => a.addEventListener('click', () => setMenu(false)));
+  drawer.querySelector('.mm-currency').addEventListener('click', () => { Money.toggle(); });
+  drawer.querySelector('#mm-login').addEventListener('click', () => { setMenu(false); openAuth('login'); });
+  drawer.querySelector('#mm-signup').addEventListener('click', e => { e.preventDefault(); setMenu(false); openAuth('signup'); });
+  drawer.querySelector('#mm-logout').addEventListener('click', () => API.logout());
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') setMenu(false); });
+  window.addEventListener('resize', () => { if (window.innerWidth > 640) setMenu(false); });
+
+  // Sync drawer auth items with login state.
+  const sync = () => {
+    const user = API.getUser();
+    drawer.querySelector('#mm-dashboard').classList.toggle('hidden', !user);
+    drawer.querySelector('#mm-logout').classList.toggle('hidden', !user);
+    drawer.querySelector('#mm-login').classList.toggle('hidden', !!user);
+    drawer.querySelector('#mm-signup').classList.toggle('hidden', !!user);
+  };
+  document.addEventListener('DOMContentLoaded', sync);
+  sync();
+})();
+
+/* ── CURRENCY TOGGLE (desktop nav) ────────── */
+(function () {
+  document.querySelectorAll('.navbar .nav-actions').forEach(actions => {
+    if (actions.querySelector('.cur-toggle')) return;
+    const btn = document.createElement('button');
+    btn.className = 'nav-btn nav-btn-ghost cur-toggle';
+    btn.type = 'button';
+    btn.title = 'Switch display currency';
+    btn.innerHTML = '<span class="js-cur-label">NGN</span> ⇄';
+    // Place before the hamburger so it stays on the right cluster.
+    const ham = actions.querySelector('.nav-hamburger');
+    actions.insertBefore(btn, ham || null);
+    btn.addEventListener('click', () => Money.toggle());
+  });
+})();
+
+/* ── FOOTER YEAR ──────────────────────────── */
+document.querySelectorAll('.js-year').forEach(el => { el.textContent = new Date().getFullYear(); });
+
+/* ── GLOBAL ESC: close modal / chat ───────── */
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  window.closeAuth?.();
+  const cw = document.getElementById('chat-window');
+  if (cw?.classList.contains('open')) document.getElementById('chat-close')?.click();
+});
+
+/* ── BOOT ─────────────────────────────────── */
+Money.load();                       // fetch live FX, then reprice
+document.addEventListener('DOMContentLoaded', () => Money.repriceAll());

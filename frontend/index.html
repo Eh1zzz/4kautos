@@ -16,6 +16,7 @@
   <ul class="nav-links">
     <li><a href="index.html" class="active">Home</a></li>
     <li><a href="listings.html">Listings</a></li>
+    <li><a href="clearance.html">Clearance</a></li>
     <li><a href="#how-it-works">How It Works</a></li>
   </ul>
   <div class="nav-search">
@@ -40,9 +41,9 @@
 <section class="hero">
   <div class="hero-bg"></div>
   <div class="hero-content">
-    <div class="hero-eyebrow">Nigeria's #1 Preowned Car Platform</div>
+    <div class="hero-eyebrow">Global Inventory · Cleared & Delivered in Nigeria</div>
     <h1 class="hero-title">Drive Your <em>Dream</em><br>Without Breaking The Bank</h1>
-    <p class="hero-sub">Browse thousands of verified preowned vehicles. Secure escrow payments. Full inspection reports. Zero hassle.</p>
+    <p class="hero-sub">Buy verified preowned vehicles from trusted international sellers. Secure escrow payments, full inspection reports, and customs clearance handled for you.</p>
 
     <div class="hero-search-card">
       <div class="search-tabs">
@@ -95,6 +96,20 @@
         <div class="hero-stat-l">Hidden Fees</div>
       </div>
     </div>
+  </div>
+</section>
+
+<!-- ── SHOP BY BRAND ──────────────────────── -->
+<section class="brand-section">
+  <div class="section-inner">
+    <div class="section-head">
+      <div>
+        <div class="section-label">Browse Makes</div>
+        <h2 class="section-title">Shop by Brand</h2>
+      </div>
+      <a href="listings.html" class="view-all">All Brands →</a>
+    </div>
+    <div class="brand-strip" id="brand-strip"></div>
   </div>
 </section>
 
@@ -154,7 +169,7 @@
     <div class="footer-grid">
       <div class="footer-brand">
         <a href="index.html" class="nav-logo" style="display:inline-flex;margin-bottom:.5rem"></a>
-        <p>Nigeria's trusted preowned car marketplace. Verified listings, secure payments, zero hidden fees.</p>
+        <p>A global preowned car marketplace — buy verified vehicles from international sellers, with customs clearance and delivery handled in Nigeria.</p>
       </div>
       <div class="footer-col">
         <h5>Buy</h5>
@@ -176,7 +191,7 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <span>© 2025 4Kautos. All rights reserved.</span>
+      <span>© <span class="js-year">2025</span> 4Kautos. All rights reserved.</span>
       <span>Built with ❤️ in Nigeria</span>
     </div>
   </div>
@@ -215,7 +230,7 @@
     if (e.key === 'Enter') location.href = `listings.html?q=${encodeURIComponent(e.target.value)}`;
   });
 
-  // Load featured listings
+  // Load featured listings (carCard + card interactions are shared in app.js)
   async function loadFeatured() {
     try {
       const cars = await API.getCars({ limit: 8 });
@@ -233,42 +248,12 @@
       }
 
       grid.innerHTML = cars.slice(0,8).map(c => carCard(c)).join('');
-      grid.querySelectorAll('.car-card').forEach(card => {
-        card.addEventListener('click', () => { location.href = `detail.html?id=${card.dataset.id}`; });
-      });
-      grid.querySelectorAll('.card-saves').forEach(btn => {
-        btn.addEventListener('click', e => { e.stopPropagation(); btn.classList.toggle('saved'); btn.textContent = btn.classList.contains('saved') ? '♥' : '♡'; });
-      });
     } catch {
       document.getElementById('featured-spinner').innerHTML = '<p class="empty-state">Could not load listings. Start the backend server.</p>';
     }
   }
 
-  function carCard(c) {
-    const price = c.price ? `₦${Number(c.price).toLocaleString()}` : 'Price on Request';
-    const img   = c.photos?.[0] || `https://placehold.co/600x400/18181d/f59e0b?text=${encodeURIComponent((c.make||'Car'))}`;
-    return `
-      <div class="car-card" data-id="${c.id}">
-        <div class="card-img-wrap">
-          <img class="card-img" src="${img}" alt="${c.title||''}" loading="lazy" onerror="this.src='https://placehold.co/600x400/18181d/f59e0b?text=No+Photo'">
-          ${c.featured ? '<span class="card-badge featured">Featured</span>' : ''}
-          <button class="card-saves" title="Save">♡</button>
-        </div>
-        <div class="card-body">
-          <div class="card-title">${c.title || `${c.year||''} ${c.make||''} ${c.model||''}`}</div>
-          <div class="card-specs">
-            ${c.mileage ? `<span class="spec-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${Number(c.mileage).toLocaleString()} km</span>` : ''}
-            ${c.condition ? `<span class="spec-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 12l2 2 4-4"/></svg>${c.condition}</span>` : ''}
-            ${c.year ? `<span class="spec-chip">${c.year}</span>` : ''}
-          </div>
-          <div class="card-footer">
-            <div class="card-price">${price}</div>
-            <button class="card-cta">View Details</button>
-          </div>
-        </div>
-      </div>`;
-  }
-  window.carCard = carCard;
+  renderBrandStrip('#brand-strip');
   loadFeatured();
 </script>
 </body>

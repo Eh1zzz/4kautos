@@ -13,6 +13,7 @@
   <ul class="nav-links">
     <li><a href="index.html">Home</a></li>
     <li><a href="listings.html" class="active">Listings</a></li>
+    <li><a href="clearance.html">Clearance</a></li>
     <li><a href="index.html#how-it-works">How It Works</a></li>
   </ul>
   <div class="nav-search">
@@ -77,6 +78,7 @@
 
   <!-- Main -->
   <main class="listings-main">
+    <div class="brand-strip brand-strip-sm" id="brand-strip"></div>
     <div class="listings-topbar">
       <div class="listings-count">Showing <strong id="results-count">0</strong> vehicles</div>
       <div class="sort-row">
@@ -136,55 +138,38 @@
     try {
       const cars = await API.getCars(params);
       spinner.classList.add('hidden');
+      sortCars(cars, document.getElementById('sort-select').value);
       document.getElementById('results-count').textContent = cars.length;
 
       if (!cars.length) { empty.classList.remove('hidden'); return; }
 
       grid.classList.remove('hidden');
-      grid.innerHTML = cars.map(c => carCard(c)).join('');
-      grid.querySelectorAll('.car-card').forEach(card => {
-        card.addEventListener('click', () => location.href = `detail.html?id=${card.dataset.id}`);
-      });
-      grid.querySelectorAll('.card-saves').forEach(btn => {
-        btn.addEventListener('click', e => { e.stopPropagation(); btn.classList.toggle('saved'); btn.textContent = btn.classList.contains('saved') ? '♥' : '♡'; });
-      });
+      grid.innerHTML = cars.map(c => carCard(c)).join('');   // carCard + clicks/saves are shared (app.js)
     } catch(e) {
       spinner.innerHTML = `<p class="empty-state">Backend offline. Start the server with <code>npm start</code></p>`;
     }
   }
 
-  function carCard(c) {
-    const price = c.price ? `₦${Number(c.price).toLocaleString()}` : 'Price on Request';
-    const img   = c.photos?.[0] || `https://placehold.co/600x400/18181d/f59e0b?text=${encodeURIComponent((c.make||'Car'))}`;
-    return `
-      <div class="car-card" data-id="${c.id}">
-        <div class="card-img-wrap">
-          <img class="card-img" src="${img}" alt="${c.title||''}" loading="lazy" onerror="this.src='https://placehold.co/600x400/18181d/f59e0b?text=No+Photo'">
-          ${c.condition==='excellent'?'<span class="card-badge new">Excellent</span>':''}
-          <button class="card-saves">♡</button>
-        </div>
-        <div class="card-body">
-          <div class="card-title">${c.title||`${c.year||''} ${c.make||''} ${c.model||''}`}</div>
-          <div class="card-specs">
-            ${c.mileage?`<span class="spec-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="11" height="11"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${Number(c.mileage).toLocaleString()} km</span>`:''}
-            ${c.condition?`<span class="spec-chip">${c.condition}</span>`:''}
-            ${c.year?`<span class="spec-chip">${c.year}</span>`:''}
-          </div>
-          <div class="card-footer">
-            <div class="card-price">${price}</div>
-            <button class="card-cta">View Details</button>
-          </div>
-        </div>
-      </div>`;
+  // Client-side sort. Prices are normalised to NGN so mixed-currency listings sort fairly.
+  function sortCars(cars, key) {
+    const toNgn = c => c.price == null ? 0 : (c.currency === 'USD' ? c.price * (Money?.usdToNgn || 1600) : Number(c.price));
+    const by = {
+      '-createdAt': (a,b) => new Date(b.createdAt||0) - new Date(a.createdAt||0),
+      'price':      (a,b) => toNgn(a) - toNgn(b),
+      '-price':     (a,b) => toNgn(b) - toNgn(a),
+      'mileage':    (a,b) => (a.mileage||Infinity) - (b.mileage||Infinity),
+    };
+    if (by[key]) cars.sort(by[key]);
   }
-  window.carCard = carCard;
 
   document.getElementById('f-apply').addEventListener('click', loadListings);
   document.getElementById('f-reset').addEventListener('click', () => { location.href = 'listings.html'; });
+  document.getElementById('sort-select').addEventListener('change', loadListings);
   document.getElementById('nav-q').addEventListener('keydown', e => {
     if (e.key === 'Enter') { urlP.set('q', e.target.value); location.href = `listings.html?${urlP}`; }
   });
 
+  renderBrandStrip('#brand-strip');
   loadListings();
 </script>
 </body>

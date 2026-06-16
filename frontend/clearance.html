@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customs Clearance — 4Kautos</title>
+  <meta name="description" content="Estimate Nigerian import duty and compare verified clearing agents by their best all-in rate.">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<nav class="navbar">
+  <a href="index.html" class="nav-logo"></a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="listings.html">Listings</a></li>
+    <li><a href="clearance.html" class="active">Clearance</a></li>
+    <li><a href="index.html#how-it-works">How It Works</a></li>
+  </ul>
+  <div class="nav-actions">
+    <button class="nav-btn nav-btn-ghost" id="nav-login-btn">Sign In</button>
+    <button class="nav-btn nav-btn-accent" id="nav-signup-btn">List Your Car</button>
+    <button class="nav-btn nav-btn-ghost hidden" id="nav-profile-btn" onclick="location.href='profile.html'">👤 <span class="nav-user-label">Profile</span></button>
+  </div>
+</nav>
+
+<section class="clearance-hero">
+  <div class="section-inner">
+    <div class="section-label">Import Made Easy</div>
+    <h1 class="section-title">Nigeria Customs Clearance</h1>
+    <p class="section-sub">Estimate import duty on any vehicle and compare verified clearing agents by their all-in rate — so you pay less and clear faster at the port.</p>
+  </div>
+</section>
+
+<div class="clearance-layout">
+  <!-- Estimator -->
+  <aside class="panel clearance-form">
+    <div class="panel-head"><h3>Duty Estimator</h3></div>
+    <div class="panel-body">
+      <div class="form-group">
+        <label class="form-label req">Vehicle value (CIF)</label>
+        <div class="price-currency">
+          <input class="form-input" type="number" id="cif-value" placeholder="10000" min="1">
+          <select class="form-select" id="cif-cur">
+            <option value="USD">$ USD</option>
+            <option value="NGN">₦ NGN</option>
+          </select>
+        </div>
+        <div class="field-hint">Cost + Insurance + Freight — the landed value Customs assesses.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Year of manufacture</label>
+        <input class="form-input" type="number" id="cif-year" placeholder="2018" min="1980" max="2027">
+      </div>
+      <button class="form-submit" id="estimate-btn">Estimate &amp; Compare Agents</button>
+      <p class="fx-note" id="fx-note"></p>
+    </div>
+  </aside>
+
+  <!-- Results -->
+  <main class="clearance-results">
+    <div id="clearance-spinner" class="spinner-wrap hidden"><div class="spinner"></div></div>
+
+    <div id="clearance-intro">
+      <div class="panel">
+        <div class="panel-head"><h3>Partner Clearing Agents</h3></div>
+        <div id="agents-directory" class="agents-list"><div class="spinner-wrap"><div class="spinner"></div></div></div>
+      </div>
+    </div>
+
+    <div id="clearance-output" class="hidden">
+      <div class="panel">
+        <div class="panel-head"><h3>Estimated Government Charges</h3><span class="duty-total" id="duty-total"></span></div>
+        <div class="panel-body"><div class="duty-grid" id="duty-grid"></div></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3>Agents · Best Rate First</h3></div>
+        <div class="agents-list" id="agents-list"></div>
+      </div>
+
+      <p class="disclaimer" id="disclaimer"></p>
+    </div>
+  </main>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-bottom">
+      <span>© <span class="js-year">2025</span> 4Kautos. All rights reserved.</span>
+      <span>Customs estimates are indicative, not official quotations.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+<script>
+  const params = new URLSearchParams(location.search);
+
+  // Prefill from a car detail page (?cif=<amount>&cur=<NGN|USD>)
+  if (params.get('cif')) document.getElementById('cif-value').value = params.get('cif');
+  if (params.get('cur')) document.getElementById('cif-cur').value = params.get('cur') === 'USD' ? 'USD' : 'NGN';
+
+  const r = n => Math.round(Number(n) || 0).toLocaleString('en-US');
+  function moneyPair(ngn, usd) {
+    const d = Money.display();
+    const primary   = d === 'USD' ? `$${r(usd)}` : `₦${r(ngn)}`;
+    const secondary = d === 'USD' ? `₦${r(ngn)}` : `$${r(usd)}`;
+    return `<span class="price-main">${primary}</span><span class="price-sub">≈ ${secondary}</span>`;
+  }
+  const stars = n => '★'.repeat(Math.round(n)) + '☆'.repeat(5 - Math.round(n));
+
+  function agentCard(a, rate) {
+    const priced = a.totalNgn != null;
+    return `
+      <div class="agent-card ${a.bestRate ? 'best' : ''}">
+        ${a.bestRate ? '<span class="best-badge">Best Rate</span>' : ''}
+        <div class="agent-head">
+          <div>
+            <div class="agent-name">${esc(a.name)} ${a.verified ? '<span class="verified-tick" title="Verified">✓</span>' : ''}</div>
+            <div class="agent-meta">${stars(a.rating)} ${a.rating} · ${a.reviews ?? ''} reviews · ${esc(a.port || '')}</div>
+          </div>
+          ${priced ? `<div class="agent-total js-price-static">${moneyPair(a.totalNgn, a.totalUsd)}</div>` : ''}
+        </div>
+        <div class="agent-services">${(a.services || []).map(s => `<span class="svc-chip">${esc(s)}</span>`).join('')}</div>
+        <div class="agent-foot">
+          <span class="agent-turn">⏱ ~${a.turnaroundDays} days</span>
+          ${priced ? `<span class="agent-fee">Agent fee: $${r(a.agentFeeUsd)}</span>` : `<span class="agent-fee">From $${r(a.baseFeeUsd)} + ${a.ratePercent}%</span>`}
+          <a class="agent-call" href="tel:${esc((a.phone||'').replace(/\s/g,''))}">📞 ${esc(a.phone || '')}</a>
+        </div>
+      </div>`;
+  }
+
+  async function loadDirectory() {
+    const host = document.getElementById('agents-directory');
+    try {
+      const agents = await API.getClearanceAgents();
+      host.innerHTML = agents
+        .sort((a, b) => b.rating - a.rating)
+        .map(a => agentCard(a)).join('');
+    } catch {
+      host.innerHTML = '<p class="empty-state">Could not load agents. Start the backend server.</p>';
+    }
+  }
+
+  async function runEstimate() {
+    const raw = parseFloat(document.getElementById('cif-value').value);
+    if (!Number.isFinite(raw) || raw <= 0) { toast('Enter a vehicle value first', 'error'); return; }
+    const cur = document.getElementById('cif-cur').value;
+    const year = parseInt(document.getElementById('cif-year').value, 10) || undefined;
+
+    const spinner = document.getElementById('clearance-spinner');
+    const intro = document.getElementById('clearance-intro');
+    const out = document.getElementById('clearance-output');
+    spinner.classList.remove('hidden'); intro.classList.add('hidden'); out.classList.add('hidden');
+
+    const body = cur === 'USD' ? { cifValueUsd: raw, year } : { cifValueNgn: raw, year };
+    try {
+      const d = await API.estimateClearance(body);
+      spinner.classList.add('hidden'); out.classList.remove('hidden');
+
+      const g = d.government, rate = d.fx.usdToNgn;
+      const line = (label, usd) => `<div class="duty-row"><span>${label}</span><span>${moneyPair(usd * rate, usd)}</span></div>`;
+      document.getElementById('duty-grid').innerHTML =
+        line('Import Duty (20%)', g.importDuty) +
+        line('NAC Levy (15%)', g.nacLevy) +
+        line('ETLS (0.5%)', g.etls) +
+        line('CISS (1%)', g.ciss) +
+        line('Port Surcharge (7%)', g.surcharge) +
+        line('VAT (7.5%)', g.vat);
+      document.getElementById('duty-total').innerHTML = moneyPair(g.totalNgn, g.total);
+
+      document.getElementById('agents-list').innerHTML = d.agents.map(a => agentCard(a, rate)).join('');
+
+      const note = d.notes && d.notes.length ? `<strong>Note:</strong> ${d.notes.map(esc).join(' ')}<br>` : '';
+      const fxLine = `Rate used: $1 = ₦${r(rate)} (${d.fx.source}).`;
+      document.getElementById('disclaimer').innerHTML = `${note}${esc(d.disclaimer)} ${fxLine}`;
+      out.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (e) {
+      spinner.classList.add('hidden'); intro.classList.remove('hidden');
+      toast(e.message || 'Estimate failed', 'error');
+    }
+  }
+
+  document.getElementById('estimate-btn').addEventListener('click', runEstimate);
+  loadDirectory();
+  if (params.get('cif')) runEstimate();
+</script>
+</body>
+</html>

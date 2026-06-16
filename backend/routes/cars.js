@@ -2,6 +2,7 @@ import express from 'express';
 import { findAll, findById, create, deleteById, deleteByIdAndSeller, addPhotos } from '../models/Car.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { upload } from '../middleware/upload.js';
+import { validateCarInput } from '../utils/validation.js';
 
 const router = express.Router();
 
@@ -30,8 +31,11 @@ router.get('/:id', async (req, res) => {
 // POST /cars — create listing (sellers only)
 router.post('/', authenticate, authorize('seller'), async (req, res) => {
   try {
-    const { title, make, model, year, mileage, vin, condition, description, photos, price } = req.body;
-    const car = await create({ title, make, model, year, mileage, vin, condition, description, photos: photos || [], price, sellerId: req.user.id });
+    const { errors, value } = validateCarInput(req.body);
+    if (errors.length)
+      return res.status(400).json({ message: errors[0], errors });
+
+    const car = await create({ ...value, sellerId: req.user.id });
     res.status(201).json({ message: 'Car added successfully', car });
   } catch (err) {
     console.error('POST /cars:', err.message);

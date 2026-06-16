@@ -6,16 +6,28 @@ import path          from 'path';
 import fs            from 'fs';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { connectDB } from './config/db.js';
+import { securityHeaders } from './middleware/security.js';
 import authRoutes        from './routes/auth.js';
 import carRoutes         from './routes/cars.js';
 import transactionRoutes from './routes/transactions.js';
 import adminRoutes       from './routes/admin.js';
 import chatbotRoutes     from './routes/chatbot.js';
+import fxRoutes          from './routes/fx.js';
+import clearanceRoutes   from './routes/clearance.js';
 
 dotenv.config();
 
+// Fail fast in production if the JWT secret is missing or weak.
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+  const msg = 'JWT_SECRET is missing or shorter than 32 characters';
+  if (process.env.NODE_ENV === 'production') throw new Error(msg);
+  console.warn(`⚠️  ${msg} — set a strong secret in .env before deploying.`);
+}
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
+app.disable('x-powered-by');
+app.use(securityHeaders);
 
 /* ── CORS ─────────────────────────────────── */
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5500,http://127.0.0.1:5500,http://localhost:3000')
@@ -63,6 +75,8 @@ app.use('/cars',         carRoutes);
 app.use('/transactions', transactionRoutes);
 app.use('/admin',        adminRoutes);
 app.use('/chat',         chatbotRoutes);
+app.use('/fx',           fxRoutes);
+app.use('/clearance',    clearanceRoutes);
 
 /* ── HEALTH CHECK ─────────────────────────── */
 app.get('/health', (_req, res) => res.json({ status: 'ok', ts: Date.now() }));
