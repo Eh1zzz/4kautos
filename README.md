@@ -234,7 +234,10 @@ ANTHROPIC_API_KEY=sk-ant-...
 3. Build command: `npm install`
 4. Start command: `npm start`
 5. Provision a MySQL database (PlanetScale, Railway, RDS, etc.)
-6. Add env vars: `PORT`, `DATABASE_URL`, `JWT_SECRET`, `ALLOWED_ORIGINS`, `ANTHROPIC_API_KEY`
+6. Add env vars: `NODE_ENV=production`, `PORT`, `DATABASE_URL`, `JWT_SECRET`, `ALLOWED_ORIGINS`, `ANTHROPIC_API_KEY`
+
+> `NODE_ENV=production` switches CORS to the strict `ALLOWED_ORIGINS` allow-list.
+> In development (no `NODE_ENV`), any `localhost` / `127.0.0.1` / `file://` origin is accepted.
 
 > For managed MySQL that requires TLS, append the appropriate SSL parameters to
 > `DATABASE_URL` (e.g. `?ssl={"rejectUnauthorized":true}`).

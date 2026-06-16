@@ -18,9 +18,28 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
 /* ── CORS ─────────────────────────────────── */
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5500,http://127.0.0.1:5500,http://localhost:3000').split(',');
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5500,http://127.0.0.1:5500,http://localhost:3000')
+  .split(',').map(o => o.trim()).filter(Boolean);
+const isProd = process.env.NODE_ENV === 'production';
+
+// Same-origin / curl requests have no Origin and are always allowed. In dev we also
+// accept any localhost / 127.0.0.1 origin (any port) and file:// pages (Origin "null"),
+// so the frontend works however it's served. Production is restricted to ALLOWED_ORIGINS.
+function isAllowedOrigin(origin) {
+  if (!origin) return true;
+  if (allowedOrigins.includes(origin)) return true;
+  if (isProd) return false;
+  if (origin === 'null') return true; // file:// (double-clicked HTML)
+  try {
+    const { hostname } = new URL(origin);
+    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
+  } catch {
+    return false;
+  }
+}
+
 app.use(cors({
-  origin: (origin, cb) => (!origin || allowedOrigins.includes(origin)) ? cb(null, true) : cb(new Error('CORS blocked')),
+  origin: (origin, cb) => isAllowedOrigin(origin) ? cb(null, true) : cb(new Error('CORS blocked')),
   methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization'],
 }));
