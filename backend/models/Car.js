@@ -18,6 +18,9 @@ function normalize(row) {
     try { row.seller = JSON.parse(row.seller); } catch { /* leave as-is */ }
   }
   if (row.currency == null) row.currency = 'NGN';
+  // DECIMAL columns arrive as strings — expose coordinates as numbers for the map.
+  if (row.latitude  != null) row.latitude  = Number(row.latitude);
+  if (row.longitude != null) row.longitude = Number(row.longitude);
   // Frontend reads `createdAt`; expose an alias for the snake_case column.
   if (row.created_at != null) row.createdAt = row.created_at;
   return row;
@@ -69,9 +72,9 @@ export async function findById(id) {
   return rows[0] ? normalize(rows[0]) : null;
 }
 
-export async function create({ title, make, model, year, mileage, vin, condition, description, photos, price, currency, sellerId }) {
+export async function create({ title, make, model, year, mileage, vin, condition, description, photos, price, currency, location, latitude, longitude, sellerId }) {
   const [result] = await pool.query(
-    'INSERT INTO cars (title, make, model, year, mileage, vin, `condition`, description, photos, price, currency, seller_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
+    'INSERT INTO cars (title, make, model, year, mileage, vin, `condition`, description, photos, price, currency, location, latitude, longitude, seller_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
     [
       title || null,
       make  || null,
@@ -84,6 +87,9 @@ export async function create({ title, make, model, year, mileage, vin, condition
       JSON.stringify(photos || []),
       price ? parseFloat(price) : null,
       CURRENCIES.includes(currency) ? currency : 'NGN',
+      location || null,
+      latitude  != null ? parseFloat(latitude)  : null,
+      longitude != null ? parseFloat(longitude) : null,
       sellerId,
     ]
   );

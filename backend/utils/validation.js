@@ -92,6 +92,20 @@ export function validateCarInput(body = {}) {
   if (description.length > 5000) errors.push('Description is too long (max 5000 characters)');
   value.description = description || null;
 
+  // Location: a human label (e.g. "Atlanta, GA, USA") is required so buyers know
+  // where the car ships from. Coordinates are optional (geocoded client-side).
+  const location = typeof body.location === 'string' ? body.location.trim() : '';
+  if (!location) errors.push('Location is required (city, country)');
+  else if (location.length > 160) errors.push('Location is too long');
+  value.location = location || null;
+
+  const lat = body.latitude != null && body.latitude !== '' ? Number(body.latitude) : null;
+  const lng = body.longitude != null && body.longitude !== '' ? Number(body.longitude) : null;
+  if (lat != null && (!Number.isFinite(lat) || lat < -90 || lat > 90)) errors.push('Invalid latitude');
+  if (lng != null && (!Number.isFinite(lng) || lng < -180 || lng > 180)) errors.push('Invalid longitude');
+  value.latitude  = Number.isFinite(lat) ? lat : null;
+  value.longitude = Number.isFinite(lng) ? lng : null;
+
   // Title is optional — derive a sensible one when omitted.
   const title = typeof body.title === 'string' && body.title.trim()
     ? body.title.trim()

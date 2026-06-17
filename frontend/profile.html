@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Dashboard — 4Kautos</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <meta name="theme-color" content="#08080f">
+  <script>try{var t=localStorage.getItem('4k_theme')||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','dark');}</script>
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
 <nav class="navbar">
@@ -25,7 +28,7 @@
 </nav>
 
 <div id="auth-gate" style="display:flex;align-items:center;justify-content:center;min-height:60vh;flex-direction:column;gap:1rem">
-  <h2 style="font-family:'Oswald',sans-serif;font-size:1.5rem">Sign in to access your dashboard</h2>
+  <h2 style="font-family:var(--font-display);font-size:1.5rem">Sign in to access your dashboard</h2>
   <p style="color:var(--text2)">Manage your listings, track purchases, and update your profile.</p>
   <button class="nav-btn nav-btn-accent" onclick="openAuth('login')">Sign In</button>
 </div>
@@ -74,11 +77,11 @@
           <p style="color:var(--text2);font-size:.9rem">Your 4Kautos dashboard. Manage your listings, track transactions, and keep your profile up to date.</p>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1.25rem">
             <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1.25rem">
-              <div style="font-family:'Oswald',sans-serif;font-size:2rem;color:var(--accent)" id="stat-listings">—</div>
+              <div style="font-family:var(--font-display);font-size:2rem;color:var(--accent)" id="stat-listings">—</div>
               <div style="font-size:.75rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:2px">Active Listings</div>
             </div>
             <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1.25rem">
-              <div style="font-family:'Oswald',sans-serif;font-size:2rem;color:var(--accent)" id="stat-tx">—</div>
+              <div style="font-family:var(--font-display);font-size:2rem;color:var(--accent)" id="stat-tx">—</div>
               <div style="font-size:.75rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:2px">Transactions</div>
             </div>
           </div>
@@ -167,6 +170,15 @@
             </div>
           </div>
           <div class="form-group">
+            <label class="form-label req">Location (where the car is)</label>
+            <div class="location-row">
+              <input class="form-input" type="text" id="car-location" placeholder="e.g. Atlanta, GA, USA" autocomplete="off">
+              <button class="nav-btn nav-btn-ghost" type="button" id="locate-btn">📍 Locate</button>
+            </div>
+            <div class="field-hint" id="loc-hint">City and country — we'll pin it on the map for buyers.</div>
+            <div id="upload-map" class="car-map upload-map" style="display:none"></div>
+          </div>
+          <div class="form-group">
             <label class="form-label">Description</label>
             <textarea class="form-input" id="car-desc" rows="4" placeholder="Describe the vehicle's history, features, and any known issues…" style="resize:vertical;min-height:100px"></textarea>
           </div>
@@ -190,6 +202,7 @@
 
 <script src="js/api.js"></script>
 <script src="js/app.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
   function switchTab(name) {
     document.querySelectorAll('.profile-tab').forEach(t => t.classList.toggle('active', t.id === `tab-${name}`));
@@ -305,6 +318,40 @@
   const VIN_RE = /^[A-HJ-NPR-Z0-9]{17}$/;
   const val = id => (document.getElementById(id)?.value || '').trim();
 
+  /* Location geocoding + map preview */
+  let geo = { lat: null, lng: null, display: null };
+  let uploadMap = null, uploadMarker = null;
+  const tileUrlP = () => document.documentElement.getAttribute('data-theme') !== 'light'
+    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+    : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+
+  async function geocodeLocation(q){
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`, { headers: { Accept: 'application/json' } });
+    const d = await res.json();
+    return d && d[0] ? { lat: +d[0].lat, lng: +d[0].lon, display: d[0].display_name } : null;
+  }
+
+  document.getElementById('locate-btn').addEventListener('click', async () => {
+    const q = val('car-location'); const hint = document.getElementById('loc-hint');
+    if (!q) { hint.className = 'field-hint bad'; hint.textContent = 'Enter a city and country first.'; return; }
+    hint.className = 'field-hint'; hint.textContent = 'Searching…';
+    let g = null; try { g = await geocodeLocation(q); } catch {}
+    if (!g) { hint.className = 'field-hint bad'; hint.textContent = 'Couldn’t find that — try "City, Country".'; return; }
+    geo = g; hint.className = 'field-hint ok'; hint.textContent = '✓ ' + g.display;
+    const mapEl = document.getElementById('upload-map'); mapEl.style.display = '';
+    if (typeof L !== 'undefined') {
+      if (!uploadMap) {
+        uploadMap = L.map('upload-map', { scrollWheelZoom: false, attributionControl: true }).setView([g.lat, g.lng], 9);
+        L.tileLayer(tileUrlP(), { maxZoom: 18, attribution: '&copy; OpenStreetMap &copy; CARTO' }).addTo(uploadMap);
+      } else { uploadMap.setView([g.lat, g.lng], 9); }
+      if (uploadMarker) uploadMarker.remove();
+      const icon = L.divIcon({ className: 'map-pin', html: '<span></span>', iconSize: [26, 26], iconAnchor: [13, 26] });
+      uploadMarker = L.marker([g.lat, g.lng], { icon }).addTo(uploadMap);
+      setTimeout(() => uploadMap.invalidateSize(), 200);
+    }
+    refreshForm();
+  });
+
   document.getElementById('photo-checklist').innerHTML = REQUIRED_SHOTS.map(s => `
     <div class="shot-row" data-key="${s.key}">
       <div class="shot-label"><span class="shot-dot"></span>${s.label}</div>
@@ -346,6 +393,7 @@
       ['Mileage entered', mileage !== '' && Number(mileage) >= 0],
       ['Valid 17-char VIN', VIN_RE.test(vin)],
       ['Price greater than 0', price > 0],
+      ['Location entered', !!val('car-location')],
       [`All ${REQUIRED_SHOTS.length} required photos`, shotsFilled],
     ];
     return { checks, valid: checks.every(c => c[1]) };
@@ -364,6 +412,7 @@
   }
 
   document.getElementById('tab-add-car').addEventListener('input', e => {
+    if (e.target.id === 'car-location') geo = { lat: null, lng: null, display: null }; // re-locate after edits
     refreshForm();
     if (e.target.classList.contains('shot-url')) {
       const key = e.target.id.replace('shot-', '');
@@ -391,6 +440,9 @@
       vin:         val('car-vin').toUpperCase(),
       condition:   document.getElementById('car-condition').value,
       description: val('car-desc') || undefined,
+      location:    val('car-location'),
+      latitude:    geo.lat,
+      longitude:   geo.lng,
       photos:      collectPhotos(),
     };
     const btn = document.getElementById('submit-car-btn');

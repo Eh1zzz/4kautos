@@ -370,11 +370,25 @@ const Money = (function () {
            `<span class="price-sub">≈ ${symbol(secondary)}${fmtNum(v[secondary])}</span>`;
   }
 
+  // Format a USD amount as a single value in the user's display currency.
+  function one(amountUsd) {
+    const d = display();
+    return symbol(d) + fmtNum(d === 'USD' ? amountUsd : amountUsd * usdToNgn);
+  }
+
   // Re-render every element carrying price data attributes.
   function repriceAll() {
     document.querySelectorAll('.js-price').forEach(el => {
       const amt = el.dataset.amount;
       if (amt != null && amt !== '') el.innerHTML = fmt(+amt, el.dataset.native || 'NGN');
+    });
+    document.querySelectorAll('.js-landed').forEach(el => {
+      if (el.dataset.price == null || !window.Landed) return;
+      const r = window.Landed.calc(+el.dataset.price, el.dataset.cur || 'NGN', el.dataset.loc || '');
+      el.textContent = '≈ ' + one(r.totalUsd) + ' to your door';
+    });
+    document.querySelectorAll('.js-usd').forEach(el => {
+      if (el.dataset.usd != null) el.textContent = one(+el.dataset.usd);
     });
     document.querySelectorAll('.js-cur-label').forEach(el => { el.textContent = display(); });
   }
@@ -395,14 +409,46 @@ const Money = (function () {
     repriceAll();
   }
 
-  return { fmt, repriceAll, load, toggle, display, get usdToNgn() { return usdToNgn; } };
+  return { fmt, one, repriceAll, load, toggle, display, get usdToNgn() { return usdToNgn; } };
 })();
 window.Money = Money;
+
+/* ── LANDED COST (price + Nigerian import duty + shipping) ── */
+// Duty percentages mirror backend/routes/clearance.js — keep them in sync.
+const Landed = (function () {
+  function dutyUsd(cifUsd) {
+    const importDuty = cifUsd * 0.20, nacLevy = cifUsd * 0.15, etls = cifUsd * 0.005,
+          ciss = cifUsd * 0.01, surcharge = importDuty * 0.07;
+    const vat = (cifUsd + importDuty + nacLevy + etls + ciss + surcharge) * 0.075;
+    return importDuty + nacLevy + etls + ciss + surcharge + vat;
+  }
+  // Rough RoRo shipping-to-Nigeria estimate by origin region (USD).
+  function shippingUsd(location) {
+    const s = (location || '').toLowerCase();
+    if (/nigeria|lagos|abuja|kano|ibadan|port\s*harcourt/.test(s)) return 0;       // already in-country
+    if (/ghana|togo|benin|cameroon|niger|chad|africa/.test(s)) return 850;
+    if (/uk|united kingdom|england|germany|france|belgium|netherlands|spain|italy|poland|europe/.test(s)) return 1600;
+    if (/uae|dubai|qatar|saudi|japan|korea|china|india|singapore|asia/.test(s)) return 2100;
+    if (/usa|united states|canada|america|, ca|, tx|, ga|, ny|, fl|, nj/.test(s)) return 1900;
+    return 1850;
+  }
+  function calc(price, currency, location) {
+    const rate = Money.usdToNgn || 1600;
+    const priceUsd = currency === 'USD' ? Number(price) : Number(price) / rate;
+    const ship = shippingUsd(location);
+    const inCountry = ship === 0;
+    const duty = inCountry ? 0 : dutyUsd(priceUsd);
+    const totalUsd = priceUsd + duty + ship;
+    return { priceUsd, dutyUsd: duty, shippingUsd: ship, totalUsd, totalNgn: totalUsd * rate, inCountry };
+  }
+  return { calc, dutyUsd, shippingUsd };
+})();
+window.Landed = Landed;
 
 /* ── SHARED CAR CARD ──────────────────────── */
 window.carCard = function (c) {
   const native = c.currency || 'NGN';
-  const img = c.photos?.[0] || `https://placehold.co/600x400/18181d/f59e0b?text=${encodeURIComponent(c.make || 'Car')}`;
+  const img = c.photos?.[0] || `https://placehold.co/600x400/12121f/8b7cff?text=${encodeURIComponent(c.make || 'Car')}`;
   const saved = API.isSaved(c.id);
   const title = c.title || `${c.year || ''} ${c.make || ''} ${c.model || ''}`.trim();
   const badge = c.featured ? '<span class="card-badge featured">Featured</span>'
@@ -411,22 +457,35 @@ window.carCard = function (c) {
     ? `<div class="card-price js-price" data-amount="${esc(c.price)}" data-native="${esc(native)}">${Money.fmt(c.price, native)}</div>`
     : `<div class="card-price">Price on Request</div>`;
 
+  const landed = (c.price != null && c.price !== '') ? Landed.calc(c.price, native, c.location) : null;
+  const landedHtml = !landed ? ''
+    : landed.inCountry
+      ? `<div class="card-landed in-country">✓ Already in Nigeria</div>`
+      : `<div class="card-landed js-landed" data-price="${esc(c.price)}" data-cur="${esc(native)}" data-loc="${esc(c.location || '')}">≈ ${Money.one(landed.totalUsd)} to your door</div>`;
+  const locHtml = c.location
+    ? `<div class="card-loc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${esc(c.location)}</div>`
+    : '';
+
   return `
-    <div class="car-card" data-id="${esc(c.id)}">
+    <div class="car-card reveal" data-id="${esc(c.id)}">
       <div class="card-img-wrap">
-        <img class="card-img" src="${esc(img)}" alt="${esc(title)}" loading="lazy" onerror="this.src='https://placehold.co/600x400/18181d/f59e0b?text=No+Photo'">
+        <img class="card-img" src="${esc(img)}" alt="${esc(title)}" loading="lazy" onerror="this.src='https://placehold.co/600x400/12121f/8b7cff?text=No+Photo'">
         ${badge}
         <button class="card-saves ${saved ? 'saved' : ''}" title="Save" data-save="${esc(c.id)}">${saved ? '♥' : '♡'}</button>
       </div>
       <div class="card-body">
         <div class="card-title">${esc(title)}</div>
+        ${locHtml}
         <div class="card-specs">
           ${c.mileage ? `<span class="spec-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${Number(c.mileage).toLocaleString()} km</span>` : ''}
           ${c.condition ? `<span class="spec-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 12l2 2 4-4"/></svg>${esc(c.condition)}</span>` : ''}
           ${c.year ? `<span class="spec-chip">${esc(c.year)}</span>` : ''}
         </div>
         <div class="card-footer">
-          ${priceHtml}
+          <div class="card-price-wrap">
+            ${priceHtml}
+            ${landedHtml}
+          </div>
           <button class="card-cta">View Details</button>
         </div>
       </div>
@@ -449,25 +508,34 @@ document.addEventListener('click', e => {
 
 /* ── BRAND STRIP (shop by brand) ──────────── */
 // Logos via simple-icons CDN with a monogram fallback when a logo is missing.
+// simple-icons doesn't host Mercedes-Benz or Lexus — supply inline currentColor marks.
+const BRAND_SVG = {
+  'Mercedes-Benz': `<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="24" r="20"/><path d="M24 24V4.5M24 24 7.3 33.6M24 24l16.7 9.6"/></svg>`,
+  'Lexus': `<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="24" cy="24" rx="21" ry="13.5"/><path d="M18.6 15.5V31H30"/></svg>`,
+};
 const BRANDS = [
   { name: 'Toyota', slug: 'toyota' }, { name: 'Honda', slug: 'honda' },
-  { name: 'BMW', slug: 'bmw' }, { name: 'Mercedes-Benz', slug: 'mercedes' },
+  { name: 'BMW', slug: 'bmw' }, { name: 'Mercedes-Benz' },
   { name: 'Ford', slug: 'ford' }, { name: 'Hyundai', slug: 'hyundai' },
-  { name: 'Kia', slug: 'kia' }, { name: 'Lexus', slug: 'lexus' },
+  { name: 'Kia', slug: 'kia' }, { name: 'Lexus' },
   { name: 'Nissan', slug: 'nissan' }, { name: 'Volkswagen', slug: 'volkswagen' },
   { name: 'Audi', slug: 'audi' }, { name: 'Mazda', slug: 'mazda' },
 ];
 window.renderBrandStrip = function (selector) {
   const host = document.querySelector(selector);
   if (!host) return;
-  host.innerHTML = BRANDS.map(b => `
-    <a class="brand-tile" href="listings.html?make=${encodeURIComponent(b.name)}" title="${esc(b.name)} for sale">
-      <span class="brand-logo">
-        <img src="https://cdn.simpleicons.org/${b.slug}/f5f5f4" alt="${esc(b.name)}" loading="lazy"
-             onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'brand-mono',textContent:'${esc(b.name[0])}'}))">
-      </span>
-      <span class="brand-name">${esc(b.name)}</span>
-    </a>`).join('');
+  // Colour the CDN icons to match the theme text so they never fade into the tile.
+  function render() {
+    const col = document.documentElement.getAttribute('data-theme') === 'light' ? '4b4b66' : 'a6a6c6';
+    host.innerHTML = BRANDS.map(b => {
+      const logo = BRAND_SVG[b.name]
+        ? `<span class="brand-logo">${BRAND_SVG[b.name]}</span>`
+        : `<span class="brand-logo"><img src="https://cdn.simpleicons.org/${b.slug}/${col}" alt="${esc(b.name)} logo" loading="lazy"></span>`;
+      return `<a class="brand-tile" href="listings.html?make=${encodeURIComponent(b.name)}" title="${esc(b.name)} for sale">${logo}<span class="brand-name">${esc(b.name)}</span></a>`;
+    }).join('');
+  }
+  render();
+  document.addEventListener('themechange', render); // recolour CDN icons on theme switch
 };
 
 /* ── MOBILE NAV (hamburger + drawer) ──────── */
@@ -553,6 +621,181 @@ document.addEventListener('keydown', e => {
   const cw = document.getElementById('chat-window');
   if (cw?.classList.contains('open')) document.getElementById('chat-close')?.click();
 });
+
+/* ── THEME (light / dark) ─────────────────── */
+(function () {
+  const STORAGE = '4k_theme';
+  const ICON_SUN  = `<svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>`;
+  const ICON_MOON = `<svg class="icon-moon" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>`;
+
+  const current = () => document.documentElement.getAttribute('data-theme') || 'dark';
+  function apply(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    try { localStorage.setItem(STORAGE, t); } catch {}
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', t === 'light' ? '#f5f6fc' : '#08080f');
+    document.querySelectorAll('.mm-theme strong').forEach(el => el.textContent = t === 'light' ? 'Light' : 'Dark');
+    document.dispatchEvent(new Event('themechange'));
+  }
+  const toggle = () => apply(current() === 'dark' ? 'light' : 'dark');
+  window.toggleTheme = toggle;
+
+  // Desktop: a sun/moon button in the nav actions.
+  document.querySelectorAll('.navbar .nav-actions').forEach(actions => {
+    if (actions.querySelector('.theme-toggle')) return;
+    const btn = document.createElement('button');
+    btn.className = 'theme-toggle'; btn.type = 'button';
+    btn.setAttribute('aria-label', 'Toggle light / dark theme');
+    btn.innerHTML = ICON_SUN + ICON_MOON;
+    actions.insertBefore(btn, actions.querySelector('.cur-toggle') || actions.querySelector('.nav-hamburger') || null);
+    btn.addEventListener('click', toggle);
+  });
+
+  // Mobile drawer entry.
+  const drawer = document.querySelector('.mobile-menu');
+  if (drawer && !drawer.querySelector('.mm-theme')) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'mm-theme';
+    b.innerHTML = `Theme: <strong>${current() === 'light' ? 'Light' : 'Dark'}</strong> · tap to switch`;
+    const cur = drawer.querySelector('.mm-currency');
+    if (cur) cur.after(b); else drawer.appendChild(b);
+    b.addEventListener('click', toggle);
+  }
+  apply(current());
+})();
+
+/* ── SHARED CAR-OUTLINE FOOTER ────────────── */
+(function () {
+  if (document.querySelector('.site-footer')) return;
+  const year = new Date().getFullYear();
+  const carSvg = `<svg class="footer-car" viewBox="0 0 680 150" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">
+    <path d="M30 105 q8 -29 45 -31 l80 -2 q26 -39 82 -41 l150 -2 q63 0 101 45 l66 6 q41 6 47 31"/>
+    <path d="M30 105 L300 105 M372 107 L520 111"/>
+    <circle cx="198" cy="111" r="31"/><circle cx="198" cy="111" r="12.5"/>
+    <circle cx="496" cy="111" r="31"/><circle cx="496" cy="111" r="12.5"/>
+    <path d="M152 71 q9 -22 31 -24 l80 -2 0 31 -111 0z"/>
+    <path d="M289 44 l130 4 q31 4 45 25 l-175 0z"/>
+  </svg>`;
+  const footer = document.createElement('footer');
+  footer.className = 'site-footer';
+  footer.innerHTML = `${carSvg}
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="index.html" class="nav-logo" style="display:inline-flex;margin-bottom:.6rem"></a>
+          <p>A global preowned-car marketplace — buy verified vehicles from international sellers, with customs clearance and delivery handled in Nigeria.</p>
+        </div>
+        <div class="footer-col">
+          <h5>Buy</h5>
+          <a href="listings.html">Browse Listings</a>
+          <a href="listings.html?condition=excellent">Premium Cars</a>
+          <a href="clearance.html">Customs Clearance</a>
+        </div>
+        <div class="footer-col">
+          <h5>Sell</h5>
+          <a href="#" onclick="openAuth('signup');return false">List Your Car</a>
+          <a href="profile.html">Seller Dashboard</a>
+        </div>
+        <div class="footer-col">
+          <h5>Company</h5>
+          <a href="index.html#how-it-works">How It Works</a>
+          <a href="#">Terms of Service</a>
+          <a href="#">Privacy Policy</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© <span class="js-year">${year}</span> 4Kautos. All rights reserved.</span>
+        <span>Built for the global car market</span>
+      </div>
+    </div>`;
+  document.body.appendChild(footer);
+  // Populate the footer logo (the page-load logo pass already ran).
+  const navLogo = document.querySelector('.navbar .nav-logo');
+  const fLogo = footer.querySelector('.nav-logo');
+  if (navLogo && fLogo) fLogo.innerHTML = navLogo.innerHTML;
+})();
+
+/* ── SCROLL REVEAL ────────────────────────── */
+(function () {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce || !('IntersectionObserver' in window)) return;
+  document.documentElement.classList.add('js-reveal');
+  const io = new IntersectionObserver(entries => {
+    for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+  }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
+  const observe = (root = document) => root.querySelectorAll('.reveal:not(.in)').forEach(el => io.observe(el));
+  window.observeReveals = observe;
+
+  const tagStatic = () => document.querySelectorAll('section:not(.hero), .step-card, .panel, .agent-card, .footer-col, .brand-tile')
+    .forEach(el => el.classList.add('reveal'));
+  document.addEventListener('DOMContentLoaded', () => { tagStatic(); observe(); });
+
+  // Cards added later (carCard already carries .reveal) — observe them as they appear.
+  const mo = new MutationObserver(muts => {
+    let found = false;
+    for (const m of muts) for (const n of m.addedNodes) {
+      if (n.nodeType !== 1) continue;
+      if (n.classList?.contains('reveal') || n.querySelector?.('.reveal:not(.in)')) found = true;
+    }
+    if (found) observe();
+  });
+  mo.observe(document.body, { childList: true, subtree: true });
+})();
+
+/* ── COUNT-UP (hero stats) ────────────────── */
+(function () {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) return;
+  function run(el) {
+    const m = el.textContent.trim().match(/^(\D*)(\d[\d,]*)(.*)$/);
+    if (!m) return;
+    const prefix = m[1], target = parseInt(m[2].replace(/,/g, ''), 10), suffix = m[3];
+    if (!target) return;
+    const dur = 1100, t0 = performance.now();
+    (function step(now) {
+      const p = Math.min((now - t0) / dur, 1);
+      el.textContent = prefix + Math.round((1 - Math.pow(1 - p, 3)) * target).toLocaleString('en-US') + suffix;
+      if (p < 1) requestAnimationFrame(step);
+    })(t0);
+  }
+  const io = new IntersectionObserver(entries => {
+    for (const e of entries) if (e.isIntersecting) { run(e.target); io.unobserve(e.target); }
+  }, { threshold: 0.6 });
+  document.addEventListener('DOMContentLoaded', () => document.querySelectorAll('.hero-stat-n').forEach(el => io.observe(el)));
+})();
+
+/* ── CUSTOM CURSOR: dashboard caution triangle ─ */
+(function () {
+  // Mouse devices only — never hijack the cursor on touch/coarse pointers.
+  if (!matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const el = document.createElement('div');
+  el.className = 'cursor-warn' + (reduce ? ' no-flicker' : '');
+  el.setAttribute('aria-hidden', 'true');
+  el.innerHTML = `<svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="cwGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8b7cff"/><stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient></defs>
+    <g class="cursor-ico">
+      <path d="M14 3.4 L25.2 22.8 a1.7 1.7 0 0 1-1.5 2.6 H4.3 a1.7 1.7 0 0 1-1.5-2.6 Z" fill="url(#cwGrad)" stroke="#0b0b14" stroke-width="1.1" stroke-linejoin="round"/>
+      <rect x="12.8" y="10.4" width="2.4" height="6.6" rx="1.2" fill="#0b0b14"/>
+      <circle cx="14" cy="20.3" r="1.5" fill="#0b0b14"/>
+    </g></svg>`;
+  document.body.appendChild(el);
+  document.documentElement.classList.add('has-cursor-warn');
+
+  const INTERACTIVE = 'a,button,[role="button"],input,select,textarea,.car-card,.brand-tile,.modal-tab,.gallery-thumb,.quick-reply,label,.theme-toggle,.cur-toggle';
+  addEventListener('mousemove', e => {
+    el.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+    if (!el.classList.contains('on')) el.classList.add('on');
+  }, { passive: true });
+  addEventListener('mouseover', e => {
+    el.classList.toggle('active', !!(e.target.closest && e.target.closest(INTERACTIVE)));
+  }, { passive: true });
+  addEventListener('mouseout', e => { if (!e.relatedTarget) el.classList.remove('on'); });
+  addEventListener('mousedown', () => el.classList.add('press'));
+  addEventListener('mouseup',   () => el.classList.remove('press'));
+})();
 
 /* ── BOOT ─────────────────────────────────── */
 Money.load();                       // fetch live FX, then reprice

@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Car Details — 4Kautos</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <meta name="theme-color" content="#08080f">
+  <script>try{var t=localStorage.getItem('4k_theme')||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','dark');}</script>
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
 <nav class="navbar">
@@ -40,8 +43,12 @@
       <div class="gallery" style="margin-bottom:1.5rem">
         <div class="gallery-main">
           <img id="gallery-main-img" src="" alt="Car photo">
-          <button class="gallery-nav-btn prev" id="gal-prev">‹</button>
-          <button class="gallery-nav-btn next" id="gal-next">›</button>
+          <button class="gallery-nav-btn prev" id="gal-prev" aria-label="Previous photo">
+            <svg class="turn-arrow" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 4.5 L4 12 L12.5 19.5 V14.5 H20 V9.5 H12.5 Z"/></svg>
+          </button>
+          <button class="gallery-nav-btn next" id="gal-next" aria-label="Next photo">
+            <svg class="turn-arrow" viewBox="0 0 24 24" fill="currentColor"><path d="M11.5 4.5 L20 12 L11.5 19.5 V14.5 H4 V9.5 H11.5 Z"/></svg>
+          </button>
         </div>
         <div class="gallery-thumbs" id="gallery-thumbs"></div>
       </div>
@@ -56,6 +63,12 @@
       <div class="specs-table">
         <div class="specs-table-title">Vehicle Specifications</div>
         <dl id="specs-dl"></dl>
+      </div>
+
+      <!-- Location -->
+      <div class="map-card" id="map-card" style="display:none">
+        <div class="specs-table-title">Location <span id="map-loc"></span></div>
+        <div id="car-map" class="car-map"></div>
       </div>
 
     </div>
@@ -74,6 +87,8 @@
           <div class="cta-label">Asking Price</div>
           <div class="cta-price" id="d-price">—</div>
         </div>
+
+        <div class="landed-box" id="landed-box"></div>
 
         <button class="cta-btn cta-btn-primary" id="buy-btn">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
@@ -113,6 +128,7 @@
 
 <script src="js/api.js"></script>
 <script src="js/app.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
   const id = new URLSearchParams(location.search).get('id');
   let photos = [], currentPhoto = 0, car = null;
@@ -156,7 +172,7 @@
       if (!seller?.verified) document.getElementById('seller-badge').innerHTML = '<span style="color:var(--text3)">Unverified</span>';
 
       // Gallery
-      photos = car.photos?.length ? car.photos : [`https://placehold.co/800x500/18181d/f59e0b?text=${encodeURIComponent(car.make||'Car')}`];
+      photos = car.photos?.length ? car.photos : [`https://placehold.co/800x500/12121f/8b7cff?text=${encodeURIComponent(car.make||'Car')}`];
       document.getElementById('gallery-main-img').src = photos[0];
       const thumbsEl = document.getElementById('gallery-thumbs');
       if (photos.length > 1) {
@@ -176,6 +192,7 @@
         ['Mileage',    car.mileage ? `${Number(car.mileage).toLocaleString()} km` : null],
         ['Condition',  car.condition],
         ['VIN',        car.vin],
+        ['Location',   car.location],
         ['Listed',     car.createdAt ? new Date(car.createdAt).toLocaleDateString() : null],
       ].filter(([,v]) => v);
 
@@ -195,6 +212,9 @@
 
       document.getElementById('detail-spinner').classList.add('hidden');
       document.getElementById('detail-content').classList.remove('hidden');
+
+      renderLanded(car);
+      initMap(car);
     } catch(e) {
       document.getElementById('detail-spinner').innerHTML = `<div class="empty-state"><h3>Car Not Found</h3><p><a href="listings.html" style="color:var(--accent)">Browse all listings</a></p></div>`;
     }
@@ -222,6 +242,55 @@
       document.getElementById('chat-input').value = `Tell me more about the ${title} listed at ${document.getElementById('d-price').textContent}`;
     }, 300);
   });
+
+  /* ── Landed cost + location map ── */
+  function renderLanded(car){
+    const box = document.getElementById('landed-box');
+    if (!box || car.price == null) { if (box) box.innerHTML = ''; return; }
+    const r = Landed.calc(car.price, car.currency || 'NGN', car.location);
+    if (r.inCountry) {
+      box.innerHTML = `<div class="landed-head">In Nigeria — no import needed</div>
+        <div class="landed-note">✓ Already in-country. No customs duty or shipping — ready for local handover.</div>`;
+      return;
+    }
+    const row = (label, usd) => `<div class="landed-row"><span>${label}</span><span class="js-usd" data-usd="${usd}">${Money.one(usd)}</span></div>`;
+    box.innerHTML = `
+      <div class="landed-head">Est. landed cost in Nigeria</div>
+      ${row('Vehicle price', r.priceUsd)}
+      ${row('Import duty &amp; taxes', r.dutyUsd)}
+      ${row('Shipping (RoRo est.)', r.shippingUsd)}
+      <div class="landed-total"><span>To your door</span><span class="js-usd" data-usd="${r.totalUsd}">${Money.one(r.totalUsd)}</span></div>
+      <a class="landed-link" href="clearance.html?cif=${encodeURIComponent(car.price)}&cur=${encodeURIComponent(car.currency||'NGN')}">Full customs breakdown →</a>`;
+  }
+
+  function tileUrl(){
+    const dark = document.documentElement.getAttribute('data-theme') !== 'light';
+    return dark
+      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+      : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+  }
+
+  async function initMap(car){
+    const card = document.getElementById('map-card');
+    if (!card || typeof L === 'undefined') return;
+    let lat = car.latitude, lng = car.longitude;
+    if (lat == null || lng == null) {
+      if (!car.location) return;
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(car.location)}`, { headers: { Accept: 'application/json' } });
+        const d = await res.json();
+        if (d && d[0]) { lat = +d[0].lat; lng = +d[0].lon; }
+      } catch {}
+    }
+    if (lat == null || lng == null || isNaN(lat) || isNaN(lng)) return;
+    card.style.display = '';
+    document.getElementById('map-loc').textContent = car.location ? `· ${car.location}` : '';
+    const map = L.map('car-map', { scrollWheelZoom: false, attributionControl: true }).setView([lat, lng], 9);
+    L.tileLayer(tileUrl(), { maxZoom: 18, attribution: '&copy; OpenStreetMap &copy; CARTO' }).addTo(map);
+    const icon = L.divIcon({ className: 'map-pin', html: '<span></span>', iconSize: [26, 26], iconAnchor: [13, 26] });
+    L.marker([lat, lng], { icon }).addTo(map);
+    setTimeout(() => map.invalidateSize(), 200);
+  }
 
   load();
 </script>

@@ -20,6 +20,17 @@ A full-stack web application for buying preowned vehicles from **international s
 
 ## Recent Changes
 
+### v2.3 — Car location maps + landed-cost
+- **Location & maps** — each listing carries a location (city/country) + coordinates. The detail page shows an interactive **Leaflet + OpenStreetMap/CARTO** map pin (theme-aware tiles, no API key); the seller upload form geocodes the location (free **OSM Nominatim**) and previews the pin. Cards show a 📍 location chip.
+- **"Landed cost to your door"** — every listing shows the all-in cost delivered & cleared in Nigeria (vehicle price + import duty from the clearance engine + a region-based RoRo shipping estimate) in ₦/$, reactive to the currency toggle. In-country cars are flagged as duty-free. Detail page shows the full breakdown with a link to the customs calculator.
+- Seed refreshed with international demo inventory (USA/UK/Germany/UAE/Japan + in-country Lagos/Abuja) priced in mixed currencies.
+
+### v2.2 — "Electric Midnight" UI redesign
+- **Light + dark themes** — CSS-variable theming (dark default), a nav/mobile toggle that persists to `localStorage` and respects `prefers-color-scheme`, with a no-flash inline init in each page `<head>` and smooth cross-fade.
+- **New look** — indigo/violet + cyan palette, glassmorphism surfaces, neon glow, gradient text/buttons; Sora + Plus Jakarta Sans + Space Grotesk type.
+- **Motion** — scroll-reveal (IntersectionObserver), animated hero gradient mesh, count-up stats, card hover-lift/glow — all gated behind `prefers-reduced-motion`.
+- **Skewed car-outline footer** — a single shared footer (injected by `app.js`) with an angled clip-path top edge, a car-silhouette watermark and a gradient top-glow, replacing the per-page footers.
+
 ### v2.1 — Security hardening, FX & customs clearance
 - **Security fixes**
   - **Privilege escalation closed** — `/auth/signup` no longer accepts an arbitrary `role`; only `buyer`/`seller` can be self-assigned (never `admin`).
@@ -32,7 +43,7 @@ A full-stack web application for buying preowned vehicles from **international s
 - **Customs clearance** — new `clearance.html` + `GET /clearance/agents` and `POST /clearance/estimate`: estimates Nigerian import duty and compares verified clearing agents, flagging the **best all-in rate**.
 - **Shop by brand** — clickable brand-logo strip on the home and listings pages filters by make.
 - **Mobile nav fixed** — the hamburger now opens a working drawer (it previously did nothing); injected consistently across all pages.
-- **Same-origin API base** — the frontend now calls the origin that served it (no hard-coded `localhost:3000`), eliminating the cross-origin CORS failure. Override with `window.API_BASE` for a separately-hosted frontend.
+- **Smart API base** — the frontend calls the **same origin** that served it (backend-served in dev or prod → no CORS). When opened from a separate static dev server (Live Server, `serve`, Vite…) it auto-routes API calls to the backend on `:3000`. Override with `window.API_BASE` for a separately-hosted frontend. This resolves the original cross-origin CORS / "method not allowed" failures.
 - Working listings **sort**, persistent **saved/favourites**, Esc-to-close modal/chat, and the footer year auto-updates.
 
 ### Database — migrated from MongoDB to MySQL
@@ -166,7 +177,19 @@ The server runs on `http://localhost:3000` and also serves the frontend statical
 ```
 http://localhost:3000
 ```
-Or serve the frontend separately with Live Server / `npx serve frontend`.
+Or serve the frontend separately with Live Server / `npx serve frontend` — API calls
+auto-route to the backend on `:3000` (recognised dev ports: 5500–5502, 5173, 4173, 8080,
+8000, 4200). For any other port, set `window.API_BASE` in the HTML.
+
+---
+
+## Troubleshooting
+
+| Symptom | Cause & fix |
+|---|---|
+| **"CORS blocked" or "method not allowed"** on login/signup | The page is loaded from a different origin than the API (e.g. VS Code Live Server). The API client auto-routes known dev ports to `:3000`; for any other port set `window.API_BASE`. Simplest: open the app at `http://localhost:3000` (backend-served, same origin). Hard-refresh (`Ctrl+Shift+R`) after changing this. |
+| **`backend/sql/setup.sql` shows red underlines in VS Code** | The `ms-mssql` extension lints `.sql` as SQL Server (T-SQL) and mis-flags valid MySQL syntax. The repo's `.vscode/settings.json` disables that check (`mssql.intelliSense.enableErrorChecking: false`) — reload the window. The SQL itself is correct. |
+| **`mysql_native_password` deprecation warning** | Harmless on MySQL 8.0.34+. On MySQL **8.4+** the plugin is removed — change the user in `setup.sql` to `caching_sha2_password` and append `?allowPublicKeyRetrieval=true` to `DATABASE_URL` for non-TLS local connections. |
 
 ---
 
@@ -193,7 +216,7 @@ Or serve the frontend separately with Live Server / `npx serve frontend`.
 |--------|-------------------|---------------|-------|
 | GET    | /cars             | —             | `?q=&make=&model=&year=&minPrice=&maxPrice=&condition=&sellerId=` |
 | GET    | /cars/:id         | —             | |
-| POST   | /cars             | seller        | Validated: `{ make, model, year, mileage, vin(17), price, currency('NGN'\|'USD'), condition, photos[≥5], description? }` |
+| POST   | /cars             | seller        | Validated: `{ make, model, year, mileage, vin(17), price, currency('NGN'\|'USD'), condition, location, latitude?, longitude?, photos[≥5], description? }` |
 | POST   | /cars/:id/photos  | seller (owner)| multipart form |
 | DELETE | /cars/:id         | seller (owner) or admin | |
 

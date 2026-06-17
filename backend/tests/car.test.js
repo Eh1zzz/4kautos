@@ -10,6 +10,7 @@ const validCar = (over = {}) => ({
   make: 'Toyota', model: 'Camry', year: 2020,
   mileage: 42000, price: 9500000, condition: 'good',
   vin: '1HGCM82633A004352',
+  location: 'Atlanta, GA, USA', latitude: 33.749, longitude: -84.388,
   photos: [
     'https://example.com/front.jpg',
     'https://example.com/rear.jpg',

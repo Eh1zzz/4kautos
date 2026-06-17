@@ -1,9 +1,17 @@
 /* ── 4Kautos API Client ─────────────────── */
-// Default to the SAME origin that served the page (the backend serves this
-// frontend), so it works on any host/port with no CORS. Opened from a file://
-// path we fall back to the local dev server. For a separately-hosted frontend
-// (e.g. Netlify), set `window.API_BASE = 'https://your-api'` before this loads.
-const BASE = window.API_BASE ?? (location.protocol.startsWith('http') ? '' : 'http://localhost:3000');
+// Resolve where the API lives:
+//  • window.API_BASE  → explicit override (use for a separately-hosted frontend, e.g. Netlify)
+//  • backend-served   → SAME origin (works on any host/port, no CORS) — dev on :3000 and production
+//  • static dev server (VS Code Live Server, `serve`, Vite…) → can't answer API calls and
+//    returns 405 for POST, so route those origins to the local backend on :3000
+//  • file://          → local backend on :3000
+const BASE = (function () {
+  if (window.API_BASE != null) return window.API_BASE;
+  if (!location.protocol.startsWith('http')) return 'http://localhost:3000';
+  const STATIC_DEV_PORTS = ['5500', '5501', '5502', '5173', '4173', '8080', '8000', '4200'];
+  if (STATIC_DEV_PORTS.includes(location.port)) return `${location.protocol}//${location.hostname}:3000`;
+  return ''; // same-origin
+})();
 
 function getToken() { return localStorage.getItem('4k_token'); }
 function setToken(t) { localStorage.setItem('4k_token', t); }

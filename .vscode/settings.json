@@ -1,3 +1,9 @@
 {
-  "liveServer.settings.port": 5501
+  "liveServer.settings.port": 5501,
+
+  // This project uses MySQL. The ms-mssql extension lints .sql files as T-SQL
+  // (SQL Server) and falsely flags valid MySQL syntax — backtick identifiers,
+  // IDENTIFIED WITH mysql_native_password, FLUSH PRIVILEGES, etc. Disable its
+  // error checking so backend/sql/setup.sql stops showing red underlines.
+  "mssql.intelliSense.enableErrorChecking": false
 }

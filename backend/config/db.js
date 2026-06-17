@@ -36,6 +36,9 @@ export async function connectDB() {
       photos      JSON,
       price       DECIMAL(15,2),
       currency    VARCHAR(3)    NOT NULL DEFAULT 'NGN',
+      location    VARCHAR(160),
+      latitude    DECIMAL(9,6),
+      longitude   DECIMAL(9,6),
       featured    BOOLEAN       NOT NULL DEFAULT FALSE,
       seller_id   INT           NOT NULL,
       created_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -45,9 +48,12 @@ export async function connectDB() {
     )
   `);
 
-  // Migrate databases created before the currency column existed.
+  // Migrate databases created before these columns existed.
   // (MySQL has no ADD COLUMN IF NOT EXISTS, so check information_schema first.)
-  await ensureColumn('cars', 'currency', "VARCHAR(3) NOT NULL DEFAULT 'NGN'");
+  await ensureColumn('cars', 'currency',  "VARCHAR(3) NOT NULL DEFAULT 'NGN'");
+  await ensureColumn('cars', 'location',  'VARCHAR(160)');
+  await ensureColumn('cars', 'latitude',  'DECIMAL(9,6)');
+  await ensureColumn('cars', 'longitude', 'DECIMAL(9,6)');
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS transactions (
