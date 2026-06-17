@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About Us — 4Kautos</title>
+  <meta name="description" content="4Kautos connects international car sellers with Nigerian buyers — verified listings, secure escrow, and door-to-door customs clearance.">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <meta name="theme-color" content="#08080f">
+  <script>try{var t=localStorage.getItem('4k_theme')||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','dark');}</script>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<nav class="navbar">
+  <a href="index.html" class="nav-logo"></a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="listings.html">Listings</a></li>
+    <li><a href="clearance.html">Clearance</a></li>
+    <li><a href="index.html#how-it-works">How It Works</a></li>
+  </ul>
+  <div class="nav-actions">
+    <button class="nav-btn nav-btn-ghost" id="nav-login-btn">Sign In</button>
+    <button class="nav-btn nav-btn-accent" id="nav-signup-btn">List Your Car</button>
+    <button class="nav-btn nav-btn-ghost hidden" id="nav-profile-btn" onclick="location.href='profile.html'">👤 <span class="nav-user-label">Profile</span></button>
+  </div>
+</nav>
+
+<section class="page-hero">
+  <div class="section-inner">
+    <div class="section-label">Our Story</div>
+    <h1 class="section-title">About <em>4Kautos</em></h1>
+    <p class="section-sub">We make buying a car from anywhere in the world feel as safe as buying one down the street.</p>
+  </div>
+</section>
+
+<section style="padding-top:1rem">
+  <div class="section-inner page-prose">
+    <p>4Kautos is a global preowned-car marketplace built for the Nigerian buyer. Sellers list verified vehicles from the US, UK, Europe, the Gulf and Asia; we handle the parts that usually go wrong — inspection standards, secure escrow, import duty and door-to-door clearance — so you always know the real cost to your door before you commit.</p>
+
+    <h3>What we believe</h3>
+    <div class="value-grid">
+      <div class="value-card"><h4>Honest pricing</h4><p>Every listing shows its all-in landed cost in ₦ and $ — duty and shipping included. No surprises at the port.</p></div>
+      <div class="value-card"><h4>Verified inventory</h4><p>Listings require a valid VIN, accurate mileage and clear photos of every key angle before they go live.</p></div>
+      <div class="value-card"><h4>Protected payments</h4><p>Funds sit in escrow and are only released to the seller once you confirm the vehicle is as described.</p></div>
+      <div class="value-card"><h4>Clearance, sorted</h4><p>Compare verified clearing agents by their best rate, and track your car from the seller's driveway to yours.</p></div>
+    </div>
+
+    <h3>How it started</h3>
+    <p>Importing a car into Nigeria has long meant guesswork — unclear duties, unreliable agents and sellers you can't verify. 4Kautos was built to replace that guesswork with transparency: real-time exchange rates, a customs estimator, and a marketplace where both sides are accountable.</p>
+
+    <h3>Join us</h3>
+    <p>Whether you're buying your first car or shipping your tenth, we'd love to have you. <a href="#" onclick="openAuth('signup');return false">Create an account</a> or <a href="listings.html">browse the latest arrivals</a>.</p>
+  </div>
+</section>
+
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

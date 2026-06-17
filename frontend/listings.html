@@ -136,9 +136,19 @@
     if (priceMax) params.maxPrice  = priceMax;
     if (conditions.length) params.condition = conditions.join(',');
     if (urlP.get('q')) params.q = urlP.get('q');
+    if (urlP.get('type'))       params.type = urlP.get('type');
+    if (urlP.get('minMileage')) params.minMileage = urlP.get('minMileage');
+    if (urlP.get('maxMileage')) params.maxMileage = urlP.get('maxMileage');
 
     try {
-      const cars = await API.getCars(params);
+      let cars = await API.getCars(params);
+      // Budget bands are in USD — filter client-side with the live rate (listings are mixed-currency).
+      const minUsd = parseFloat(urlP.get('minUsd')), maxUsd = parseFloat(urlP.get('maxUsd'));
+      if (Number.isFinite(minUsd) || Number.isFinite(maxUsd)) {
+        const rate = (window.Money && Money.usdToNgn) || 1600;
+        const toUsd = c => c.price == null ? null : (c.currency === 'USD' ? Number(c.price) : Number(c.price) / rate);
+        cars = cars.filter(c => { const u = toUsd(c); if (u == null) return false; if (Number.isFinite(minUsd) && u < minUsd) return false; if (Number.isFinite(maxUsd) && u > maxUsd) return false; return true; });
+      }
       spinner.classList.add('hidden');
       sortCars(cars, document.getElementById('sort-select').value);
       document.getElementById('results-count').textContent = cars.length;

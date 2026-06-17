@@ -100,6 +100,7 @@
         <a class="cta-btn cta-btn-secondary" id="clearance-btn" href="clearance.html">
           🛃 Estimate import clearance
         </a>
+        <button class="cta-btn cta-btn-secondary" id="message-btn" type="button">💬 Message the seller</button>
         <button class="cta-btn cta-btn-ghost" id="save-btn" type="button">♡ Save this car</button>
 
         <div class="seller-info">
@@ -231,6 +232,19 @@
     } catch(e) {
       toast(e.message, 'error');
     }
+  });
+
+  // Message the seller
+  document.getElementById('message-btn').addEventListener('click', () => {
+    if (!API.isLoggedIn()) { openAuth('login'); return; }
+    if (!car) return;
+    const me = API.getUser();
+    if (me && car.seller && me.id === car.seller.id) { toast('This is your own listing', 'info'); return; }
+    openChatThread({
+      carId: car.id,
+      title: 'Chat with ' + (car.seller?.name || 'the seller'),
+      sub: car.title || `${car.year||''} ${car.make||''} ${car.model||''}`.trim(),
+    });
   });
 
   // Enquire via chatbot

@@ -1,6 +1,20 @@
 /* ── 4Kautos App — Shared Utilities & Chatbot ─── */
 'use strict';
 
+/* ── Password show/hide icons + toggle ────── */
+const EYE_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>`;
+const EYE_OFF_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-7-11-7a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.pw-toggle');
+  if (!btn) return;
+  const input = document.getElementById(btn.dataset.pw);
+  if (!input) return;
+  const reveal = input.type === 'password';
+  input.type = reveal ? 'text' : 'password';
+  btn.innerHTML = reveal ? EYE_OFF_SVG : EYE_SVG;
+  btn.setAttribute('aria-label', reveal ? 'Hide password' : 'Show password');
+});
+
 /* ── TOAST ────────────────────────────────── */
 (function() {
   const root = document.createElement('div');
@@ -39,7 +53,10 @@
             </div>
             <div class="form-group">
               <label class="form-label">Password</label>
-              <input class="form-input" type="password" id="login-password" placeholder="Your password" autocomplete="current-password">
+              <div class="pw-wrap">
+                <input class="form-input" type="password" id="login-password" placeholder="Your password" autocomplete="current-password">
+                <button type="button" class="pw-toggle" data-pw="login-password" aria-label="Show password">${EYE_SVG}</button>
+              </div>
             </div>
             <div class="form-error hidden" id="login-error"></div>
             <button class="form-submit" id="login-btn">Sign In</button>
@@ -57,7 +74,10 @@
             </div>
             <div class="form-group">
               <label class="form-label">Password</label>
-              <input class="form-input" type="password" id="signup-password" placeholder="Min. 6 characters" autocomplete="new-password">
+              <div class="pw-wrap">
+                <input class="form-input" type="password" id="signup-password" placeholder="Min. 6 characters" autocomplete="new-password">
+                <button type="button" class="pw-toggle" data-pw="signup-password" aria-label="Show password">${EYE_SVG}</button>
+              </div>
             </div>
             <div class="form-group">
               <label class="form-label">I am a</label>
@@ -520,6 +540,13 @@ const BRANDS = [
   { name: 'Kia', slug: 'kia' }, { name: 'Lexus' },
   { name: 'Nissan', slug: 'nissan' }, { name: 'Volkswagen', slug: 'volkswagen' },
   { name: 'Audi', slug: 'audi' }, { name: 'Mazda', slug: 'mazda' },
+  { name: 'Tesla', slug: 'tesla' }, { name: 'Porsche', slug: 'porsche' },
+  { name: 'Subaru', slug: 'subaru' }, { name: 'Jeep', slug: 'jeep' },
+  { name: 'Chevrolet', slug: 'chevrolet' }, { name: 'Volvo', slug: 'volvo' },
+  { name: 'Peugeot', slug: 'peugeot' }, { name: 'Mitsubishi', slug: 'mitsubishi' },
+  { name: 'Suzuki', slug: 'suzuki' }, { name: 'Renault', slug: 'renault' },
+  { name: 'Mini', slug: 'mini' }, { name: 'Acura', slug: 'acura' },
+  { name: 'Infiniti', slug: 'infiniti' }, { name: 'Fiat', slug: 'fiat' },
 ];
 window.renderBrandStrip = function (selector) {
   const host = document.querySelector(selector);
@@ -678,34 +705,77 @@ document.addEventListener('keydown', e => {
   </svg>`;
   const footer = document.createElement('footer');
   footer.className = 'site-footer';
+  const SOC = {
+    yt: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.8-.5-5.6a2.9 2.9 0 0 0-2-2C18.7 4 12 4 12 4s-6.7 0-8.5.4a2.9 2.9 0 0 0-2 2C1 8.2 1 12 1 12s0 3.8.5 5.6a2.9 2.9 0 0 0 2 2C5.3 20 12 20 12 20s6.7 0 8.5-.4a2.9 2.9 0 0 0 2-2C23 15.8 23 12 23 12zM10 15.5v-7l6 3.5-6 3.5z"/></svg>`,
+    ig: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.1" fill="currentColor" stroke="none"/></svg>`,
+    fb: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-7H16l.5-3h-3V9c0-.8.3-1.3 1.4-1.3H17V5.1C16.6 5 15.6 5 14.8 5c-2 0-3.3 1.2-3.3 3.5V11H9v3h2.5v7h2z"/></svg>`,
+    tt: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 4c.4 2 1.8 3.5 3.8 3.8v3c-1.4 0-2.7-.4-3.8-1.1V15a5.5 5.5 0 1 1-5.5-5.5c.3 0 .6 0 .9.1v3.1a2.4 2.4 0 1 0 1.7 2.3V4H16z"/></svg>`,
+    x:  `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 3h3l-6.6 7.5L21.6 21h-5.5l-4.2-5.5L7.1 21H4l7.1-8.1L3.4 3H9l3.8 5L17.5 3z"/></svg>`,
+  };
+  const APPLE = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.7 3c.1 1-.3 1.9-.9 2.6-.6.7-1.6 1.2-2.5 1.1-.1-.9.3-1.9.9-2.5.6-.7 1.7-1.2 2.5-1.2zM19 17.2c-.5 1.1-.7 1.6-1.3 2.6-.9 1.3-2.2 3-3.8 3-1.4 0-1.8-.9-3.7-.9s-2.3.9-3.7.9c-1.6 0-2.7-1.5-3.7-2.8C-.7 16-1 10.2 2.5 8.4c1.2-.6 2.2-.3 3.2-.3 1.1 0 1.8.3 2.9.3.9 0 1.6-.4 2.9-.4.8 0 1.8.2 2.6.7-2.3 1.4-1.9 4.7.4 5.7z"/></svg>`;
+  const PLAY = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 3.2v17.6c0 .5.5.8 1 .6l13-8.8c.5-.3.5-1 0-1.3L5 2.6c-.5-.3-1 0-1 .6z"/></svg>`;
+
   footer.innerHTML = `${carSvg}
     <div class="footer-inner">
       <div class="footer-grid">
         <div class="footer-brand">
           <a href="index.html" class="nav-logo" style="display:inline-flex;margin-bottom:.6rem"></a>
-          <p>A global preowned-car marketplace — buy verified vehicles from international sellers, with customs clearance and delivery handled in Nigeria.</p>
+          <p>A global preowned-car marketplace — buy verified vehicles from international sellers, with customs clearance and delivery handled across Nigeria.</p>
+          <div class="footer-social">
+            <a href="#" aria-label="YouTube">${SOC.yt}</a>
+            <a href="#" aria-label="Instagram">${SOC.ig}</a>
+            <a href="#" aria-label="Facebook">${SOC.fb}</a>
+            <a href="#" aria-label="TikTok">${SOC.tt}</a>
+            <a href="#" aria-label="X">${SOC.x}</a>
+          </div>
+          <div class="app-badges">
+            <a href="#" class="app-badge">${APPLE}<span>Download on the<br></span><b>App Store</b></a>
+            <a href="#" class="app-badge">${PLAY}<span>Get it on<br></span><b>Google Play</b></a>
+          </div>
         </div>
         <div class="footer-col">
           <h5>Buy</h5>
           <a href="listings.html">Browse Listings</a>
           <a href="listings.html?condition=excellent">Premium Cars</a>
           <a href="clearance.html">Customs Clearance</a>
+          <a href="index.html#how-it-works">How It Works</a>
         </div>
         <div class="footer-col">
           <h5>Sell</h5>
           <a href="#" onclick="openAuth('signup');return false">List Your Car</a>
           <a href="profile.html">Seller Dashboard</a>
+          <a href="profile.html">Photo Guide</a>
+          <a href="clearance.html">Shipping &amp; Clearance</a>
         </div>
         <div class="footer-col">
           <h5>Company</h5>
-          <a href="index.html#how-it-works">How It Works</a>
+          <a href="about.html">About Us</a>
+          <a href="community.html">Community</a>
+          <a href="#">Careers</a>
+          <a href="#">The 4K Blog</a>
+        </div>
+        <div class="footer-col">
+          <h5>Support</h5>
+          <a href="#">Help Center</a>
+          <a href="#">FAQs</a>
+          <a href="#">Contact Us</a>
           <a href="#">Terms of Service</a>
           <a href="#">Privacy Policy</a>
         </div>
       </div>
+
+      <div class="footer-news">
+        <h5>Get the weekly drop — new arrivals &amp; price moves</h5>
+        <form class="news-form" id="news-form" novalidate>
+          <input type="email" id="news-email" placeholder="you@example.com" autocomplete="email" aria-label="Email address">
+          <button type="submit">Subscribe</button>
+        </form>
+        <div class="news-note" id="news-note"></div>
+      </div>
+
       <div class="footer-bottom">
         <span>© <span class="js-year">${year}</span> 4Kautos. All rights reserved.</span>
-        <span>Built for the global car market</span>
+        <span class="footer-legal"><a href="#">Terms</a> · <a href="#">Privacy</a> · <a href="#">Do Not Sell My Info</a></span>
       </div>
     </div>`;
   document.body.appendChild(footer);
@@ -713,6 +783,22 @@ document.addEventListener('keydown', e => {
   const navLogo = document.querySelector('.navbar .nav-logo');
   const fLogo = footer.querySelector('.nav-logo');
   if (navLogo && fLogo) fLogo.innerHTML = navLogo.innerHTML;
+
+  // Newsletter subscribe (capture; sending wired separately)
+  footer.querySelector('#news-form')?.addEventListener('submit', async e => {
+    e.preventDefault();
+    const email = footer.querySelector('#news-email').value.trim();
+    const note = footer.querySelector('#news-note');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { note.className = 'news-note bad'; note.textContent = 'Enter a valid email address.'; return; }
+    note.className = 'news-note'; note.textContent = 'Subscribing…';
+    try {
+      await API.subscribe(email);
+      note.className = 'news-note ok'; note.textContent = "✓ You're in — watch your inbox.";
+      footer.querySelector('#news-form').reset();
+    } catch (err) {
+      note.className = 'news-note bad'; note.textContent = err.message || 'Could not subscribe right now.';
+    }
+  });
 })();
 
 /* ── SCROLL REVEAL ────────────────────────── */
@@ -795,6 +881,100 @@ document.addEventListener('keydown', e => {
   addEventListener('mouseout', e => { if (!e.relatedTarget) el.classList.remove('on'); });
   addEventListener('mousedown', () => el.classList.add('press'));
   addEventListener('mouseup',   () => el.classList.remove('press'));
+})();
+
+/* ── BUYER ↔ SELLER CHAT (thread slide-over) ─ */
+(function () {
+  const panel = document.createElement('div');
+  panel.className = 'thread-overlay';
+  panel.id = 'thread-overlay';
+  panel.innerHTML = `
+    <div class="thread-panel">
+      <div class="thread-head">
+        <div><div class="thread-title" id="thread-title">Conversation</div><div class="thread-sub" id="thread-sub"></div></div>
+        <button class="thread-close" id="thread-close" aria-label="Close">✕</button>
+      </div>
+      <div class="thread-msgs" id="thread-msgs"></div>
+      <div class="thread-input-row">
+        <textarea class="thread-input" id="thread-input" rows="1" placeholder="Write a message…"></textarea>
+        <button class="thread-send" id="thread-send">Send</button>
+      </div>
+    </div>`;
+  document.body.appendChild(panel);
+
+  const state = { carId: null, buyerId: null, poll: null };
+  const $ = id => document.getElementById(id);
+
+  function render(messages) {
+    const me = API.getUser()?.id;
+    const box = $('thread-msgs');
+    const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
+    box.innerHTML = messages.length
+      ? messages.map(m => `
+          <div class="tmsg ${m.sender_id === me ? 'mine' : ''}">
+            <div class="tmsg-bubble">${esc(m.body)}</div>
+            <div class="tmsg-meta">${esc(m.sender_name)} · ${new Date(m.created_at).toLocaleString()}</div>
+          </div>`).join('')
+      : '<div class="thread-empty">No messages yet — say hello 👋</div>';
+    if (atBottom) box.scrollTop = box.scrollHeight;
+  }
+
+  async function load() {
+    if (!state.carId) return;
+    try {
+      const data = await API.getThread(state.carId, state.buyerId);
+      state.buyerId = data.buyerId;          // lock thread (esp. buyer side)
+      render(data.messages);
+    } catch { /* ignore transient poll errors */ }
+  }
+
+  window.openChatThread = function ({ carId, buyerId, title, sub }) {
+    if (!API.isLoggedIn()) { openAuth('login'); return; }
+    state.carId = carId; state.buyerId = buyerId || null;
+    $('thread-title').textContent = title || 'Conversation';
+    $('thread-sub').textContent = sub || '';
+    panel.classList.add('open');
+    document.body.classList.add('menu-open');
+    load();
+    clearInterval(state.poll);
+    state.poll = setInterval(load, 4000);
+    setTimeout(() => $('thread-input').focus(), 120);
+  };
+
+  function close() {
+    panel.classList.remove('open');
+    document.body.classList.remove('menu-open');
+    clearInterval(state.poll); state.poll = null;
+    updateUnreadBadge();
+  }
+  $('thread-close').addEventListener('click', close);
+  panel.addEventListener('click', e => { if (e.target.id === 'thread-overlay') close(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && panel.classList.contains('open')) close(); });
+
+  async function send() {
+    const input = $('thread-input'); const body = input.value.trim();
+    if (!body) return;
+    input.value = '';
+    try { await API.sendMessage(state.carId, body, state.buyerId); await load(); }
+    catch (e) { toast(e.message || 'Could not send', 'error'); input.value = body; }
+  }
+  $('thread-send').addEventListener('click', send);
+  $('thread-input').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
+
+  // Unread badge on the profile nav button
+  window.updateUnreadBadge = async function () {
+    if (!API.isLoggedIn()) return;
+    try {
+      const { count } = await API.getUnread();
+      document.querySelectorAll('#nav-profile-btn').forEach(btn => {
+        let b = btn.querySelector('.nav-badge');
+        if (!b) { b = document.createElement('span'); b.className = 'nav-badge'; btn.appendChild(b); }
+        b.textContent = count > 9 ? '9+' : count;
+        b.classList.toggle('hidden', !count);
+      });
+    } catch {}
+  };
+  document.addEventListener('DOMContentLoaded', () => { updateUnreadBadge(); setInterval(updateUnreadBadge, 20000); });
 })();
 
 /* ── BOOT ─────────────────────────────────── */

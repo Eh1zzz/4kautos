@@ -14,6 +14,9 @@ import adminRoutes       from './routes/admin.js';
 import chatbotRoutes     from './routes/chatbot.js';
 import fxRoutes          from './routes/fx.js';
 import clearanceRoutes   from './routes/clearance.js';
+import subscribeRoutes   from './routes/subscribe.js';
+import messageRoutes     from './routes/messages.js';
+import vinRoutes         from './routes/vin.js';
 
 dotenv.config();
 
@@ -77,6 +80,9 @@ app.use('/admin',        adminRoutes);
 app.use('/chat',         chatbotRoutes);
 app.use('/fx',           fxRoutes);
 app.use('/clearance',    clearanceRoutes);
+app.use('/subscribe',    subscribeRoutes);
+app.use('/messages',     messageRoutes);
+app.use('/vin',          vinRoutes);
 
 /* ── HEALTH CHECK ─────────────────────────── */
 app.get('/health', (_req, res) => res.json({ status: 'ok', ts: Date.now() }));

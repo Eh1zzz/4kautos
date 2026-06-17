@@ -1,8 +1,9 @@
 import express from 'express';
-import { findAll as findAllUsers, verifyById } from '../models/User.js';
+import { findAll as findAllUsers, verifyById, deleteById as deleteUserById } from '../models/User.js';
 import { findAllAdmin, deleteById as deleteCarById } from '../models/Car.js';
 import { findAll as findAllTx, setDisputed } from '../models/Transaction.js';
 import { authenticate, authorize } from '../middleware/auth.js';
+import { toId } from '../utils/validation.js';
 
 const router = express.Router();
 router.use(authenticate, authorize('admin'));
@@ -18,6 +19,17 @@ router.patch('/users/:id/verify', async (req, res) => {
     if (!user) return res.status(404).json({ message: 'User not found' });
     res.json({ message: 'Verified', user });
   } catch { res.status(500).json({ message: 'Failed to verify user' }); }
+});
+
+router.delete('/users/:id', async (req, res) => {
+  try {
+    const id = toId(req.params.id);
+    if (!id) return res.status(400).json({ message: 'Invalid user id' });
+    if (id === req.user.id) return res.status(400).json({ message: 'You cannot delete your own admin account' });
+    const deleted = await deleteUserById(id);
+    if (!deleted) return res.status(404).json({ message: 'User not found' });
+    res.json({ message: 'User deleted' });
+  } catch (err) { console.error('admin delete user:', err.message); res.status(500).json({ message: 'Failed to delete user' }); }
 });
 
 router.get('/cars', async (_req, res) => {

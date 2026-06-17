@@ -8,9 +8,13 @@
 const BASE = (function () {
   if (window.API_BASE != null) return window.API_BASE;
   if (!location.protocol.startsWith('http')) return 'http://localhost:3000';
-  const STATIC_DEV_PORTS = ['5500', '5501', '5502', '5173', '4173', '8080', '8000', '4200'];
-  if (STATIC_DEV_PORTS.includes(location.port)) return `${location.protocol}//${location.hostname}:3000`;
-  return ''; // same-origin
+  const STATIC_DEV_PORTS = ['5173', '4173', '8080', '8000', '4200'];
+  // Live Server uses 5500 and increments (5501, 5502, …) — match the whole 55xx range.
+  const isStaticDev = STATIC_DEV_PORTS.includes(location.port) || /^55\d\d$/.test(location.port);
+  // Always target localhost:3000 (not 127.0.0.1): the dev backend listens there, and on
+  // Windows 127.0.0.1:3000 can be a different/empty listener. Plain http (backend isn't TLS).
+  if (isStaticDev) return 'http://localhost:3000';
+  return ''; // same-origin (backend-served, dev on :3000 or production)
 })();
 
 function getToken() { return localStorage.getItem('4k_token'); }
@@ -76,6 +80,31 @@ const API = {
 
   /* ── FX (USD ↔ NGN) ── */
   getRate() { return req('GET', '/fx'); },
+
+  /* ── NEWSLETTER ── */
+  subscribe(email) { return req('POST', '/subscribe', { email }); },
+
+  /* ── VIN DECODE ── */
+  decodeVin(vin) { return req('GET', `/vin?vin=${encodeURIComponent(vin)}`); },
+
+  /* ── MESSAGES (buyer ↔ seller) ── */
+  getThreads()  { return req('GET', '/messages/threads'); },
+  getUnread()   { return req('GET', '/messages/unread'); },
+  getThread(carId, buyerId) {
+    const q = new URLSearchParams({ carId });
+    if (buyerId) q.set('buyerId', buyerId);
+    return req('GET', `/messages?${q}`);
+  },
+  sendMessage(carId, body, buyerId) {
+    return req('POST', '/messages', buyerId ? { carId, body, buyerId } : { carId, body });
+  },
+
+  /* ── ADMIN (admin role only) ── */
+  adminUsers()           { return req('GET', '/admin/users'); },
+  adminVerifyUser(id)    { return req('PATCH', `/admin/users/${id}/verify`); },
+  adminDeleteUser(id)    { return req('DELETE', `/admin/users/${id}`); },
+  adminCars()            { return req('GET', '/admin/cars'); },
+  adminDeleteCar(id)     { return req('DELETE', `/admin/cars/${id}`); },
 
   /* ── CUSTOMS CLEARANCE ── */
   getClearanceAgents()      { return req('GET', '/clearance/agents'); },

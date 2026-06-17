@@ -26,7 +26,7 @@ function normalize(row) {
   return row;
 }
 
-export async function findAll({ q, make, model, year, minPrice, maxPrice, condition, sellerId } = {}) {
+export async function findAll({ q, make, model, year, minPrice, maxPrice, condition, type, minMileage, maxMileage, sellerId } = {}) {
   const conds = [];
   const vals  = [];
 
@@ -48,6 +48,9 @@ export async function findAll({ q, make, model, year, minPrice, maxPrice, condit
     const list = condition.split(',').map(s => s.trim()).filter(Boolean);
     if (list.length) { conds.push('c.`condition` IN (?)'); vals.push(list); }
   }
+  if (type)       { conds.push('c.body_type = ?'); vals.push(type); }
+  if (minMileage) { const n = parseInt(minMileage, 10); if (!isNaN(n)) { conds.push('c.mileage >= ?'); vals.push(n); } }
+  if (maxMileage) { const n = parseInt(maxMileage, 10); if (!isNaN(n)) { conds.push('c.mileage <= ?'); vals.push(n); } }
 
   const where = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
   const [rows] = await pool.query(
@@ -72,9 +75,9 @@ export async function findById(id) {
   return rows[0] ? normalize(rows[0]) : null;
 }
 
-export async function create({ title, make, model, year, mileage, vin, condition, description, photos, price, currency, location, latitude, longitude, sellerId }) {
+export async function create({ title, make, model, year, mileage, vin, condition, bodyType, description, photos, price, currency, location, latitude, longitude, sellerId }) {
   const [result] = await pool.query(
-    'INSERT INTO cars (title, make, model, year, mileage, vin, `condition`, description, photos, price, currency, location, latitude, longitude, seller_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+    'INSERT INTO cars (title, make, model, year, mileage, vin, `condition`, body_type, description, photos, price, currency, location, latitude, longitude, seller_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
     [
       title || null,
       make  || null,
@@ -83,6 +86,7 @@ export async function create({ title, make, model, year, mileage, vin, condition
       mileage != null ? parseInt(mileage, 10) : null,
       vin   || null,
       condition || 'good',
+      bodyType || null,
       description || null,
       JSON.stringify(photos || []),
       price ? parseFloat(price) : null,

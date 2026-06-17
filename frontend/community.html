@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Community — 4Kautos</title>
+  <meta name="description" content="The 4Kautos community — buyers, sellers and clearing agents sharing tips, builds and import know-how.">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <meta name="theme-color" content="#08080f">
+  <script>try{var t=localStorage.getItem('4k_theme')||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','dark');}</script>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<nav class="navbar">
+  <a href="index.html" class="nav-logo"></a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="listings.html">Listings</a></li>
+    <li><a href="clearance.html">Clearance</a></li>
+    <li><a href="index.html#how-it-works">How It Works</a></li>
+  </ul>
+  <div class="nav-actions">
+    <button class="nav-btn nav-btn-ghost" id="nav-login-btn">Sign In</button>
+    <button class="nav-btn nav-btn-accent" id="nav-signup-btn">List Your Car</button>
+    <button class="nav-btn nav-btn-ghost hidden" id="nav-profile-btn" onclick="location.href='profile.html'">👤 <span class="nav-user-label">Profile</span></button>
+  </div>
+</nav>
+
+<section class="page-hero">
+  <div class="section-inner">
+    <div class="section-label">Better Together</div>
+    <h1 class="section-title">The 4Kautos <em>Community</em></h1>
+    <p class="section-sub">Buyers, sellers and clearing agents swapping import know-how, build threads and honest reviews.</p>
+  </div>
+</section>
+
+<section style="padding-top:1rem">
+  <div class="section-inner page-prose">
+    <p>Importing and selling cars is a lot easier with people who've done it before. Our community is where members share what they learned — which agents clear fastest, how to budget for duty, and what to check before you buy from abroad.</p>
+
+    <h3>What's inside</h3>
+    <div class="value-grid">
+      <div class="value-card"><h4>Import guides</h4><p>Step-by-step walkthroughs on duty, shipping and paperwork for first-time importers.</p></div>
+      <div class="value-card"><h4>Agent reviews</h4><p>Real ratings of clearing agents from buyers who used them — so you pick the best rate with confidence.</p></div>
+      <div class="value-card"><h4>Build &amp; ownership threads</h4><p>Owners sharing reliability notes, mods and maintenance on the models you're considering.</p></div>
+      <div class="value-card"><h4>Marketplace alerts</h4><p>Get a heads-up when a car matching your search lands, and follow price moves on your shortlist.</p></div>
+    </div>
+
+    <h3>Get involved</h3>
+    <p>The community hub is rolling out soon. In the meantime, <a href="#" onclick="openAuth('signup');return false">create an account</a> to save cars, message sellers and be first in when it opens. Want updates? Subscribe in the footer below.</p>
+  </div>
+</section>
+
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

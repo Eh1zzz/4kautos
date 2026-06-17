@@ -1,4 +1,5 @@
 import { pool } from '../config/db.js';
+import { toId } from '../utils/validation.js';
 
 const SAFE_COLS = 'id, name, email, role, verified, created_at';
 
@@ -44,4 +45,14 @@ export async function verifyById(id) {
   );
   if (result.affectedRows === 0) return null;
   return findById(numId);
+}
+
+export async function deleteById(id) {
+  const numId = toId(id);
+  if (!numId) return null;
+  // transactions have no ON DELETE CASCADE, so clear them first; the user's
+  // cars and messages are removed automatically by their FK cascades.
+  await pool.query('DELETE FROM transactions WHERE buyer_id = ? OR seller_id = ?', [numId, numId]);
+  const [result] = await pool.query('DELETE FROM users WHERE id = ?', [numId]);
+  return result.affectedRows > 0 ? { id: numId } : null;
 }

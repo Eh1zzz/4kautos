@@ -36,6 +36,7 @@ export async function connectDB() {
       photos      JSON,
       price       DECIMAL(15,2),
       currency    VARCHAR(3)    NOT NULL DEFAULT 'NGN',
+      body_type   VARCHAR(40),
       location    VARCHAR(160),
       latitude    DECIMAL(9,6),
       longitude   DECIMAL(9,6),
@@ -51,6 +52,7 @@ export async function connectDB() {
   // Migrate databases created before these columns existed.
   // (MySQL has no ADD COLUMN IF NOT EXISTS, so check information_schema first.)
   await ensureColumn('cars', 'currency',  "VARCHAR(3) NOT NULL DEFAULT 'NGN'");
+  await ensureColumn('cars', 'body_type', 'VARCHAR(40)');
   await ensureColumn('cars', 'location',  'VARCHAR(160)');
   await ensureColumn('cars', 'latitude',  'DECIMAL(9,6)');
   await ensureColumn('cars', 'longitude', 'DECIMAL(9,6)');
@@ -67,6 +69,31 @@ export async function connectDB() {
       FOREIGN KEY (buyer_id)  REFERENCES users(id),
       FOREIGN KEY (seller_id) REFERENCES users(id),
       FOREIGN KEY (car_id)    REFERENCES cars(id) ON DELETE SET NULL
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS messages (
+      id          INT           AUTO_INCREMENT PRIMARY KEY,
+      car_id      INT,
+      buyer_id    INT           NOT NULL,
+      seller_id   INT           NOT NULL,
+      sender_id   INT           NOT NULL,
+      body        VARCHAR(2000) NOT NULL,
+      read_at     TIMESTAMP     NULL,
+      created_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (buyer_id)  REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (car_id)    REFERENCES cars(id)  ON DELETE SET NULL
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS subscribers (
+      id          INT           AUTO_INCREMENT PRIMARY KEY,
+      email       VARCHAR(255)  NOT NULL UNIQUE,
+      created_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
   `);
 

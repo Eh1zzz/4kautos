@@ -20,6 +20,14 @@ A full-stack web application for buying preowned vehicles from **international s
 
 ## Recent Changes
 
+### v2.4 — Marketplace expansion, chat & email
+- **Buyer↔seller chat** — a polling message thread per car (slide-over panel on the detail page + a Messages tab on the dashboard, with unread badges, read-on-open, and self-message blocking). `messages` table + `/messages` routes.
+- **Automated email (Gmail)** — welcome email on newsletter subscribe + a notification to the recipient on every new chat message, via Gmail SMTP (nodemailer). Set `GMAIL_USER` + `GMAIL_APP_PASSWORD`; absent, email is silently skipped.
+- **Home** — Featured now precedes Shop-by-Brand; a subtle car slideshow behind the hero; a **Browse By** (body type / budget / mileage) section that deep-links into listings filters; **Why Us**, **Reviews**, and a promo banner. Brand strip grew to 26 makes.
+- **Browse/filter** — new `cars.body_type` column; `GET /cars` gains `type`, `minMileage`, `maxMileage`; budget bands filter by USD client-side.
+- **Footer** — rebuilt as a multi-column guide (Buy/Sell/Company/Support + social, app badges, newsletter). New `about.html` + `community.html`.
+- **Fix** — the Leaflet map no longer paints over the sticky header.
+
 ### v2.3 — Car location maps + landed-cost
 - **Location & maps** — each listing carries a location (city/country) + coordinates. The detail page shows an interactive **Leaflet + OpenStreetMap/CARTO** map pin (theme-aware tiles, no API key); the seller upload form geocodes the location (free **OSM Nominatim**) and previews the pin. Cards show a 📍 location chip.
 - **"Landed cost to your door"** — every listing shows the all-in cost delivered & cleared in Nigeria (vehicle price + import duty from the clearance engine + a region-based RoRo shipping estimate) in ₦/$, reactive to the currency toggle. In-country cars are flagged as duty-free. Detail page shows the full breakdown with a link to the customs calculator.
@@ -242,11 +250,21 @@ Valid statuses: `initiated`, `pending_inspection`, `payment_in_escrow`, `complet
 | GET    | /clearance/agents      | —    | Directory of clearing agents |
 | POST   | /clearance/estimate    | —    | `{ cifValueUsd \| cifValueNgn, year? }` → duty breakdown + agents ranked by best rate |
 
+### Messages & Newsletter
+| Method | Path                | Auth | Notes |
+|--------|---------------------|------|-------|
+| GET    | /messages/threads   | any  | The user's conversations (last message + unread count) |
+| GET    | /messages           | any  | `?carId=&buyerId=` → a thread's messages (marks them read) |
+| POST   | /messages           | any  | `{ carId, body, buyerId? }` — seller supplies `buyerId`; emails the recipient |
+| GET    | /messages/unread    | any  | `{ count }` for the nav badge |
+| POST   | /subscribe          | —    | `{ email }` — newsletter capture + welcome email |
+
 ### Admin (all require admin role)
 | Method | Path                            |
 |--------|---------------------------------|
 | GET    | /admin/users                    |
 | PATCH  | /admin/users/:id/verify         |
+| DELETE | /admin/users/:id                |
 | GET    | /admin/cars                     |
 | DELETE | /admin/cars/:id                 |
 | GET    | /admin/transactions             |

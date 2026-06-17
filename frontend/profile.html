@@ -55,9 +55,17 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
         Transactions
       </div>
+      <div class="profile-nav-link" data-tab="messages">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        Messages
+      </div>
       <div class="profile-nav-link" data-tab="add-car" id="add-car-nav" style="display:none">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
         Add Listing
+      </div>
+      <div class="profile-nav-link" data-tab="admin" id="admin-nav" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Admin
       </div>
       <div class="profile-nav-link" style="color:var(--red)" onclick="API.logout()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -105,6 +113,26 @@
       <div class="panel">
         <div class="panel-head"><h3>Transaction History</h3></div>
         <div id="tx-content"><div class="spinner-wrap"><div class="spinner"></div></div></div>
+      </div>
+    </div>
+
+    <!-- Messages Tab -->
+    <div class="profile-tab hidden" id="tab-messages">
+      <div class="panel">
+        <div class="panel-head"><h3>Messages</h3></div>
+        <div id="threads-content"><div class="spinner-wrap"><div class="spinner"></div></div></div>
+      </div>
+    </div>
+
+    <!-- Admin Tab (admin role only) -->
+    <div class="profile-tab hidden" id="tab-admin">
+      <div class="panel">
+        <div class="panel-head"><h3>Users</h3><span style="font-size:.75rem;color:var(--text3)" id="admin-user-count"></span></div>
+        <div id="admin-users"><div class="spinner-wrap"><div class="spinner"></div></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>All Listings</h3></div>
+        <div id="admin-cars"><div class="spinner-wrap"><div class="spinner"></div></div></div>
       </div>
     </div>
 
@@ -170,6 +198,15 @@
             </div>
           </div>
           <div class="form-group">
+            <label class="form-label">Body Type</label>
+            <select class="form-select" id="car-bodytype">
+              <option value="">Select a body type…</option>
+              <option>SUV</option><option>Sedan</option><option>Hatchback</option><option>Coupe</option>
+              <option>Pickup</option><option>Convertible</option><option>Wagon</option><option>Van</option>
+              <option>Minivan</option><option>Crossover</option>
+            </select>
+          </div>
+          <div class="form-group">
             <label class="form-label req">Location (where the car is)</label>
             <div class="location-row">
               <input class="form-input" type="text" id="car-location" placeholder="e.g. Atlanta, GA, USA" autocomplete="off">
@@ -215,6 +252,8 @@
       switchTab(link.dataset.tab);
       if (link.dataset.tab === 'listings')     loadMyListings();
       if (link.dataset.tab === 'transactions') loadTransactions();
+      if (link.dataset.tab === 'messages')     loadThreads();
+      if (link.dataset.tab === 'admin')        loadAdmin();
     });
   });
 
@@ -238,6 +277,9 @@
     if (user.role === 'seller') {
       document.getElementById('add-car-nav').style.display = 'flex';
       document.getElementById('new-listing-btn').style.display = '';
+    }
+    if (user.role === 'admin') {
+      document.getElementById('admin-nav').style.display = 'flex';
     }
 
     // Load overview counts
@@ -306,6 +348,79 @@
     try { await API.updateTxStatus(id, status); toast('Status updated', 'success'); loadTransactions(); }
     catch(e) { toast(e.message, 'error'); }
   }
+
+  async function loadThreads() {
+    const el = document.getElementById('threads-content');
+    el.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div></div>';
+    try {
+      const threads = await API.getThreads();
+      const me = API.getUser();
+      if (!threads.length) {
+        el.innerHTML = `<div class="empty-state" style="padding:2.5rem"><p>No conversations yet. Message a seller from any car page to start one.</p></div>`;
+        return;
+      }
+      el.innerHTML = '<div class="thread-list">' + threads.map(t => {
+        const other = (me.id === t.buyer_id ? t.seller_name : t.buyer_name) || 'User';
+        const initials = other.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+        return `<div class="thread-row" data-car="${esc(t.car_id)}" data-buyer="${esc(t.buyer_id)}" data-name="${esc(other)}" data-cartitle="${esc(t.car_title || 'Listing')}">
+          <div class="thread-ava">${esc(initials)}</div>
+          <div class="thread-row-main">
+            <div class="thread-row-name">${esc(other)}</div>
+            <div class="thread-row-car">${esc(t.car_title || 'Listing')}</div>
+            <div class="thread-row-last">${esc(t.last_body || '')}</div>
+          </div>
+          ${t.unread > 0 ? `<span class="thread-unread">${t.unread}</span>` : ''}
+        </div>`;
+      }).join('') + '</div>';
+      el.querySelectorAll('.thread-row').forEach(row => row.addEventListener('click', () =>
+        openChatThread({ carId: +row.dataset.car, buyerId: +row.dataset.buyer, title: row.dataset.name, sub: row.dataset.cartitle })));
+    } catch (e) {
+      el.innerHTML = `<p class="empty-state">Failed: ${e.message}</p>`;
+    }
+  }
+
+  /* ── Admin: users + listings management ── */
+  async function loadAdmin() {
+    const usersEl = document.getElementById('admin-users');
+    const carsEl  = document.getElementById('admin-cars');
+    usersEl.innerHTML = carsEl.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div></div>';
+    const me = API.getUser();
+    try {
+      const users = await API.adminUsers();
+      document.getElementById('admin-user-count').textContent = users.length + ' total';
+      usersEl.innerHTML = users.map(u => `
+        <div class="tx-row admin-row">
+          <div>
+            <div class="tx-car">${esc(u.name)}<span class="role-chip role-${esc(u.role)}">${esc(u.role)}</span>${u.verified ? '<span class="verif-chip">✓ verified</span>' : ''}</div>
+            <div class="tx-meta">${esc(u.email)} · joined ${u.created_at ? new Date(u.created_at).toLocaleDateString() : ''}</div>
+          </div>
+          <div class="admin-actions">
+            ${!u.verified ? `<button class="adm-btn" onclick="adminVerify('${esc(u.id)}')">Verify</button>` : ''}
+            ${u.id === me.id ? '<span style="font-size:.72rem;color:var(--text3)">you</span>' : `<button class="adm-btn danger" onclick="adminDeleteUser('${esc(u.id)}','${esc(u.name)}')">Delete</button>`}
+          </div>
+        </div>`).join('');
+    } catch (e) { usersEl.innerHTML = `<p class="empty-state">Failed: ${e.message}</p>`; }
+    try {
+      const cars = await API.adminCars();
+      carsEl.innerHTML = cars.length ? cars.map(c => `
+        <div class="tx-row admin-row">
+          <div>
+            <div class="tx-car">${esc(c.title || `${c.make || ''} ${c.model || ''}`)}</div>
+            <div class="tx-meta">${esc(c.seller?.name || '—')} · ${esc(c.location || 'no location')}</div>
+          </div>
+          <div class="admin-actions">
+            <a href="detail.html?id=${esc(c.id)}" class="adm-btn" style="text-decoration:none">View</a>
+            <button class="adm-btn danger" onclick="adminDeleteCar('${esc(c.id)}')">Delete</button>
+          </div>
+        </div>`).join('') : '<div class="empty-state" style="padding:2rem"><p>No listings.</p></div>';
+    } catch (e) { carsEl.innerHTML = `<p class="empty-state">Failed: ${e.message}</p>`; }
+  }
+  async function adminVerify(id) { try { await API.adminVerifyUser(id); toast('User verified', 'success'); loadAdmin(); } catch (e) { toast(e.message, 'error'); } }
+  async function adminDeleteUser(id, name) {
+    if (!confirm(`Delete user "${name}"?\nThis permanently removes their listings, messages and transactions.`)) return;
+    try { await API.adminDeleteUser(id); toast('User deleted', 'success'); loadAdmin(); } catch (e) { toast(e.message, 'error'); }
+  }
+  async function adminDeleteCar(id) { if (!confirm('Delete this listing?')) return; try { await API.adminDeleteCar(id); toast('Listing removed', 'success'); loadAdmin(); } catch (e) { toast(e.message, 'error'); } }
 
   /* ── Add Listing: standards-enforced form ── */
   const REQUIRED_SHOTS = [
@@ -411,8 +526,29 @@
       : (VIN_RE.test(vin) ? '✓ Valid VIN format' : `✗ ${vin.length}/17 — check length & characters`);
   }
 
+  let vinTimer;
+  async function autoDecodeVin(vin) {
+    const hint = document.getElementById('vin-hint');
+    hint.className = 'field-hint'; hint.textContent = 'Decoding VIN…';
+    try {
+      const d = await API.decodeVin(vin);
+      if (!d.make) { hint.className = 'field-hint ok'; hint.textContent = '✓ Valid VIN format'; return; }
+      const fill = (id, v) => { const el = document.getElementById(id); if (el && !el.value && v) el.value = v; };
+      fill('car-make', d.make); fill('car-model', d.model); fill('car-year', d.year);
+      if (d.bodyType) { const bt = document.getElementById('car-bodytype'); if (bt && !bt.value) bt.value = d.bodyType; }
+      hint.className = 'field-hint ok';
+      hint.textContent = '✓ Decoded: ' + [d.make, d.model, d.year].filter(Boolean).join(' ') + (d.bodyType ? ' · ' + d.bodyType : '');
+      refreshForm();
+    } catch { const h = document.getElementById('vin-hint'); h.className = 'field-hint ok'; h.textContent = '✓ Valid VIN format'; }
+  }
+
   document.getElementById('tab-add-car').addEventListener('input', e => {
     if (e.target.id === 'car-location') geo = { lat: null, lng: null, display: null }; // re-locate after edits
+    if (e.target.id === 'car-vin') {
+      const vin = val('car-vin').toUpperCase();
+      clearTimeout(vinTimer);
+      if (VIN_RE.test(vin)) vinTimer = setTimeout(() => autoDecodeVin(vin), 600);
+    }
     refreshForm();
     if (e.target.classList.contains('shot-url')) {
       const key = e.target.id.replace('shot-', '');
@@ -439,6 +575,7 @@
       mileage:     parseInt(val('car-mileage'), 10),
       vin:         val('car-vin').toUpperCase(),
       condition:   document.getElementById('car-condition').value,
+      bodyType:    document.getElementById('car-bodytype').value || undefined,
       description: val('car-desc') || undefined,
       location:    val('car-location'),
       latitude:    geo.lat,

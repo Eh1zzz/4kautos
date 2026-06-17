@@ -4,6 +4,7 @@
 
 export const CONDITIONS = ['excellent', 'good', 'fair', 'poor'];
 export const CURRENCIES = ['NGN', 'USD'];
+export const BODY_TYPES = ['SUV', 'Sedan', 'Hatchback', 'Coupe', 'Pickup', 'Convertible', 'Wagon', 'Van', 'Minivan', 'Crossover'];
 
 // Minimum photos a listing must include. The seller UI maps these to the
 // required angles: front, rear, interior, dashboard/odometer, engine bay.
@@ -79,6 +80,11 @@ export function validateCarInput(body = {}) {
   const condition = typeof body.condition === 'string' ? body.condition.toLowerCase() : 'good';
   if (!CONDITIONS.includes(condition)) errors.push(`Condition must be one of: ${CONDITIONS.join(', ')}`);
   value.condition = CONDITIONS.includes(condition) ? condition : 'good';
+
+  const bodyType = typeof body.bodyType === 'string' ? body.bodyType.trim()
+                 : typeof body.body_type === 'string' ? body.body_type.trim() : '';
+  if (bodyType && !BODY_TYPES.includes(bodyType)) errors.push(`Body type must be one of: ${BODY_TYPES.join(', ')}`);
+  value.bodyType = bodyType || null;
 
   // Photos: array of non-empty URL/path strings, at least MIN_PHOTOS.
   const photos = Array.isArray(body.photos)
