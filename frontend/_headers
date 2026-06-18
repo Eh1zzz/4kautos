@@ -1,0 +1,13 @@
+# Cloudflare Pages / Netlify security headers for the static frontend.
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
+  X-DNS-Prefetch-Control: off
+
+# Long-cache static media (safe — these change by filename, not in place).
+/img/*
+  Cache-Control: public, max-age=86400
+/favicon.svg
+  Cache-Control: public, max-age=86400

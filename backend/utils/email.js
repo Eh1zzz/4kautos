@@ -1,9 +1,18 @@
 import nodemailer from 'nodemailer';
 import { pool } from '../config/db.js';
 
-/* Gmail SMTP. Set GMAIL_USER + GMAIL_APP_PASSWORD (a Google App Password, not your
-   normal password) in .env. If they're absent, email is silently skipped so the
-   app still works in development. */
+/* Email delivery, in priority order:
+   1. Resend   — set RESEND_API_KEY (recommended for production deliverability).
+   2. Gmail SMTP — set GMAIL_USER + GMAIL_APP_PASSWORD (a Google App Password).
+   3. Neither   — email is silently skipped, so the app still works in dev.
+   The "from" address is MAIL_FROM (falls back to your Gmail, then Resend's
+   shared test sender which works with no domain setup). */
+
+// Resend's onboarding@resend.dev works without verifying a domain — good for the
+// first smoke test. Switch MAIL_FROM to your own verified domain for real sends.
+const MAIL_FROM = process.env.MAIL_FROM
+  || (process.env.GMAIL_USER ? `4Kautos <${process.env.GMAIL_USER}>` : '4Kautos <onboarding@resend.dev>');
+
 let transporter; // undefined = not built yet, false = disabled
 function getTransporter() {
   if (transporter !== undefined) return transporter;
@@ -12,6 +21,19 @@ function getTransporter() {
     ? nodemailer.createTransport({ service: 'gmail', auth: { user, pass } })
     : false;
   return transporter;
+}
+
+// Resend HTTP API — no SDK needed (Node 18+ global fetch).
+async function sendViaResend(to, subject, html) {
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: MAIL_FROM, to, subject, html }),
+    });
+    if (!res.ok) { console.error('Resend error:', res.status, await res.text().catch(() => '')); return false; }
+    return true;
+  } catch (e) { console.error('Resend send failed:', e.message); return false; }
 }
 
 const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -29,10 +51,11 @@ function shell(title, bodyHtml) {
 }
 
 export async function sendMail(to, subject, html) {
+  if (process.env.RESEND_API_KEY) return sendViaResend(to, subject, html);
   const t = getTransporter();
-  if (!t) { console.log(`[email skipped — set GMAIL_USER/GMAIL_APP_PASSWORD] → ${to}: ${subject}`); return false; }
+  if (!t) { console.log(`[email skipped — set RESEND_API_KEY or GMAIL_USER/GMAIL_APP_PASSWORD] → ${to}: ${subject}`); return false; }
   try {
-    await t.sendMail({ from: `4Kautos <${process.env.GMAIL_USER}>`, to, subject, html });
+    await t.sendMail({ from: MAIL_FROM, to, subject, html });
     return true;
   } catch (e) { console.error('Email send failed:', e.message); return false; }
 }

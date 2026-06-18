@@ -5,7 +5,7 @@ import rateLimit     from 'express-rate-limit';
 import path          from 'path';
 import fs            from 'fs';
 import { fileURLToPath, pathToFileURL } from 'url';
-import { connectDB } from './config/db.js';
+import { connectDB, pool } from './config/db.js';
 import { securityHeaders } from './middleware/security.js';
 import authRoutes        from './routes/auth.js';
 import carRoutes         from './routes/cars.js';
@@ -29,14 +29,24 @@ if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
 }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const isProd = process.env.NODE_ENV === 'production';
 const app = express();
 app.disable('x-powered-by');
+
+/* ── TRUST PROXY ──────────────────────────────
+   Behind Cloudflare → Railway/Render the client IP arrives in X-Forwarded-For.
+   Tell Express how many proxy hops to trust so req.ip (used by the rate-limiter)
+   is the real client, not the proxy. Direct Railway = 1 hop; add Cloudflare = 2.
+   A NUMBER (not `true`) keeps express-rate-limit from flagging a spoofable setup.
+   In local dev there's no proxy, so default to 0 (don't trust XFF). */
+const TRUST_PROXY = process.env.TRUST_PROXY ?? (isProd ? '1' : '0');
+app.set('trust proxy', /^\d+$/.test(TRUST_PROXY) ? Number(TRUST_PROXY) : TRUST_PROXY);
+
 app.use(securityHeaders);
 
 /* ── CORS ─────────────────────────────────── */
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5500,http://127.0.0.1:5500,http://localhost:3000')
   .split(',').map(o => o.trim()).filter(Boolean);
-const isProd = process.env.NODE_ENV === 'production';
 
 // Same-origin / curl requests have no Origin and are always allowed. In dev we also
 // accept any localhost / 127.0.0.1 origin (any port) and file:// pages (Origin "null"),
@@ -74,20 +84,31 @@ app.use(rateLimit({
   message: { message: 'Too many requests, please try again later.' },
 }));
 
-/* ── ROUTES ───────────────────────────────── */
-app.use('/auth',         authRoutes);
-app.use('/cars',         carRoutes);
-app.use('/transactions', transactionRoutes);
-app.use('/admin',        adminRoutes);
-app.use('/chat',         chatbotRoutes);
-app.use('/fx',           fxRoutes);
-app.use('/clearance',    clearanceRoutes);
-app.use('/subscribe',    subscribeRoutes);
-app.use('/messages',     messageRoutes);
-app.use('/vin',          vinRoutes);
+/* ── API ROUTES ───────────────────────────────
+   Mounted under /v1 (canonical, versioned) AND at the root (legacy aliases),
+   so existing callers using /cars keep working while new clients use /v1/cars. */
+const api = express.Router();
+api.use('/auth',         authRoutes);
+api.use('/cars',         carRoutes);
+api.use('/transactions', transactionRoutes);
+api.use('/admin',        adminRoutes);
+api.use('/chat',         chatbotRoutes);
+api.use('/fx',           fxRoutes);
+api.use('/clearance',    clearanceRoutes);
+api.use('/subscribe',    subscribeRoutes);
+api.use('/messages',     messageRoutes);
+api.use('/vin',          vinRoutes);
+api.get('/health', (_req, res) => res.json({ status: 'ok', ts: Date.now() }));
 
-/* ── HEALTH CHECK ─────────────────────────── */
+app.use('/v1', api);
+app.use(api); // back-compat: unversioned paths still resolve
+
+/* ── HEALTH CHECK ─────────────────────────────
+   Root health for the platform healthcheck (Railway/Render probe this path). */
 app.get('/health', (_req, res) => res.json({ status: 'ok', ts: Date.now() }));
+
+// Unmatched API routes return JSON, not the SPA's index.html.
+app.use('/v1', (_req, res) => res.status(404).json({ message: 'Not found' }));
 
 /* ── UPLOADS: serve (immutable, CDN-ready) + accept ── */
 const uploadsDir = path.join(__dirname, '..', 'public', 'uploads');
@@ -115,7 +136,26 @@ export default app;
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const PORT = process.env.PORT || 3000;
   connectDB()
-    .then(() => app.listen(PORT, () =>
-      console.log(`🚗  4Kautos server → http://localhost:${PORT}`)))
+    .then(() => {
+      const server = app.listen(PORT, () =>
+        console.log(`🚗  4Kautos server → http://localhost:${PORT}`));
+
+      // Graceful shutdown: PaaS platforms send SIGTERM on every deploy/restart.
+      // Stop accepting new connections, let in-flight requests finish, close the
+      // DB pool, then exit — with a hard cap so a stuck request can't hang forever.
+      let closing = false;
+      const shutdown = (signal) => {
+        if (closing) return;
+        closing = true;
+        console.log(`\n${signal} received — shutting down gracefully…`);
+        server.close(async () => {
+          try { await pool.end(); } catch { /* already closed */ }
+          process.exit(0);
+        });
+        setTimeout(() => { console.error('Forced exit (shutdown timed out)'); process.exit(1); }, 10_000).unref();
+      };
+      process.on('SIGTERM', () => shutdown('SIGTERM'));
+      process.on('SIGINT',  () => shutdown('SIGINT'));
+    })
     .catch(err => { console.error('Startup failed:', err.message); process.exit(1); });
 }

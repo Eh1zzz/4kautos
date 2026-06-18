@@ -20,6 +20,13 @@ A full-stack web application for buying preowned vehicles from **international s
 
 ## Recent Changes
 
+### v2.8 — Production deploy-readiness (Phase 1)
+- **Portable, PaaS-ready backend** — `trust proxy` (env `TRUST_PROXY`) so the rate-limiter sees real client IPs behind Cloudflare/Railway; **graceful SIGTERM/SIGINT shutdown** (drain server + close DB pool); root `/health` for platform healthchecks.
+- **`/v1` API versioning** — all routes mounted under `/v1` with legacy unversioned aliases kept for back-compat; unmatched API paths return JSON 404 (not the SPA HTML). Frontend `api.js` now calls `/v1` (uploads stay unversioned).
+- **Pluggable storage** — `utils/storage.js` gained an env-gated **Cloudflare R2 / S3** driver (AWS SDK v3) returning CDN URLs; falls back to local disk when unconfigured. Same `putObject` signature.
+- **Pluggable email** — `utils/email.js` gained a **Resend** path (HTTP API, no SDK) ahead of the Gmail SMTP fallback.
+- **Deploy config** — `railway.json`, `Procfile`, `.nvmrc`, `frontend/_headers`, and a fully documented `.env.example`. See **Deployment** below. *(45 tests green; back-compat verified.)*
+
 ### v2.7 — AutoBot knows the car you're looking at
 - **Listing-aware assistant** — "Ask AutoBot about this car" now opens the chat and asks in one click, and AutoBot replies about *that exact listing*. The detail page sends only the car's **id**; the server loads the **authoritative record from the DB** (never trusts client-supplied car data) and builds the context, so a buyer can't spoof a car.
 - **Two-part answer** — the model is instructed to (1) summarise **this** listing from real details (price in ₦/$, year, mileage, condition, location, verified seller) without inventing specifics that aren't listed, then (2) add general **make/model facts** — engine/drivetrain, real-world fuel economy, reliability strengths, common problem areas to inspect, and rough running costs — so the buyer can make an informed decision.
@@ -317,22 +324,36 @@ ANTHROPIC_API_KEY=sk-ant-...
 
 ## Deployment
 
-### Backend — Render.com / Railway / any Node host
-1. Push to GitHub
-2. New Web Service → connect repo
-3. Build command: `npm install`
-4. Start command: `npm start`
-5. Provision a MySQL database (PlanetScale, Railway, RDS, etc.)
-6. Add env vars: `NODE_ENV=production`, `PORT`, `DATABASE_URL`, `JWT_SECRET`, `ALLOWED_ORIGINS`, `ANTHROPIC_API_KEY`
+Target topology (≈$15–30/mo, scales): **Cloudflare** (DNS/CDN/WAF) in front → static
+**frontend on Cloudflare Pages** → **Node API on Railway** co-located with **managed
+MySQL** → car images on **Cloudflare R2** → email via **Resend**. The app is portable:
+nothing below is hard-coded — it's all environment variables (see `.env.example`).
 
-> `NODE_ENV=production` switches CORS to the strict `ALLOWED_ORIGINS` allow-list.
-> In development (no `NODE_ENV`), any `localhost` / `127.0.0.1` / `file://` origin is accepted.
+Built-in deploy affordances:
+- **`/health`** — liveness probe (also `/v1/health`); `railway.json` points the healthcheck here.
+- **Graceful shutdown** — SIGTERM/SIGINT drain in-flight requests + close the DB pool (Railway sends SIGTERM on every deploy).
+- **`trust proxy`** — set `TRUST_PROXY` so the rate-limiter sees the real client IP (Railway direct = `1`, behind Cloudflare = `2`).
+- **`/v1` API** — canonical versioned routes; legacy unversioned paths still resolve for back-compat.
 
-> For managed MySQL that requires TLS, append the appropriate SSL parameters to
-> `DATABASE_URL` (e.g. `?ssl={"rejectUnauthorized":true}`).
+### 1. Backend + database — Railway
+1. Push to GitHub, then **railway.com → New Project → Deploy from GitHub repo**. `railway.json` supplies the build/start/healthcheck.
+2. **+ New → Database → MySQL.** Copy its connection string into the API service's `DATABASE_URL`. (Tables auto-migrate on boot.)
+3. Set service variables: `NODE_ENV=production`, `JWT_SECRET` (32+ chars), `DATABASE_URL`, `ALLOWED_ORIGINS` (your frontend URLs), `TRUST_PROXY=1`, `ANTHROPIC_API_KEY` (optional).
+4. Deploy; confirm `https://<service>.up.railway.app/health` returns `{"status":"ok"}`.
 
-### Frontend — Netlify / Vercel
-By default the frontend calls the **same origin** that served it (the backend serves it),
-so no config is needed when running `npm start`. To host the frontend separately
-(Netlify/Vercel) pointing at a remote backend, set `window.API_BASE = 'https://your-api'`
-in each HTML file before `api.js` loads.
+> Managed MySQL requiring TLS: append SSL params to `DATABASE_URL` (e.g. `?ssl={"rejectUnauthorized":true}`).
+
+### 2. Frontend — Cloudflare Pages
+1. **Cloudflare Pages → connect repo.** Build command: *(none)*; output directory: `frontend`. (`frontend/_headers` ships security headers.)
+2. Point the frontend at the API by setting `window.API_BASE = 'https://<your-api>'` before `api.js` loads (the API client otherwise calls same-origin). Cleanest in production: put both behind Cloudflare — `www` → Pages, `api` → Railway — so `API_BASE` is `https://api.yourdomain.com`, then bump `TRUST_PROXY=2`.
+
+### 3. Car images — Cloudflare R2
+1. **R2 → Create bucket**, then create an R2 API token (S3-compatible).
+2. On the Railway API service set: `S3_BUCKET`, `S3_ENDPOINT=https://<accountid>.r2.cloudflarestorage.com`, `S3_REGION=auto`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, and `ASSET_BASE_URL` (the bucket's public/custom domain). Unset = images stay on local disk (fine for dev).
+
+### 4. Email — Resend
+Set `RESEND_API_KEY` (+ `MAIL_FROM`). Until a domain is verified, `onboarding@resend.dev`
+works for smoke tests. No key → Gmail SMTP fallback → silent skip.
+
+> `NODE_ENV=production` switches CORS to the strict `ALLOWED_ORIGINS` allow-list. In dev
+> (no `NODE_ENV`) any `localhost` / `127.0.0.1` / `file://` origin is accepted.

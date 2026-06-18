@@ -17,6 +17,10 @@ const BASE = (function () {
   return ''; // same-origin (backend-served, dev on :3000 or production)
 })();
 
+// Versioned API prefix. /uploads is deliberately left unversioned (its stored
+// URLs are /uploads/<hash>). The backend still accepts legacy unversioned paths.
+const API_PREFIX = '/v1';
+
 function getToken() { return localStorage.getItem('4k_token'); }
 function setToken(t) { localStorage.setItem('4k_token', t); }
 function clearToken()  { localStorage.removeItem('4k_token'); localStorage.removeItem('4k_user'); }
@@ -34,7 +38,7 @@ async function req(method, path, body = null, isForm = false) {
   const opts = { method, headers };
   if (body) opts.body = isForm ? body : JSON.stringify(body);
 
-  const res = await fetch(`${BASE}${path}`, opts);
+  const res = await fetch(`${BASE}${API_PREFIX}${path}`, opts);
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: res.statusText }));
     throw new Error(err.message || `HTTP ${res.status}`);
@@ -69,7 +73,7 @@ const API = {
     Object.entries(params).forEach(([k, v]) => { if (v != null && v !== '') clean[k] = v; });
     const q = new URLSearchParams(clean).toString();
     const token = getToken();
-    const res = await fetch(`${BASE}/cars${q ? '?' + q : ''}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+    const res = await fetch(`${BASE}${API_PREFIX}/cars${q ? '?' + q : ''}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
     if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.message || `HTTP ${res.status}`); }
     const cars = await res.json();
     return {

@@ -1,3 +1,16 @@
+# Dependencies (Railway/Render run their own `npm install`)
+node_modules/
+
+# Secrets — never commit. .env.example IS committed as the template.
 .env
-node_modules  
-.env.example
+.env.local
+.env.*.local
+
+# User-uploaded media (served from object storage / CDN in production)
+public/uploads/
+
+# Logs & OS cruft
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
