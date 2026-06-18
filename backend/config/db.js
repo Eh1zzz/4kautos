@@ -97,7 +97,28 @@ export async function connectDB() {
     )
   `);
 
+  // Indexes for the columns we filter/sort on (seller_id is already indexed by its FK).
+  await ensureIndex('cars', 'idx_cars_created',   'created_at');
+  await ensureIndex('cars', 'idx_cars_body_type', 'body_type');
+  await ensureIndex('cars', 'idx_cars_price',     'price');
+  await ensureIndex('cars', 'idx_cars_mileage',   'mileage');
+  await ensureIndex('cars', 'idx_cars_condition', '`condition`');
+  await ensureIndex('messages', 'idx_msg_thread', 'car_id, buyer_id');
+
   console.log('✅ MySQL connected and tables ready');
+}
+
+/** Create an index only if it is missing (MySQL has no CREATE INDEX IF NOT EXISTS). */
+async function ensureIndex(table, indexName, columns) {
+  const [rows] = await pool.query(
+    `SELECT 1 FROM information_schema.statistics
+     WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ?`,
+    [table, indexName]
+  );
+  if (rows.length === 0) {
+    await pool.query(`CREATE INDEX \`${indexName}\` ON \`${table}\` (${columns})`);
+    console.log(`🔧 Index added: ${table}.${indexName}`);
+  }
 }
 
 /** Add a column only if it is missing — a tiny idempotent migration helper. */

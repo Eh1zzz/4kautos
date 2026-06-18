@@ -461,11 +461,19 @@ section{padding:5rem 2rem}
 }
 .pg-btn:hover{border-color:var(--border-hi);color:var(--accent)}
 .pg-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.pg-btn:disabled{opacity:.4;cursor:default}
+.pg-ellipsis{display:flex;align-items:center;color:var(--text3);padding:0 2px}
 
 /* ══════════════════════════════════════════
    DETAIL PAGE
 ═══════════════════════════════════════════ */
 .detail-layout{max-width:1280px;margin:0 auto;padding:2rem clamp(1rem,2vw,2rem) 4rem;display:grid;grid-template-columns:1fr 360px;gap:2rem;align-items:start}
+
+/* Similar-listings strip on the detail page (reuses .cars-grid / .car-card) */
+.similar-section{max-width:1280px;margin:0 auto;padding:0 clamp(1rem,2vw,2rem) 4.5rem}
+.similar-section .section-head{margin-bottom:1.5rem}
+.similar-section .section-title{font-size:clamp(1.4rem,3vw,1.9rem)}
+.similar-section[hidden]{display:none}
 
 /* Gallery */
 .gallery{border-radius:var(--radius-lg);overflow:hidden;border:1.5px solid var(--border)}
@@ -966,7 +974,9 @@ body.menu-open{overflow:hidden}
 .field-hint.ok{color:var(--green)}
 .field-hint.bad{color:var(--red)}
 .photo-checklist{display:flex;flex-direction:column;gap:.5rem}
-.shot-row{display:grid;grid-template-columns:160px 1fr auto;gap:.6rem;align-items:center}
+.shot-row{display:grid;grid-template-columns:150px 1fr auto auto;gap:.6rem;align-items:center}
+.shot-file-btn{font-size:.72rem;padding:7px 11px;border-radius:7px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);cursor:pointer;white-space:nowrap;font-weight:600;transition:all var(--speed)}
+.shot-file-btn:hover{border-color:var(--border-hi);color:var(--accent)}
 .shot-label{font-size:.8rem;color:var(--text2);display:flex;align-items:center;gap:7px}
 .shot-dot{width:8px;height:8px;border-radius:50%;background:var(--surface3);border:1px solid var(--border);flex-shrink:0;transition:background var(--speed)}
 .shot-row:has(.shot-url:not(:placeholder-shown)) .shot-dot{background:var(--accent);border-color:var(--accent)}
@@ -992,7 +1002,7 @@ body.menu-open{overflow:hidden}
 }
 @media(max-width:640px){
   .cur-toggle{display:none}
-  .shot-row{grid-template-columns:1fr auto;gap:.3rem .6rem}
+  .shot-row{grid-template-columns:1fr auto auto;gap:.3rem .5rem}
   .shot-label{grid-column:1/-1}
   .price-currency{grid-template-columns:1fr 92px}
   .brand-strip{grid-template-columns:repeat(auto-fill,minmax(82px,1fr))}
@@ -1185,6 +1195,25 @@ html.has-cursor-warn,html.has-cursor-warn *{cursor:none!important}
 .leaflet-control-attribution a{color:var(--text2)!important}
 .leaflet-bar a{background:var(--surface)!important;color:var(--text)!important;border-color:var(--border)!important}
 .leaflet-bar a:hover{background:var(--surface2)!important}
+
+/* listings map view + Grid/Map toggle */
+.topbar-right{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+.view-toggle{display:flex;gap:3px;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:3px}
+.view-btn{padding:5px 12px;border-radius:6px;font-size:.76rem;font-weight:600;color:var(--text3);background:none;transition:color var(--speed),background var(--speed)}
+.view-btn.active{background:var(--accent);color:#fff}
+.view-btn:hover:not(.active){color:var(--text)}
+.listings-map{height:620px;border-radius:var(--radius-lg);overflow:hidden;border:1.5px solid var(--border);position:relative;z-index:0;background:var(--surface2)}
+.map-pop{width:160px;text-align:center}
+.map-pop img{width:100%;height:88px;object-fit:cover;border-radius:6px;margin-bottom:6px}
+.map-pop-t{font-weight:600;font-size:.82rem;line-height:1.3;color:var(--text)}
+.map-pop-p{font-size:.85rem;margin-top:2px}
+.map-pop-p .price-main{color:var(--accent);font-weight:700;font-family:var(--font-display)}
+.map-pop-p .price-sub{display:none}
+.map-pop a{display:inline-block;margin-top:6px;color:var(--accent);font-weight:600;font-size:.78rem}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+.leaflet-popup-content{margin:10px 12px}
+.leaflet-popup-close-button{color:var(--text3)!important}
+@media(max-width:640px){.listings-map{height:460px}}
 
 /* location chip + landed line on cards */
 .card-loc{display:flex;align-items:center;gap:5px;font-size:.74rem;color:var(--text3)}

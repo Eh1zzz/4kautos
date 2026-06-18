@@ -108,3 +108,24 @@ describe('GET /cars/:id', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('GET /cars/:id/similar', () => {
+  it('returns comparable listings, excluding the car itself', async () => {
+    const a = await request(app).post('/cars').set('Authorization', `Bearer ${sellerToken}`)
+      .send(validCar({ make:'Toyota', model:'Camry', vin:'1HGCM82633A004352' }));
+    await request(app).post('/cars').set('Authorization', `Bearer ${sellerToken}`)
+      .send(validCar({ make:'Toyota', model:'Camry', vin:'1HGCM82633A004353' }));
+
+    const res = await request(app).get(`/cars/${a.body.car.id}/similar`);
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+    expect(res.body.length).toBeGreaterThanOrEqual(1);
+    expect(res.body.every(c => c.id !== a.body.car.id)).toBe(true); // never itself
+    expect(res.body[0].photos).toBeDefined();                       // thumbnail field present
+  });
+
+  it('returns 404 for an unknown car', async () => {
+    const res = await request(app).get('/cars/999999/similar');
+    expect(res.status).toBe(404);
+  });
+});

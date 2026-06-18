@@ -17,6 +17,7 @@ import clearanceRoutes   from './routes/clearance.js';
 import subscribeRoutes   from './routes/subscribe.js';
 import messageRoutes     from './routes/messages.js';
 import vinRoutes         from './routes/vin.js';
+import uploadRoutes      from './routes/uploads.js';
 
 dotenv.config();
 
@@ -57,6 +58,7 @@ app.use(cors({
   origin: (origin, cb) => isAllowedOrigin(origin) ? cb(null, true) : cb(new Error('CORS blocked')),
   methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization'],
+  exposedHeaders: ['X-Total-Count','X-Total-Pages'],
 }));
 
 /* ── BODY PARSING ─────────────────────────── */
@@ -87,10 +89,12 @@ app.use('/vin',          vinRoutes);
 /* ── HEALTH CHECK ─────────────────────────── */
 app.get('/health', (_req, res) => res.json({ status: 'ok', ts: Date.now() }));
 
-/* ── SERVE UPLOADED PHOTOS ────────────────── */
+/* ── UPLOADS: serve (immutable, CDN-ready) + accept ── */
 const uploadsDir = path.join(__dirname, '..', 'public', 'uploads');
 fs.mkdirSync(uploadsDir, { recursive: true });
-app.use('/uploads', express.static(uploadsDir));
+// Filenames are content-hashed, so cache aggressively — put a CDN in front in prod.
+app.use('/uploads', express.static(uploadsDir, { immutable: true, maxAge: '365d' }));
+app.use('/uploads', uploadRoutes); // POST / (static above only answers GET/HEAD)
 
 /* ── SERVE STATIC FRONTEND ────────────────── */
 const frontendDir = path.join(__dirname, '..', 'frontend');
@@ -100,7 +104,9 @@ app.get('/{*path}', (_req, res) => res.sendFile(path.join(frontendDir, 'index.ht
 /* ── GLOBAL ERROR HANDLER ─────────────────── */
 app.use((err, _req, res, _next) => {
   console.error('[error]', err.message);
-  res.status(err.status || 500).json({ message: err.message || 'Internal server error' });
+  const status = err.status || err.statusCode || 500;
+  // Don't leak internal error text on 5xx; client (4xx) messages are safe to show.
+  res.status(status).json({ message: status >= 500 ? 'Internal server error' : (err.message || 'Request error') });
 });
 
 export default app;

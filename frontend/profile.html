@@ -470,9 +470,29 @@
   document.getElementById('photo-checklist').innerHTML = REQUIRED_SHOTS.map(s => `
     <div class="shot-row" data-key="${s.key}">
       <div class="shot-label"><span class="shot-dot"></span>${s.label}</div>
-      <input class="form-input shot-url" id="shot-${s.key}" type="url" placeholder="https://…  image URL">
+      <input class="form-input shot-url" id="shot-${s.key}" type="url" placeholder="paste a URL or upload →">
+      <label class="shot-file-btn" title="Upload a photo (auto-optimized)">⬆ Upload<input type="file" id="file-${s.key}" accept="image/jpeg,image/png,image/webp" hidden></label>
       <span class="shot-badge" id="badge-${s.key}"></span>
     </div>`).join('');
+
+  // Upload a chosen file → optimized WebP URL fills the slot
+  document.getElementById('photo-checklist').addEventListener('change', async e => {
+    if (e.target.type !== 'file' || !e.target.files || !e.target.files.length) return;
+    const key = e.target.id.replace('file-', '');
+    const badge = document.getElementById('badge-' + key);
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (file.size > 20 * 1024 * 1024) { badge.className = 'shot-badge bad'; badge.textContent = '✗ over 20MB'; return; }
+    badge.className = 'shot-badge checking'; badge.textContent = 'Uploading…';
+    try {
+      const { urls } = await API.uploadPhotos([file]);
+      document.getElementById('shot-' + key).value = urls[0];
+      badge.className = 'shot-badge ok'; badge.textContent = '✓ uploaded';
+      refreshForm();
+    } catch (err) {
+      badge.className = 'shot-badge bad'; badge.textContent = '✗ ' + (err.message || 'upload failed');
+    }
+  });
 
   // Verify a photo actually loads and meets a minimum resolution (quality gate).
   function checkImageQuality(url, badge) {

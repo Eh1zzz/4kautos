@@ -125,6 +125,18 @@
     </aside>
   </div>
 
+  <!-- Similar listings (comparable inventory) -->
+  <section class="similar-section" id="similar-section" hidden>
+    <div class="section-head">
+      <div>
+        <div class="section-label">Compare your options</div>
+        <h2 class="section-title">Similar listings</h2>
+      </div>
+      <a href="listings.html" class="view-all">Browse all cars →</a>
+    </div>
+    <div class="cars-grid" id="similar-grid"></div>
+  </section>
+
 </div>
 
 <script src="js/api.js"></script>
@@ -214,11 +226,28 @@
       document.getElementById('detail-spinner').classList.add('hidden');
       document.getElementById('detail-content').classList.remove('hidden');
 
+      // Give AutoBot this listing so it answers about THIS exact car.
+      if (window.AutoBot) window.AutoBot.setCar(car);
+
       renderLanded(car);
       initMap(car);
+      loadSimilar(car.id);
     } catch(e) {
       document.getElementById('detail-spinner').innerHTML = `<div class="empty-state"><h3>Car Not Found</h3><p><a href="listings.html" style="color:var(--accent)">Browse all listings</a></p></div>`;
     }
+  }
+
+  // Comparable inventory strip — same query AutoBot uses for price comparison.
+  async function loadSimilar(id) {
+    try {
+      const cars = await API.getSimilar(id, 4);
+      if (!cars || !cars.length) return;
+      const grid = document.getElementById('similar-grid');
+      grid.innerHTML = cars.map(c => window.carCard(c)).join('');
+      document.getElementById('similar-section').hidden = false;
+      window.observeReveals?.();   // animate the injected cards in
+      Money.repriceAll?.();        // show prices in the active currency
+    } catch (e) { /* non-critical — leave the section hidden */ }
   }
 
   // Buy button
@@ -247,14 +276,14 @@
     });
   });
 
-  // Enquire via chatbot
+  // Ask AutoBot about this car — open the assistant and ask in one click.
+  // AutoBot already has the listing context (set in load()), so it replies with
+  // this car's real details plus general facts about the model.
   document.getElementById('chat-enquire-btn').addEventListener('click', () => {
-    // Open chatbot and pre-fill message
-    document.getElementById('chat-fab').click();
-    setTimeout(() => {
-      const title = car ? (car.title || `${car.year} ${car.make} ${car.model}`) : 'this car';
-      document.getElementById('chat-input').value = `Tell me more about the ${title} listed at ${document.getElementById('d-price').textContent}`;
-    }, 300);
+    if (window.AutoBot) {
+      if (car) window.AutoBot.setCar(car);
+      window.AutoBot.ask('Tell me about this car');
+    }
   });
 
   /* ── Landed cost + location map ── */

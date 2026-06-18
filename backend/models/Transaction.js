@@ -87,7 +87,7 @@ export async function findExisting(buyerId, carId) {
 }
 
 export async function findAll() {
-  const [rows] = await pool.query(`${withRelations()} ORDER BY t.created_at DESC`);
+  const [rows] = await pool.query(`${withRelations()} ORDER BY t.created_at DESC LIMIT 500`);
   return rows.map(normalize);
 }
 

@@ -46,11 +46,15 @@ router.get('/', authenticate, async (req, res) => {
   }
 });
 
-// GET /transactions/:id — single transaction
+// GET /transactions/:id — single transaction (participants or admin only)
 router.get('/:id', authenticate, async (req, res) => {
   try {
     const t = await findById(req.params.id);
     if (!t) return res.status(404).json({ message: 'Transaction not found' });
+    // This view includes counterparties' emails — only the buyer, seller, or an
+    // admin may read it (otherwise any logged-in user could enumerate PII by id).
+    if (req.user.role !== 'admin' && ![t.buyer_id, t.seller_id].includes(req.user.id))
+      return res.status(403).json({ message: 'Not authorized' });
     res.json(t);
   } catch (err) {
     res.status(500).json({ message: 'Failed to fetch transaction' });

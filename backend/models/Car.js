@@ -26,7 +26,11 @@ function normalize(row) {
   return row;
 }
 
-export async function findAll({ q, make, model, year, minPrice, maxPrice, condition, type, minMileage, maxMileage, sellerId } = {}) {
+// Normalised-to-USD price so mixed-currency listings filter/sort fairly.
+const USD_PRICE = "(CASE WHEN c.currency = 'USD' THEN c.price ELSE c.price / ? END)";
+
+export async function findAll({ q, make, model, year, minPrice, maxPrice, condition, type,
+  minMileage, maxMileage, minUsd, maxUsd, sellerId, sort, page, limit, rate = 1600 } = {}) {
   const conds = [];
   const vals  = [];
 
@@ -51,14 +55,63 @@ export async function findAll({ q, make, model, year, minPrice, maxPrice, condit
   if (type)       { conds.push('c.body_type = ?'); vals.push(type); }
   if (minMileage) { const n = parseInt(minMileage, 10); if (!isNaN(n)) { conds.push('c.mileage >= ?'); vals.push(n); } }
   if (maxMileage) { const n = parseInt(maxMileage, 10); if (!isNaN(n)) { conds.push('c.mileage <= ?'); vals.push(n); } }
+  if (minUsd)     { const n = parseFloat(minUsd); if (!isNaN(n)) { conds.push(`${USD_PRICE} >= ?`); vals.push(rate, n); } }
+  if (maxUsd)     { const n = parseFloat(maxUsd); if (!isNaN(n)) { conds.push(`${USD_PRICE} <= ?`); vals.push(rate, n); } }
 
   const where = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
+
+  // Sorting (price sorts on the USD-normalised value).
+  let orderBy = 'c.created_at DESC';
+  const sortVals = [];
+  if (sort === 'price')   { orderBy = `${USD_PRICE} ASC`;  sortVals.push(rate); }
+  else if (sort === '-price')   { orderBy = `${USD_PRICE} DESC`; sortVals.push(rate); }
+  else if (sort === 'mileage')  { orderBy = 'c.mileage ASC, c.created_at DESC'; }
+
+  // Pagination (capped page size).
+  const lim = Math.min(Math.max(parseInt(limit, 10) || 24, 1), 100);
+  const pg  = Math.max(parseInt(page, 10) || 1, 1);
+  const offset = (pg - 1) * lim;
+
+  const [[{ total }]] = await pool.query(
+    `SELECT COUNT(*) AS total FROM cars c JOIN users u ON u.id = c.seller_id ${where}`, vals);
+
   const [rows] = await pool.query(
     `SELECT c.*, ${SELLER_JSON}
      FROM cars c JOIN users u ON u.id = c.seller_id
      ${where}
-     ORDER BY c.created_at DESC LIMIT 100`,
-    vals
+     ORDER BY ${orderBy}
+     LIMIT ? OFFSET ?`,
+    [...vals, ...sortVals, lim, offset]
+  );
+  return { cars: rows.map(normalize), total, page: pg, limit: lim };
+}
+
+// Comparable listings for the AI assistant's "how does the price compare?"
+// answer. Prefer the same make+model, fall back to the same body type, and
+// always exclude the car being viewed. Lean projection (no seller join).
+export async function findSimilar({ id, make, model, body_type } = {}, limit = 8) {
+  const carId = toId(id);
+  if (!carId) return [];
+
+  const ors = [], vals = [];
+  if (make && model) { ors.push('(c.make = ? AND c.model = ?)'); vals.push(make, model); }
+  if (body_type)     { ors.push('c.body_type = ?');             vals.push(body_type); }
+  if (!ors.length) return [];
+
+  // Rank exact make+model matches first, then most-recently listed.
+  let orderBy = 'c.created_at DESC';
+  const orderVals = [];
+  if (make && model) { orderBy = '(c.make = ? AND c.model = ?) DESC, c.created_at DESC'; orderVals.push(make, model); }
+
+  const lim = Math.min(Math.max(parseInt(limit, 10) || 8, 1), 20);
+  const [rows] = await pool.query(
+    `SELECT c.id, c.title, c.make, c.model, c.year, c.mileage, c.price, c.currency,
+            c.body_type, c.location, c.photos, c.\`condition\`
+     FROM cars c
+     WHERE c.id <> ? AND (${ors.join(' OR ')})
+     ORDER BY ${orderBy}
+     LIMIT ?`,
+    [carId, ...vals, ...orderVals, lim]
   );
   return rows.map(normalize);
 }
@@ -117,25 +170,12 @@ export async function deleteByIdAndSeller(id, sellerId) {
   return result.affectedRows > 0 ? { id: numId } : null;
 }
 
-export async function addPhotos(id, sellerId, urls) {
-  const numId = toId(id);
-  if (!numId) return null;
-  const [result] = await pool.query(
-    `UPDATE cars
-     SET photos = JSON_MERGE_PRESERVE(COALESCE(photos, JSON_ARRAY()), CAST(? AS JSON))
-     WHERE id = ? AND seller_id = ?`,
-    [JSON.stringify(urls), numId, sellerId]
-  );
-  if (result.affectedRows === 0) return null;
-  return findById(numId);
-}
-
 export async function findAllAdmin() {
   const [rows] = await pool.query(
     `SELECT c.*,
        JSON_OBJECT('id', u.id, 'name', u.name, 'email', u.email) AS seller
      FROM cars c JOIN users u ON u.id = c.seller_id
-     ORDER BY c.created_at DESC`
+     ORDER BY c.created_at DESC LIMIT 500`
   );
   return rows.map(normalize);
 }

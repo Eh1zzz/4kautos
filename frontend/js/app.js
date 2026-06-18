@@ -175,6 +175,13 @@ document.getElementById('nav-signup-btn')?.addEventListener('click', () => openA
     'What documents do I need?',
     'How to list my car?',
   ];
+  // Shown instead of the generic prompts when the user is on a listing page.
+  const QUICK_CAR = [
+    'Tell me about this car',
+    'How does the price compare?',
+    'Common problems to check?',
+    'Running & maintenance costs?',
+  ];
 
   const fabHtml = `
     <button class="chat-fab" id="chat-fab" aria-label="Open chat">
@@ -214,17 +221,31 @@ document.getElementById('nav-signup-btn')?.addEventListener('click', () => openA
   const qrWrap   = document.getElementById('quick-replies');
   let history    = [];
   let isOpen     = false;
+  let carCtx     = null; // { id, label } when viewing a specific listing
 
   function toggleChat() {
     isOpen = !isOpen;
     fab.classList.toggle('open', isOpen);
     win.classList.toggle('open', isOpen);
     if (isOpen && msgs.children.length === 0) {
-      addBotMsg("Hi! I'm AutoBot 🚗 I can help you find the perfect car, understand our buying process, or list your vehicle. What can I help you with?");
+      addBotMsg(carCtx
+        ? `Hi! I'm AutoBot 🚗 Ask me anything about the ${carCtx.label} — its details, whether the price looks fair, common issues to check, or running costs.`
+        : "Hi! I'm AutoBot 🚗 I can help you find the perfect car, understand our buying process, or list your vehicle. What can I help you with?");
       renderQuickReplies();
     }
     if (isOpen) input.focus();
   }
+
+  // Public hook used by the detail page: set the current car, open the panel,
+  // or ask a question about it. Lets "Ask AutoBot about this car" work in 1 click.
+  window.AutoBot = {
+    setCar(car) {
+      carCtx = car ? { id: car.id, label: car.title || [car.year, car.make, car.model].filter(Boolean).join(' ') || 'this car' } : null;
+    },
+    clearCar() { carCtx = null; },
+    open() { if (!isOpen) toggleChat(); input.focus(); },
+    ask(text) { if (!isOpen) toggleChat(); sendMessage(text); },
+  };
 
   fab.addEventListener('click', toggleChat);
   document.getElementById('chat-close').addEventListener('click', () => {
@@ -269,7 +290,7 @@ document.getElementById('nav-signup-btn')?.addEventListener('click', () => openA
   }
 
   function renderQuickReplies() {
-    qrWrap.innerHTML = QUICK.map(q =>
+    qrWrap.innerHTML = (carCtx ? QUICK_CAR : QUICK).map(q =>
       `<button class="quick-reply">${q}</button>`
     ).join('');
     qrWrap.querySelectorAll('.quick-reply').forEach(btn => {
@@ -288,7 +309,7 @@ document.getElementById('nav-signup-btn')?.addEventListener('click', () => openA
     history.push({ role: 'user', content: msg });
 
     try {
-      const data = await API.chat(msg, history);
+      const data = await API.chat(msg, history, carCtx?.id);
       typing.remove();
       const reply = data.reply || "Sorry, I couldn't get a response right now.";
       addBotMsg(reply);
@@ -313,6 +334,8 @@ document.getElementById('nav-signup-btn')?.addEventListener('click', () => openA
       return "To list your car:\n1. Create a seller account\n2. Go to your Profile dashboard\n3. Click 'Add New Listing'\n4. Fill in make, model, year, mileage, VIN, condition, price\n5. Upload photos (up to 10)\n\nListings go live immediately after submission!";
     if (m.includes('document'))
       return "For buying you'll need: valid ID, proof of insurance, and payment method.\n\nFor selling you'll need: vehicle title (clean), government-issued ID, and service history if available.";
+    if (carCtx)
+      return `I can't reach the server right now, so I can't pull the full write-up for the ${carCtx.label}. The listing's specs are on this page — and once I'm back online I'll add the model's reliability and running-cost notes. Please try again in a moment. 🚗`;
     return "I'm having trouble connecting to the server right now. Please try again in a moment, or browse our listings page to find your perfect car! 🚗";
   }
 

@@ -31,7 +31,7 @@ export async function create(name, email, hashedPassword, role) {
 
 export async function findAll() {
   const [rows] = await pool.query(
-    `SELECT ${SAFE_COLS} FROM users ORDER BY created_at DESC`
+    `SELECT ${SAFE_COLS} FROM users ORDER BY created_at DESC LIMIT 500`
   );
   return rows;
 }

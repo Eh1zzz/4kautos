@@ -20,6 +20,26 @@ A full-stack web application for buying preowned vehicles from **international s
 
 ## Recent Changes
 
+### v2.7 — AutoBot knows the car you're looking at
+- **Listing-aware assistant** — "Ask AutoBot about this car" now opens the chat and asks in one click, and AutoBot replies about *that exact listing*. The detail page sends only the car's **id**; the server loads the **authoritative record from the DB** (never trusts client-supplied car data) and builds the context, so a buyer can't spoof a car.
+- **Two-part answer** — the model is instructed to (1) summarise **this** listing from real details (price in ₦/$, year, mileage, condition, location, verified seller) without inventing specifics that aren't listed, then (2) add general **make/model facts** — engine/drivetrain, real-world fuel economy, reliability strengths, common problem areas to inspect, and rough running costs — so the buyer can make an informed decision.
+- **Compare to similar listings** — AutoBot now pulls **comparable inventory** (`Car.findSimilar`: same make+model, falling back to body type) and grounds price questions in real data, **USD-normalized** so mixed ₦/$ listings rank fairly: *"Among 4 comparable listings spanning $5,003–$19,500, this one is 74% below the average."* Surfaced via a new "How does the price compare?" quick-reply, and a one-line market note now rides along on the "Tell me about this car" answer.
+- **"Similar listings" strip on the detail page** — the same `findSimilar` query now also powers a card strip below each listing (`GET /cars/:id/similar`), reusing the standard car card (thumbnail, dual-currency price, landed cost, save) so buyers can jump straight to comparable cars.
+- **Prompt-injection guard** — the seller's free-text note is passed as clearly-delimited *data*, with an instruction to ignore any embedded commands.
+- **Works without a key too** — with no `ANTHROPIC_API_KEY`, AutoBot still returns the listing's real details, the market comparison, and a used-car inspection checklist (only the model-specific reliability write-up needs the live API). Set `ANTHROPIC_API_KEY` in `.env` to enable the full general-facts section.
+- **Tests** — a new `chatbot` suite covers the details, compare, graceful-degrade and process-question paths, plus the `/cars/:id/similar` route (**45 tests** total).
+
+### v2.6 — Scale: pagination, server-side filtering & map browse
+- **Server-side pagination/sort/filter** — `GET /cars` takes `page`/`limit`/`sort` and returns the matching count via `X-Total-Count`/`X-Total-Pages` headers. **Price sorting and budget bands (`minUsd`/`maxUsd`) are normalized to USD** so mixed NGN/USD listings rank fairly. The listings page now has a real **pagination UI** (client-side sort/budget removed).
+- **Indexes** — added on the columns we filter/sort (`cars.created_at/body_type/price/mileage/condition`, `messages(car_id,buyer_id)`); admin list queries are bounded (`LIMIT 500`).
+- **Browse on a map** — a **Grid / Map** toggle on the listings page plots every located car as a pin (Leaflet) with a popup (photo, price, link).
+
+### v2.5 — Audit hardening + image pipeline
+- **Security fixes**: closed an **IDOR** on `GET /transactions/:id` (now buyer/seller/admin only — it exposes emails); removed a client-supplied Anthropic-key header; the global error handler no longer leaks internal 5xx details.
+- **Hardened image uploads** (replaces the old unused, unsafe disk-upload endpoint): `POST /uploads` validates the **real file type by magic bytes**, caps at 20 MB, re-encodes with **`sharp` → WebP** (strips EXIF, resizes; the re-encode neutralizes malicious payloads), stores via a `putObject()` abstraction (local now, **S3-swappable**) with **content-hashed** filenames, served `immutable, max-age=1y` (CDN-ready). The seller upload form gained per-slot **Upload** buttons.
+- **Tests**: added `transaction`/`messages`/`admin` suites (IDOR + authorization regressions) — **37 tests** total.
+- Removed dead code (`middleware/upload.js`, `Car.addPhotos`, the old photos route).
+
 ### v2.4 — Marketplace expansion, chat & email
 - **Buyer↔seller chat** — a polling message thread per car (slide-over panel on the detail page + a Messages tab on the dashboard, with unread badges, read-on-open, and self-message blocking). `messages` table + `/messages` routes.
 - **Automated email (Gmail)** — welcome email on newsletter subscribe + a notification to the recipient on every new chat message, via Gmail SMTP (nodemailer). Set `GMAIL_USER` + `GMAIL_APP_PASSWORD`; absent, email is silently skipped.
@@ -225,8 +245,8 @@ auto-route to the backend on `:3000` (recognised dev ports: 5500–5502, 5173, 4
 | GET    | /cars             | —             | `?q=&make=&model=&year=&minPrice=&maxPrice=&condition=&sellerId=` |
 | GET    | /cars/:id         | —             | |
 | POST   | /cars             | seller        | Validated: `{ make, model, year, mileage, vin(17), price, currency('NGN'\|'USD'), condition, location, latitude?, longitude?, photos[≥5], description? }` |
-| POST   | /cars/:id/photos  | seller (owner)| multipart form |
 | DELETE | /cars/:id         | seller (owner) or admin | |
+| POST   | /uploads          | seller        | multipart `photos[]` → magic-byte validated, optimized to WebP, returns CDN-ready URLs |
 
 ### Transactions
 | Method | Path                     | Auth   | Body |

@@ -63,9 +63,42 @@ const API = {
     const q = new URLSearchParams(params).toString();
     return req('GET', `/cars${q ? '?' + q : ''}`);
   },
+  // Paginated variant: returns { cars, total, pages } using the response headers.
+  async getCarsPage(params = {}) {
+    const clean = {};
+    Object.entries(params).forEach(([k, v]) => { if (v != null && v !== '') clean[k] = v; });
+    const q = new URLSearchParams(clean).toString();
+    const token = getToken();
+    const res = await fetch(`${BASE}/cars${q ? '?' + q : ''}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.message || `HTTP ${res.status}`); }
+    const cars = await res.json();
+    return {
+      cars,
+      total: Number(res.headers.get('X-Total-Count')) || cars.length,
+      pages: Number(res.headers.get('X-Total-Pages')) || 1,
+    };
+  },
   getCar(id)        { return req('GET', `/cars/${id}`); },
+  getSimilar(id, limit = 4) { return req('GET', `/cars/${id}/similar?limit=${limit}`); },
   createCar(data)   { return req('POST', '/cars', data); },
   deleteCar(id)     { return req('DELETE', `/cars/${id}`); },
+
+  /* ── PHOTO UPLOAD (multipart) ── */
+  async uploadPhotos(files) {
+    const fd = new FormData();
+    [...files].forEach(f => fd.append('photos', f));
+    const token = getToken();
+    const res = await fetch(`${BASE}/uploads`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},  // let the browser set the multipart boundary
+      body: fd,
+    });
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({ message: res.statusText }));
+      throw new Error(e.message || `HTTP ${res.status}`);
+    }
+    return res.json(); // { urls: [...] }
+  },
 
   /* ── TRANSACTIONS ── */
   initTx(carId, sellerId) { return req('POST', '/transactions', { carId, sellerId }); },
@@ -74,8 +107,12 @@ const API = {
   updateTxStatus(id, status) { return req('PATCH', `/transactions/${id}/status`, { status }); },
 
   /* ── CHATBOT ── */
-  async chat(message, history = []) {
-    return req('POST', '/chat', { message, history });
+  // carId (optional) lets AutoBot answer about a specific listing — the server
+  // loads that car's real details and adds general facts about the model.
+  async chat(message, history = [], carId = null) {
+    const body = { message, history };
+    if (carId != null) body.carId = carId;
+    return req('POST', '/chat', body);
   },
 
   /* ── FX (USD ↔ NGN) ── */
