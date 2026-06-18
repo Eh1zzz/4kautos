@@ -21,7 +21,8 @@
     "mysql2": "^3.11.4",
     "nodemailer": "^9.0.1",
     "path-to-regexp": "^8.4.2",
-    "sharp": "^0.35.1"
+    "sharp": "^0.35.1",
+    "socket.io": "^4.8.3"
   },
   "devDependencies": {
     "jest": "^30.3.0",

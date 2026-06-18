@@ -4,6 +4,7 @@ import { toId } from '../utils/validation.js';
 import { findById as findCarById } from '../models/Car.js';
 import * as Messages from '../models/Message.js';
 import { notifyNewMessage } from '../utils/email.js';
+import { threadRoom, userRoom } from '../realtime.js';
 
 const router = express.Router();
 router.use(authenticate);
@@ -64,6 +65,15 @@ router.post('/', async (req, res) => {
 
     const msg = await Messages.create({ carId: t.carId, buyerId: t.buyerId, sellerId: t.sellerId, senderId: req.user.id, body });
     notifyNewMessage({ buyerId: t.buyerId, sellerId: t.sellerId, senderId: req.user.id, car: t.car }).catch(() => {});
+
+    // Real-time: nudge the thread to reload live, and bump the recipient's unread badge.
+    const io = req.app.get('io');
+    if (io) {
+      io.to(threadRoom(t.carId, t.buyerId)).emit('message', { carId: t.carId, buyerId: t.buyerId });
+      const recipientId = req.user.id === t.buyerId ? t.sellerId : t.buyerId;
+      io.to(userRoom(recipientId)).emit('unread');
+    }
+
     res.status(201).json(msg);
   } catch (err) { console.error('send message:', err.message); res.status(500).json({ message: 'Failed to send message' }); }
 });

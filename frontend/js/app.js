@@ -906,6 +906,46 @@ document.addEventListener('keydown', e => {
   addEventListener('mouseup',   () => el.classList.remove('press'));
 })();
 
+/* ── REALTIME (Socket.IO) ─────────────────── */
+// Shared, lazily-connected socket. Loads the client from CDN on first use and
+// authenticates with the JWT. If anything fails (offline, CDN blocked, logged
+// out) callers simply keep their polling fallback — nothing breaks.
+window.RT = (function () {
+  let socket = null, connecting = null;
+  const handlers = {};
+
+  function loadClient() {
+    if (window.io) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.socket.io/4.8.1/socket.io.min.js';
+      s.onload = resolve; s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+
+  function connect() {
+    if (socket) return Promise.resolve(socket);
+    if (connecting) return connecting;
+    if (!API.isLoggedIn()) return Promise.resolve(null);
+    connecting = loadClient().then(() => {
+      const origin = API.origin();
+      socket = origin ? io(origin, { auth: { token: API.token() }, transports: ['websocket','polling'] })
+                      : io({ auth: { token: API.token() }, transports: ['websocket','polling'] });
+      socket.on('message', d => (handlers.message || []).forEach(fn => fn(d)));
+      socket.on('unread',  d => (handlers.unread  || []).forEach(fn => fn(d)));
+      return socket;
+    }).catch(() => null);
+    return connecting;
+  }
+
+  return {
+    connect,
+    on(event, fn) { (handlers[event] || (handlers[event] = [])).push(fn); },
+    emit(event, data) { if (socket) socket.emit(event, data); },
+  };
+})();
+
 /* ── BUYER ↔ SELLER CHAT (thread slide-over) ─ */
 (function () {
   const panel = document.createElement('div');
@@ -951,6 +991,11 @@ document.addEventListener('keydown', e => {
     } catch { /* ignore transient poll errors */ }
   }
 
+  // Realtime: when a message lands in the currently-open thread, reload it live.
+  RT.on('message', ({ carId, buyerId } = {}) => {
+    if (panel.classList.contains('open') && String(state.carId) === String(carId) && String(state.buyerId) === String(buyerId)) load();
+  });
+
   window.openChatThread = function ({ carId, buyerId, title, sub }) {
     if (!API.isLoggedIn()) { openAuth('login'); return; }
     state.carId = carId; state.buyerId = buyerId || null;
@@ -958,13 +1003,17 @@ document.addEventListener('keydown', e => {
     $('thread-sub').textContent = sub || '';
     panel.classList.add('open');
     document.body.classList.add('menu-open');
-    load();
+    // Load history, then join the realtime room (load() resolves buyerId on the buyer side).
+    load().then(() => {
+      RT.connect().then(s => { if (s && state.carId && state.buyerId) RT.emit('thread:join', { carId: state.carId, buyerId: state.buyerId }); });
+    });
     clearInterval(state.poll);
-    state.poll = setInterval(load, 4000);
+    state.poll = setInterval(load, 15000); // slow fallback; the socket drives real-time
     setTimeout(() => $('thread-input').focus(), 120);
   };
 
   function close() {
+    if (state.carId && state.buyerId) RT.emit('thread:leave', { carId: state.carId, buyerId: state.buyerId });
     panel.classList.remove('open');
     document.body.classList.remove('menu-open');
     clearInterval(state.poll); state.poll = null;
@@ -997,7 +1046,12 @@ document.addEventListener('keydown', e => {
       });
     } catch {}
   };
-  document.addEventListener('DOMContentLoaded', () => { updateUnreadBadge(); setInterval(updateUnreadBadge, 20000); });
+  RT.on('unread', () => updateUnreadBadge());
+  document.addEventListener('DOMContentLoaded', () => {
+    updateUnreadBadge();
+    RT.connect();                          // live unread nudges
+    setInterval(updateUnreadBadge, 30000); // slow fallback
+  });
 })();
 
 /* ── BOOT ─────────────────────────────────── */

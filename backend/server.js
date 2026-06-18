@@ -4,9 +4,11 @@ import dotenv        from 'dotenv';
 import rateLimit     from 'express-rate-limit';
 import path          from 'path';
 import fs            from 'fs';
+import http          from 'http';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { connectDB, pool } from './config/db.js';
 import { securityHeaders } from './middleware/security.js';
+import { initRealtime } from './realtime.js';
 import authRoutes        from './routes/auth.js';
 import carRoutes         from './routes/cars.js';
 import transactionRoutes from './routes/transactions.js';
@@ -145,18 +147,22 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const PORT = process.env.PORT || 3000;
   connectDB()
     .then(() => {
-      const server = app.listen(PORT, () =>
+      // Wrap Express in an HTTP server so Socket.IO (real-time chat) can share it.
+      const httpServer = http.createServer(app);
+      const io = initRealtime(httpServer, isAllowedOrigin);
+      app.set('io', io); // the messages route pushes new-message nudges through this
+      httpServer.listen(PORT, () =>
         console.log(`🚗  4Kautos server → http://localhost:${PORT}`));
 
       // Graceful shutdown: PaaS platforms send SIGTERM on every deploy/restart.
-      // Stop accepting new connections, let in-flight requests finish, close the
-      // DB pool, then exit — with a hard cap so a stuck request can't hang forever.
+      // Disconnect sockets, let in-flight requests finish, close the DB pool, then
+      // exit — with a hard cap so a stuck request can't hang forever.
       let closing = false;
       const shutdown = (signal) => {
         if (closing) return;
         closing = true;
         console.log(`\n${signal} received — shutting down gracefully…`);
-        server.close(async () => {
+        io.close(async () => { // closes the sockets and the underlying HTTP server
           try { await pool.end(); } catch { /* already closed */ }
           process.exit(0);
         });

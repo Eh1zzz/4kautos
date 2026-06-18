@@ -61,6 +61,8 @@ const API = {
   logout() { clearToken(); window.location.href = '/'; },
   getUser,
   isLoggedIn() { return !!getToken(); },
+  origin() { return BASE; },   // backend origin for the realtime socket
+  token: getToken,             // raw JWT for the socket handshake
 
   /* ── CARS ── */
   getCars(params = {}) {
