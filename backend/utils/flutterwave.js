@@ -31,3 +31,14 @@ export async function verifyTransaction(flwId) {
   if (!res.ok || data.status !== 'success') return null;
   return data.data; // { id, tx_ref, status, amount, currency, customer, ... }
 }
+
+// Refund a charge (full by default). Returns true on success.
+export async function refundTransaction(flwId, amount) {
+  const res = await fetch(`${FLW_BASE}/transactions/${flwId}/refund`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${secret()}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(amount != null ? { amount } : {}),
+  });
+  const data = await res.json().catch(() => ({}));
+  return res.ok && data.status === 'success';
+}

@@ -113,6 +113,7 @@ const API = {
   updateTxStatus(id, status) { return req('PATCH', `/transactions/${id}/status`, { status }); },
   // Escrow: start paying for a transaction → returns { link } to the Flutterwave checkout.
   initiatePayment(transactionId) { return req('POST', '/payments/initiate', { transactionId }); },
+  refundPayment(transactionId)   { return req('POST', '/payments/refund',   { transactionId }); },
 
   /* ── CHATBOT ── */
   // carId (optional) lets AutoBot answer about a specific listing — the server

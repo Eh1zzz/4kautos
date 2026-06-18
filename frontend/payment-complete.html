@@ -39,7 +39,8 @@
   if (status === 'successful' || status === 'completed') {
     icon.textContent = '✅';
     title.textContent = 'Payment received';
-    msg.textContent = 'Your funds are now held safely in escrow. They’re released to the seller only once you confirm the vehicle. Track the status in your dashboard.';
+    msg.textContent = 'Your funds are now held safely in escrow. They’re released to the seller only once you confirm the vehicle. Taking you to your dashboard…';
+    setTimeout(() => { location.href = 'profile.html'; }, 3500); // back into the app
   } else if (status === 'cancelled') {
     icon.textContent = '↩️';
     title.textContent = 'Payment cancelled';

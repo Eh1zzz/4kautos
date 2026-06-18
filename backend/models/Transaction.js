@@ -138,3 +138,17 @@ export async function markEscrowPaid(paymentRef, flwTxId) {
   const [rows] = await pool.query('SELECT * FROM transactions WHERE payment_ref = ?', [paymentRef]);
   return rows[0] || null;
 }
+
+// Cancel an escrowed transaction after a refund. Idempotent — only flips from
+// payment_in_escrow, so a repeat call is a no-op.
+export async function markRefunded(id) {
+  const numId = toId(id);
+  if (!numId) return null;
+  const [result] = await pool.query(
+    "UPDATE transactions SET status = 'cancelled' WHERE id = ? AND status = 'payment_in_escrow'",
+    [numId]
+  );
+  if (result.affectedRows === 0) return null;
+  const [rows] = await pool.query('SELECT * FROM transactions WHERE id = ?', [numId]);
+  return rows[0] || null;
+}

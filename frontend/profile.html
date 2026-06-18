@@ -325,8 +325,9 @@
       el.innerHTML = txs.map(t => {
         const car   = t.car;
         const other = me?.id === t.buyer_id ? t.seller?.name : t.buyer?.name;
-        const isBuyer = me?.id === t.buyer_id;
-        const canPay  = isBuyer && ['initiated','pending_inspection'].includes(t.status);
+        const isBuyer   = me?.id === t.buyer_id;
+        const canPay    = isBuyer && ['initiated','pending_inspection'].includes(t.status);
+        const canRefund = (isBuyer || me?.role === 'admin') && t.status === 'payment_in_escrow';
         return `<div class="tx-row">
           <div>
             <div class="tx-car">${esc(car?.title || 'Car Listing')}</div>
@@ -335,6 +336,7 @@
           <span class="tx-status status-${t.status}">${t.status.replace(/_/g,' ')}</span>
           <div class="tx-actions">
             ${canPay ? `<button class="pay-btn" onclick="payEscrow('${t.id}', this)">💳 Pay into escrow</button>` : ''}
+            ${canRefund ? `<button class="adm-btn danger" onclick="refundTx('${t.id}', this)">Cancel &amp; refund</button>` : ''}
             <select onchange="updateTx('${t.id}', this.value)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:6px;font-size:.75rem">
               <option value="">Update…</option>
               <option value="pending_inspection">Inspection</option>
@@ -363,6 +365,14 @@
       toast(e.message || 'Could not start payment', 'error');
       btn.disabled = false; btn.textContent = orig;
     }
+  }
+
+  // Reverse an escrowed payment (buyer or admin) → buyer is credited.
+  async function refundTx(id, btn) {
+    if (!confirm('Refund this payment? The buyer is credited and the transaction is cancelled.')) return;
+    btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Refunding…';
+    try { await API.refundPayment(id); toast('Refund issued', 'success'); loadTransactions(); }
+    catch (e) { toast(e.message || 'Refund failed', 'error'); btn.disabled = false; btn.textContent = orig; }
   }
 
   async function loadThreads() {

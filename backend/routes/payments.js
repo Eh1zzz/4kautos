@@ -2,7 +2,7 @@ import express from 'express';
 import crypto from 'crypto';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { toId } from '../utils/validation.js';
-import { findById as findTx, setPaymentInit, findByPaymentRef, markEscrowPaid } from '../models/Transaction.js';
+import { findById as findTx, setPaymentInit, findByPaymentRef, markEscrowPaid, markRefunded } from '../models/Transaction.js';
 import { findById as findCar } from '../models/Car.js';
 import * as FLW from '../utils/flutterwave.js';
 
@@ -47,6 +47,36 @@ router.post('/initiate', authenticate, authorize('buyer'), async (req, res) => {
   } catch (err) {
     console.error('payment initiate:', err.message);
     res.status(502).json({ message: 'Could not start the payment' });
+  }
+});
+
+// POST /payments/refund { transactionId } — buyer (own) or admin reverses an
+// escrowed payment; the buyer is credited and the transaction is cancelled.
+router.post('/refund', authenticate, async (req, res) => {
+  try {
+    if (!FLW.isConfigured())
+      return res.status(503).json({ message: 'Payments are not configured yet' });
+
+    const txId = toId(req.body.transactionId);
+    if (!txId) return res.status(400).json({ message: 'A valid transactionId is required' });
+
+    const tx = await findTx(txId);
+    if (!tx) return res.status(404).json({ message: 'Transaction not found' });
+    if (req.user.role !== 'admin' && req.user.id !== tx.buyer_id)
+      return res.status(403).json({ message: 'Not authorized to refund this transaction' });
+    if (tx.status !== 'payment_in_escrow')
+      return res.status(409).json({ message: 'Only an escrowed payment can be refunded' });
+    if (!tx.flw_tx_id)
+      return res.status(400).json({ message: 'No payment on record to refund' });
+
+    const ok = await FLW.refundTransaction(tx.flw_tx_id, tx.amount);
+    if (!ok) return res.status(502).json({ message: 'Refund could not be processed' });
+
+    const updated = await markRefunded(tx.id);
+    res.json({ message: 'Refund issued — the buyer will be credited', transaction: updated });
+  } catch (err) {
+    console.error('payment refund:', err.message);
+    res.status(502).json({ message: 'Could not process the refund' });
   }
 });
 
