@@ -20,6 +20,7 @@ import subscribeRoutes   from './routes/subscribe.js';
 import messageRoutes     from './routes/messages.js';
 import vinRoutes         from './routes/vin.js';
 import uploadRoutes      from './routes/uploads.js';
+import paymentRoutes     from './routes/payments.js';
 
 dotenv.config();
 
@@ -108,6 +109,7 @@ api.use('/clearance',    clearanceRoutes);
 api.use('/subscribe',    subscribeRoutes);
 api.use('/messages',     messageRoutes);
 api.use('/vin',          vinRoutes);
+api.use('/payments',     paymentRoutes);
 api.get('/health', (_req, res) => res.json({ status: 'ok', ts: Date.now() }));
 
 app.use('/v1', api);

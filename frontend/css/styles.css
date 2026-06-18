@@ -641,6 +641,9 @@ section{padding:5rem 2rem}
 .tx-row:last-child{border-bottom:none}
 .tx-car{font-weight:600;font-size:.9rem}
 .tx-meta{font-size:.75rem;color:var(--text3)}
+.tx-actions{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+.pay-btn{background:linear-gradient(135deg,var(--accent),var(--accent-dk));color:#fff;border:none;border-radius:7px;padding:6px 12px;font-size:.75rem;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
+.pay-btn:disabled{opacity:.6;cursor:default}
 .tx-status{
   padding:3px 10px;border-radius:20px;font-size:.67rem;font-weight:700;letter-spacing:.3px;text-transform:uppercase;white-space:nowrap;
 }

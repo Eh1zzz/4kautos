@@ -102,3 +102,39 @@ export async function setDisputed(id) {
   const [rows] = await pool.query('SELECT * FROM transactions WHERE id = ?', [numId]);
   return rows[0] || null;
 }
+
+/* ── Payments / escrow ─────────────────────────────────────── */
+
+// Snapshot the amount/currency and our payment reference when a buyer starts paying.
+export async function setPaymentInit(id, { amount, currency, paymentRef }) {
+  const numId = toId(id);
+  if (!numId) return null;
+  await pool.query(
+    'UPDATE transactions SET amount = ?, currency = ?, payment_ref = ? WHERE id = ?',
+    [amount, currency, paymentRef, numId]
+  );
+  const [rows] = await pool.query('SELECT * FROM transactions WHERE id = ?', [numId]);
+  return rows[0] || null;
+}
+
+export async function findByPaymentRef(ref) {
+  if (!ref) return null;
+  const [rows] = await pool.query('SELECT * FROM transactions WHERE payment_ref = ?', [ref]);
+  return rows[0] || null;
+}
+
+// Idempotently move a transaction into escrow once payment is verified. It only
+// flips from a pre-payment state, so a duplicate webhook is a no-op (affectedRows
+// 0 → returns null). Returns the updated row when it actually changed.
+export async function markEscrowPaid(paymentRef, flwTxId) {
+  const [result] = await pool.query(
+    `UPDATE transactions
+        SET status = 'payment_in_escrow', flw_tx_id = ?, paid_at = NOW()
+      WHERE payment_ref = ?
+        AND status IN ('initiated','pending_inspection')`,
+    [String(flwTxId), paymentRef]
+  );
+  if (result.affectedRows === 0) return null;
+  const [rows] = await pool.query('SELECT * FROM transactions WHERE payment_ref = ?', [paymentRef]);
+  return rows[0] || null;
+}

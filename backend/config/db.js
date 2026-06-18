@@ -105,6 +105,14 @@ export async function connectDB() {
   await ensureIndex('cars', 'idx_cars_condition', '`condition`');
   await ensureIndex('messages', 'idx_msg_thread', 'car_id, buyer_id');
 
+  // Escrow / payments (Flutterwave) — snapshot of what was charged + provider refs.
+  await ensureColumn('transactions', 'amount',      'DECIMAL(15,2)');
+  await ensureColumn('transactions', 'currency',    "VARCHAR(3) NOT NULL DEFAULT 'NGN'");
+  await ensureColumn('transactions', 'payment_ref', 'VARCHAR(64)'); // our tx_ref sent to Flutterwave
+  await ensureColumn('transactions', 'flw_tx_id',   'VARCHAR(64)'); // Flutterwave's id (idempotency)
+  await ensureColumn('transactions', 'paid_at',     'TIMESTAMP NULL');
+  await ensureIndex('transactions', 'idx_tx_payment_ref', 'payment_ref');
+
   console.log('✅ MySQL connected and tables ready');
 }
 

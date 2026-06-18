@@ -325,19 +325,23 @@
       el.innerHTML = txs.map(t => {
         const car   = t.car;
         const other = me?.id === t.buyer_id ? t.seller?.name : t.buyer?.name;
+        const isBuyer = me?.id === t.buyer_id;
+        const canPay  = isBuyer && ['initiated','pending_inspection'].includes(t.status);
         return `<div class="tx-row">
           <div>
             <div class="tx-car">${esc(car?.title || 'Car Listing')}</div>
             <div class="tx-meta">${other ? `with ${esc(other)}` : ''} · <span class="js-price" data-amount="${esc(car?.price ?? '')}" data-native="${esc(car?.currency||'NGN')}">${car?.price!=null ? Money.fmt(car.price, car.currency||'NGN') : '—'}</span></div>
           </div>
           <span class="tx-status status-${t.status}">${t.status.replace(/_/g,' ')}</span>
-          <select onchange="updateTx('${t.id}', this.value)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:6px;font-size:.75rem">
-            <option value="">Update…</option>
-            <option value="pending_inspection">Inspection</option>
-            <option value="payment_in_escrow">Pay Escrow</option>
-            <option value="completed">Complete</option>
-            <option value="cancelled">Cancel</option>
-          </select>
+          <div class="tx-actions">
+            ${canPay ? `<button class="pay-btn" onclick="payEscrow('${t.id}', this)">💳 Pay into escrow</button>` : ''}
+            <select onchange="updateTx('${t.id}', this.value)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:6px;font-size:.75rem">
+              <option value="">Update…</option>
+              <option value="pending_inspection">Inspection</option>
+              <option value="completed">Complete</option>
+              <option value="cancelled">Cancel</option>
+            </select>
+          </div>
         </div>`;
       }).join('');
     } catch(e) { el.innerHTML = `<p class="empty-state">Failed: ${e.message}</p>`; }
@@ -347,6 +351,18 @@
     if (!status) return;
     try { await API.updateTxStatus(id, status); toast('Status updated', 'success'); loadTransactions(); }
     catch(e) { toast(e.message, 'error'); }
+  }
+
+  // Start the escrow payment → redirect to Flutterwave's hosted checkout.
+  async function payEscrow(id, btn) {
+    btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Starting…';
+    try {
+      const { link } = await API.initiatePayment(id);
+      window.location.href = link;
+    } catch (e) {
+      toast(e.message || 'Could not start payment', 'error');
+      btn.disabled = false; btn.textContent = orig;
+    }
   }
 
   async function loadThreads() {
