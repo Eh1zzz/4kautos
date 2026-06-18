@@ -48,6 +48,14 @@ app.use(securityHeaders);
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5500,http://127.0.0.1:5500,http://localhost:3000')
   .split(',').map(o => o.trim()).filter(Boolean);
 
+// Railway/Render inject the service's own public domain. Always trust it so the
+// backend-served frontend can call its own API in production without us having to
+// hand-maintain ALLOWED_ORIGINS for it. (Covers a future custom domain too.)
+const selfDomain = process.env.RAILWAY_PUBLIC_DOMAIN || process.env.RENDER_EXTERNAL_HOSTNAME;
+if (selfDomain && !allowedOrigins.includes(`https://${selfDomain}`)) {
+  allowedOrigins.push(`https://${selfDomain}`);
+}
+
 // Same-origin / curl requests have no Origin and are always allowed. In dev we also
 // accept any localhost / 127.0.0.1 origin (any port) and file:// pages (Origin "null"),
 // so the frontend works however it's served. Production is restricted to ALLOWED_ORIGINS.

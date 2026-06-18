@@ -4,6 +4,12 @@ dotenv.config();
 import bcrypt from 'bcrypt';
 import { pool, connectDB } from './config/db.js';
 
+// Admin credentials are env-driven so the public default never reaches production.
+// Local dev falls back to the demo password; for prod run:
+//   ADMIN_PASSWORD="a-strong-password" node backend/seed.js
+const ADMIN_EMAIL    = process.env.ADMIN_EMAIL    || 'admin@4kautos.com';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin1234';
+
 const CARS = [
   { title:'2020 Toyota Camry XSE',   make:'Toyota',     model:'Camry',       year:2020, mileage:42000, price:14500, currency:'USD', bodyType:'Sedan',  location:'Atlanta, GA, USA',     latitude:33.7490,  longitude:-84.3880, condition:'excellent', description:'Full service history. Accident-free. Leather seats, sunroof, push-start.', photos:['https://placehold.co/800x500/12121f/8b7cff?text=Toyota+Camry'],   featured:true  },
   { title:'2019 Honda Accord Sport',  make:'Honda',      model:'Accord',      year:2019, mileage:68000, price:11000, currency:'USD', bodyType:'Sedan',  location:'London, UK',           latitude:51.5074,  longitude:-0.1278,  condition:'good',      description:'One owner. Regular maintenance at Honda dealership. Clean title.', photos:['https://placehold.co/800x500/12121f/8b7cff?text=Honda+Accord'],   featured:false },
@@ -43,7 +49,7 @@ async function seed() {
 
   await pool.query(
     'INSERT INTO users (name, email, password, role, verified) VALUES (?,?,?,?,?)',
-    ['Admin', 'admin@4kautos.com', await hash('admin1234'), 'admin', true]
+    ['Admin', ADMIN_EMAIL, await hash(ADMIN_PASSWORD), 'admin', true]
   );
   console.log('Created users: seller, buyer, admin');
 
@@ -66,7 +72,7 @@ async function seed() {
   console.log('\n✅ Seed complete!');
   console.log('  Seller: seller@4kautos.com / password123');
   console.log('  Buyer:  buyer@4kautos.com  / password123');
-  console.log('  Admin:  admin@4kautos.com  / admin1234');
+  console.log(`  Admin:  ${ADMIN_EMAIL}  /  ${ADMIN_PASSWORD === 'admin1234' ? 'admin1234   ⚠️  CHANGE FOR PRODUCTION' : '(the ADMIN_PASSWORD you set)'}`);
 
   await pool.end();
   process.exit(0);
