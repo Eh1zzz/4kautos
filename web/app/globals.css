@@ -41,4 +41,15 @@ h1 { font-size: clamp(1.5rem, 4vw, 2.2rem); margin: .25rem 0 .5rem; line-height:
 .card-title { font-weight: 600; font-size: .92rem; }
 .card-meta { color: var(--muted); font-size: .78rem; margin-top: .2rem; }
 
-@media (max-width: 560px) { .specs { grid-template-columns: 1fr; } }
+.filters { display: flex; flex-wrap: wrap; gap: .6rem; margin-bottom: 1.25rem; }
+.f-input { background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 9px; padding: .6rem .75rem; font-size: .88rem; font-family: inherit; flex: 1 1 130px; min-width: 0; }
+.f-btn { background: var(--accent); color: #fff; border: none; border-radius: 9px; padding: .6rem 1.4rem; font-weight: 700; cursor: pointer; flex: 0 0 auto; }
+.f-btn:hover { filter: brightness(1.08); }
+.count { margin-bottom: 1rem; }
+.card-price { color: var(--accent); font-weight: 700; font-size: .9rem; margin-top: .35rem; }
+.pager { display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin-top: 2.5rem; }
+.pg { color: var(--accent); font-weight: 600; }
+.pg.disabled { color: var(--border); pointer-events: none; }
+.pg-info { color: var(--muted); font-size: .85rem; }
+
+@media (max-width: 560px) { .specs { grid-template-columns: 1fr; } .f-input { flex: 1 1 100%; } }

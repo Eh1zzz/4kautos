@@ -16,3 +16,25 @@ export async function getCars() {
   if (!res.ok) return [];
   return res.json();
 }
+
+// Search/browse with filters + pagination. `cache: 'no-store'` makes it dynamic
+// (rendered on every request) since results vary by query — the right choice for
+// search. Reads the X-Total-* headers the API sets for pagination.
+export async function searchCars(searchParams = {}) {
+  const allow = ['q', 'make', 'model', 'year', 'minPrice', 'maxPrice', 'condition', 'type', 'sort', 'page', 'limit', 'minUsd', 'maxUsd'];
+  const qs = new URLSearchParams();
+  for (const k of allow) {
+    const v = searchParams[k];
+    if (v != null && v !== '') qs.set(k, String(v));
+  }
+  if (!qs.has('limit')) qs.set('limit', '12');
+
+  const res = await fetch(`${API_BASE}/v1/cars?${qs.toString()}`, { cache: 'no-store' });
+  if (!res.ok) return { cars: [], total: 0, pages: 1 };
+  const cars = await res.json();
+  return {
+    cars,
+    total: Number(res.headers.get('X-Total-Count')) || cars.length,
+    pages: Number(res.headers.get('X-Total-Pages')) || 1,
+  };
+}

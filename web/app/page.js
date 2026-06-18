@@ -10,7 +10,7 @@ export default async function Home() {
     <main className="wrap">
       <header className="topbar">
         <span className="brand">4KAUTOS</span>
-        <span className="tag">Next.js preview</span>
+        <a className="tag" href="/listings">Browse cars →</a>
       </header>
       <h1>Listings</h1>
       <p className="muted">Server-rendered from your Express API. Open any car to see the SEO-ready detail page.</p>

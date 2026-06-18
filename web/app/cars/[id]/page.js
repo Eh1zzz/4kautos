@@ -43,7 +43,7 @@ export default async function CarPage({ params }) {
     <main className="wrap">
       <header className="topbar">
         <a className="brand" href="/">4KAUTOS</a>
-        <a className="tag" href="/">← All listings</a>
+        <a className="tag" href="/listings">← All listings</a>
       </header>
 
       {car.photos?.[0] && <img className="hero" src={car.photos[0]} alt={name} />}
