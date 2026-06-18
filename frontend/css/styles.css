@@ -876,7 +876,12 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:3rem 2re
 @media(max-width:640px){
   .nav-links{display:none}
   .nav-search{display:none}
+  /* Collapse the desktop action buttons + currency into the hamburger drawer;
+     leave only the theme toggle and the hamburger in the bar. */
+  .nav-actions .nav-btn{display:none}
   .nav-hamburger{display:flex}
+  .navbar{padding-left:1rem;padding-right:1rem}
+  .nav-actions{gap:.5rem}
   .hero-stats{gap:2rem}
   .search-fields{grid-template-columns:1fr}
   .search-fields .search-btn{grid-column:span 1}
@@ -1366,6 +1371,14 @@ html.has-cursor-warn,html.has-cursor-warn *{cursor:none!important}
 .adm-btn:hover{border-color:var(--border-hi);color:var(--text)}
 .adm-btn.danger{color:var(--red);background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.2)}
 .adm-btn.danger:hover{background:rgba(239,68,68,.16)}
+/* On phones, stack each transaction/admin row so the action buttons sit below
+   the info (full-width, left-aligned) instead of crammed into the bottom-right
+   corner where the floating chat button overlaps them. */
+@media(max-width:640px){
+  .tx-row{grid-template-columns:1fr;gap:.55rem;align-items:start}
+  .admin-row{grid-template-columns:1fr!important}
+  .admin-actions{justify-content:flex-start;flex-wrap:wrap}
+}
 .role-chip{font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:2px 7px;border-radius:10px;margin-left:7px;vertical-align:middle}
 .role-admin{background:rgba(139,124,255,.16);color:var(--accent)}
 .role-seller{background:rgba(34,211,238,.13);color:var(--accent2)}
