@@ -867,11 +867,21 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:3rem 2re
   .profile-sidebar{position:static}
   .footer-grid{grid-template-columns:1fr 1fr}
 }
+.filters-toggle{display:none}
 @media(max-width:900px){
   .listings-layout{grid-template-columns:1fr}
-  .filter-sidebar{position:static}
+  .listings-main{min-width:0;padding-bottom:4.5rem}  /* shrink to fit + clear the floating chat button */
   .search-fields{grid-template-columns:1fr 1fr}
   .search-fields .search-btn{grid-column:span 2}
+  /* Collapse the filter panel behind a toggle so cars show first on phones */
+  .filters-toggle{display:flex;align-items:center;justify-content:center;gap:.5rem;width:100%;padding:.85rem 1rem;margin-bottom:1.1rem;border-radius:var(--radius);background:var(--surface);border:1.5px solid var(--border);color:var(--text);font-family:inherit;font-weight:600;font-size:.9rem;cursor:pointer;transition:border-color var(--speed)}
+  .filters-toggle:hover{border-color:var(--border-hi)}
+  .filter-sidebar{position:static;display:none}
+  .filter-sidebar.open{display:block;margin-bottom:1.25rem}
+  /* Brand quick-filter becomes a horizontal swipe strip so it doesn't push cars down.
+     Scoped to .listings-main so it outranks the base .brand-strip-sm grid rule. */
+  .listings-main .brand-strip-sm{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:.6rem;padding-bottom:.4rem;-webkit-overflow-scrolling:touch}
+  .listings-main .brand-strip-sm .brand-tile{flex:0 0 84px}
 }
 @media(max-width:640px){
   .nav-links{display:none}
@@ -886,8 +896,9 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:3rem 2re
   .search-fields{grid-template-columns:1fr}
   .search-fields .search-btn{grid-column:span 1}
   .footer-grid{grid-template-columns:1fr}
-  .chat-window{width:calc(100vw - 2rem);right:1rem;bottom:calc(1rem + 68px)}
-  .chat-fab{right:1rem;bottom:1rem}
+  .chat-window{width:calc(100vw - 2rem);right:1rem;bottom:calc(1rem + 60px)}
+  .chat-fab{right:1rem;bottom:1rem;width:48px;height:48px}
+  .chat-fab svg{width:20px;height:20px}
 }
 
 /* ══════════════════════════════════════════

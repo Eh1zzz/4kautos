@@ -194,6 +194,27 @@
   document.getElementById('f-apply').addEventListener('click', () => loadListings(1));
   document.getElementById('f-reset').addEventListener('click', () => { location.href = 'listings.html'; });
   document.getElementById('sort-select').addEventListener('change', () => loadListings(1));
+
+  /* Mobile: collapse the filter panel behind a toggle so cars show first. */
+  (function () {
+    const layout = document.querySelector('.listings-layout');
+    const sidebar = document.querySelector('.filter-sidebar');
+    if (!layout || !sidebar) return;
+    const btn = document.createElement('button');
+    btn.className = 'filters-toggle';
+    btn.type = 'button';
+    btn.setAttribute('aria-expanded', 'false');
+    btn.textContent = '🔍 Filters';
+    layout.prepend(btn);
+    const setOpen = (open) => {
+      sidebar.classList.toggle('open', open);
+      btn.setAttribute('aria-expanded', String(open));
+      btn.textContent = open ? '✕ Hide filters' : '🔍 Filters';
+    };
+    btn.addEventListener('click', () => setOpen(!sidebar.classList.contains('open')));
+    // Collapse again after applying so the results are immediately visible.
+    document.getElementById('f-apply').addEventListener('click', () => setOpen(false));
+  })();
   document.getElementById('nav-q').addEventListener('keydown', e => {
     if (e.key === 'Enter') { urlP.set('q', e.target.value); location.href = `listings.html?${urlP}`; }
   });
