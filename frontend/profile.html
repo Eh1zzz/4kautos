@@ -343,6 +343,7 @@
             <div class="tx-meta">${other ? `${isBuyer ? 'Purchase from' : 'Sale to'} ${esc(other)}` : ''} · <span class="js-price" data-amount="${esc(car?.price ?? '')}" data-native="${esc(car?.currency||'NGN')}">${car?.price!=null ? Money.fmt(car.price, car.currency||'NGN') : '—'}</span></div>
           </div>
           <span class="tx-status status-${t.status}">${t.status.replace(/_/g,' ')}</span>
+          ${t.payout_status ? `<span class="tx-status" style="background:rgba(139,124,255,.14);color:var(--accent)">${t.payout_status === 'pending' ? 'payout pending' : t.payout_status === 'paid' ? 'paid out' : 'sent to seller'}</span>` : ''}
           <div class="tx-actions">
             ${canPay ? `<button class="pay-btn" onclick="payEscrow('${t.id}', this)">💳 Pay into escrow</button>` : ''}
             ${canSettle ? `<button class="pay-btn" onclick="releaseTx('${t.id}', this)">✓ Confirm &amp; release</button>` : ''}
