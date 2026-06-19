@@ -36,7 +36,10 @@ router.post('/initiate', authenticate, authorize('buyer'), async (req, res) => {
     const paymentRef = `4kautos-${tx.id}-${crypto.randomBytes(6).toString('hex')}`;
     await setPaymentInit(tx.id, { amount, currency, paymentRef });
 
-    const base = process.env.APP_BASE_URL || `${req.protocol}://${req.get('host')}`;
+    // Use only the ORIGIN for the redirect — so a misconfigured APP_BASE_URL that
+    // includes a path (e.g. the webhook URL) can't break the return link.
+    let base = process.env.APP_BASE_URL || `${req.protocol}://${req.get('host')}`;
+    try { base = new URL(base).origin; } catch { base = `${req.protocol}://${req.get('host')}`; }
     const link = await FLW.initiatePayment({
       tx_ref: paymentRef,
       amount,
