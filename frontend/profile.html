@@ -336,7 +336,7 @@
         return `<div class="tx-row">
           <div>
             <div class="tx-car">${esc(car?.title || 'Car Listing')}</div>
-            <div class="tx-meta">${other ? `with ${esc(other)}` : ''} · <span class="js-price" data-amount="${esc(car?.price ?? '')}" data-native="${esc(car?.currency||'NGN')}">${car?.price!=null ? Money.fmt(car.price, car.currency||'NGN') : '—'}</span></div>
+            <div class="tx-meta">${other ? `${isBuyer ? 'Purchase from' : 'Sale to'} ${esc(other)}` : ''} · <span class="js-price" data-amount="${esc(car?.price ?? '')}" data-native="${esc(car?.currency||'NGN')}">${car?.price!=null ? Money.fmt(car.price, car.currency||'NGN') : '—'}</span></div>
           </div>
           <span class="tx-status status-${t.status}">${t.status.replace(/_/g,' ')}</span>
           <div class="tx-actions">
@@ -390,6 +390,7 @@
   }
 
   // Seller payout details (bank account we send their sales to).
+  let _payoutBanks = [];
   async function loadPayout() {
     const el = document.getElementById('payout-content');
     try {
@@ -397,16 +398,18 @@
         API.getPayout().catch(() => ({})),
         API.getBanks().catch(() => []),
       ]);
+      _payoutBanks = banks;
       const saved = payout && payout.account_number;
-      const opts = banks.map(b => `<option value="${esc(b.code)}" ${saved && payout.bank_code === b.code ? 'selected' : ''}>${esc(b.name)}</option>`).join('');
+      const savedBankName = saved ? (banks.find(b => b.code === payout.bank_code)?.name || '') : '';
+      // A <datalist> gives a native type-to-search box over the long bank list.
+      const opts = banks.map(b => `<option value="${esc(b.name)}"></option>`).join('');
       el.innerHTML = `
         ${saved
           ? `<p style="color:var(--text2);font-size:.85rem;margin-bottom:.75rem">Paying out to <b>${esc(payout.account_name || '')}</b> · ${esc(payout.account_number)}</p>`
           : `<p style="color:var(--text3);font-size:.85rem;margin-bottom:.75rem">Add a bank account so buyers can release funds to you.</p>`}
         <form id="payout-form" style="display:flex;flex-wrap:wrap;gap:.6rem;align-items:center">
-          <select id="po-bank" required style="flex:1 1 180px;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:8px;font-size:.85rem">
-            <option value="">Select bank…</option>${opts}
-          </select>
+          <input id="po-bank" list="bank-list" autocomplete="off" placeholder="Type your bank…" value="${esc(savedBankName)}" required style="flex:1 1 180px;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:8px;font-size:.85rem">
+          <datalist id="bank-list">${opts}</datalist>
           <input id="po-acct" inputmode="numeric" placeholder="Account number" value="${saved ? esc(payout.account_number) : ''}" required style="flex:1 1 150px;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:8px;font-size:.85rem">
           <button type="submit" class="pay-btn">Save payout</button>
         </form>
@@ -420,12 +423,14 @@
   async function savePayoutDetails(e) {
     e.preventDefault();
     const btn = e.target.querySelector('button[type=submit]');
-    const bankCode = document.getElementById('po-bank').value;
+    const typed = document.getElementById('po-bank').value.trim();
     const accountNumber = document.getElementById('po-acct').value.trim();
-    if (!bankCode || !accountNumber) { toast('Pick a bank and enter your account number', 'error'); return; }
+    const bank = _payoutBanks.find(b => b.name.toLowerCase() === typed.toLowerCase());
+    if (!bank) { toast('Pick your bank from the list', 'error'); return; }
+    if (!accountNumber) { toast('Enter your account number', 'error'); return; }
     btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Verifying…';
     try {
-      const { payout } = await API.savePayout(bankCode, accountNumber);
+      const { payout } = await API.savePayout(bank.code, accountNumber);
       toast(`Verified: ${payout.account_name}`, 'success');
       loadPayout();
     } catch (err) { toast(err.message || 'Could not save', 'error'); btn.disabled = false; btn.textContent = orig; }
