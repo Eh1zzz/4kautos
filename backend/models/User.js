@@ -56,3 +56,24 @@ export async function deleteById(id) {
   const [result] = await pool.query('DELETE FROM users WHERE id = ?', [numId]);
   return result.affectedRows > 0 ? { id: numId } : null;
 }
+
+/* ── Seller payout (bank) details ──────────────────────────── */
+export async function getPayout(id) {
+  const numId = parseInt(id, 10);
+  if (isNaN(numId)) return null;
+  const [rows] = await pool.query(
+    'SELECT bank_code, account_number, account_name FROM users WHERE id = ?',
+    [numId]
+  );
+  return rows[0] || null;
+}
+
+export async function setPayout(id, { bankCode, accountNumber, accountName }) {
+  const numId = parseInt(id, 10);
+  if (isNaN(numId)) return null;
+  await pool.query(
+    'UPDATE users SET bank_code = ?, account_number = ?, account_name = ? WHERE id = ?',
+    [bankCode, accountNumber, accountName, numId]
+  );
+  return getPayout(numId);
+}

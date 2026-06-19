@@ -110,6 +110,10 @@
 
     <!-- Transactions Tab -->
     <div class="profile-tab hidden" id="tab-transactions">
+      <div class="panel hidden" id="payout-panel">
+        <div class="panel-head"><h3>Payout details</h3><span style="font-size:.75rem;color:var(--text3)">where your sales are paid</span></div>
+        <div id="payout-content"><div class="spinner-wrap"><div class="spinner"></div></div></div>
+      </div>
       <div class="panel">
         <div class="panel-head"><h3>Transaction History</h3></div>
         <div id="tx-content"><div class="spinner-wrap"><div class="spinner"></div></div></div>
@@ -316,6 +320,7 @@
   }
 
   async function loadTransactions() {
+    if (API.getUser()?.role === 'seller') { document.getElementById('payout-panel').classList.remove('hidden'); loadPayout(); }
     const el = document.getElementById('tx-content');
     el.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div></div>';
     try {
@@ -327,7 +332,7 @@
         const other = me?.id === t.buyer_id ? t.seller?.name : t.buyer?.name;
         const isBuyer   = me?.id === t.buyer_id;
         const canPay    = isBuyer && ['initiated','pending_inspection'].includes(t.status);
-        const canRefund = (isBuyer || me?.role === 'admin') && t.status === 'payment_in_escrow';
+        const canSettle = (isBuyer || me?.role === 'admin') && t.status === 'payment_in_escrow';
         return `<div class="tx-row">
           <div>
             <div class="tx-car">${esc(car?.title || 'Car Listing')}</div>
@@ -336,7 +341,8 @@
           <span class="tx-status status-${t.status}">${t.status.replace(/_/g,' ')}</span>
           <div class="tx-actions">
             ${canPay ? `<button class="pay-btn" onclick="payEscrow('${t.id}', this)">💳 Pay into escrow</button>` : ''}
-            ${canRefund ? `<button class="adm-btn danger" onclick="refundTx('${t.id}', this)">Cancel &amp; refund</button>` : ''}
+            ${canSettle ? `<button class="pay-btn" onclick="releaseTx('${t.id}', this)">✓ Confirm &amp; release</button>` : ''}
+            ${canSettle ? `<button class="adm-btn danger" onclick="refundTx('${t.id}', this)">Cancel &amp; refund</button>` : ''}
             <select onchange="updateTx('${t.id}', this.value)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:6px;font-size:.75rem">
               <option value="">Update…</option>
               <option value="pending_inspection">Inspection</option>
@@ -373,6 +379,56 @@
     btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Refunding…';
     try { await API.refundPayment(id); toast('Refund issued', 'success'); loadTransactions(); }
     catch (e) { toast(e.message || 'Refund failed', 'error'); btn.disabled = false; btn.textContent = orig; }
+  }
+
+  // Buyer confirms receipt → release escrowed funds to the seller.
+  async function releaseTx(id, btn) {
+    if (!confirm('Confirm you’ve received the vehicle and release the funds to the seller? This cannot be undone.')) return;
+    btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Releasing…';
+    try { await API.releasePayment(id); toast('Funds released to the seller', 'success'); loadTransactions(); }
+    catch (e) { toast(e.message || 'Release failed', 'error'); btn.disabled = false; btn.textContent = orig; }
+  }
+
+  // Seller payout details (bank account we send their sales to).
+  async function loadPayout() {
+    const el = document.getElementById('payout-content');
+    try {
+      const [payout, banks] = await Promise.all([
+        API.getPayout().catch(() => ({})),
+        API.getBanks().catch(() => []),
+      ]);
+      const saved = payout && payout.account_number;
+      const opts = banks.map(b => `<option value="${esc(b.code)}" ${saved && payout.bank_code === b.code ? 'selected' : ''}>${esc(b.name)}</option>`).join('');
+      el.innerHTML = `
+        ${saved
+          ? `<p style="color:var(--text2);font-size:.85rem;margin-bottom:.75rem">Paying out to <b>${esc(payout.account_name || '')}</b> · ${esc(payout.account_number)}</p>`
+          : `<p style="color:var(--text3);font-size:.85rem;margin-bottom:.75rem">Add a bank account so buyers can release funds to you.</p>`}
+        <form id="payout-form" style="display:flex;flex-wrap:wrap;gap:.6rem;align-items:center">
+          <select id="po-bank" required style="flex:1 1 180px;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:8px;font-size:.85rem">
+            <option value="">Select bank…</option>${opts}
+          </select>
+          <input id="po-acct" inputmode="numeric" placeholder="Account number" value="${saved ? esc(payout.account_number) : ''}" required style="flex:1 1 150px;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:8px;font-size:.85rem">
+          <button type="submit" class="pay-btn">Save payout</button>
+        </form>
+        ${banks.length === 0 ? '<p style="color:var(--text3);font-size:.72rem;margin-top:.5rem">Bank list unavailable — payments may not be configured yet.</p>' : ''}`;
+      document.getElementById('payout-form').addEventListener('submit', savePayoutDetails);
+    } catch (e) {
+      el.innerHTML = `<p style="color:var(--red);font-size:.85rem">${esc(e.message || 'Could not load payout settings')}</p>`;
+    }
+  }
+
+  async function savePayoutDetails(e) {
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type=submit]');
+    const bankCode = document.getElementById('po-bank').value;
+    const accountNumber = document.getElementById('po-acct').value.trim();
+    if (!bankCode || !accountNumber) { toast('Pick a bank and enter your account number', 'error'); return; }
+    btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Verifying…';
+    try {
+      const { payout } = await API.savePayout(bankCode, accountNumber);
+      toast(`Verified: ${payout.account_name}`, 'success');
+      loadPayout();
+    } catch (err) { toast(err.message || 'Could not save', 'error'); btn.disabled = false; btn.textContent = orig; }
   }
 
   async function loadThreads() {

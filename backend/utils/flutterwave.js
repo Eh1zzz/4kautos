@@ -42,3 +42,37 @@ export async function refundTransaction(flwId, amount) {
   const data = await res.json().catch(() => ({}));
   return res.ok && data.status === 'success';
 }
+
+// ── Payouts (transfers to sellers) ──────────────────────────
+// Bank list for a country (the seller's payout dropdown).
+export async function getBanks(country = 'NG') {
+  const res = await fetch(`${FLW_BASE}/banks/${country}`, { headers: { Authorization: `Bearer ${secret()}` } });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.status !== 'success') return [];
+  return (data.data || []).map(b => ({ code: b.code, name: b.name }));
+}
+
+// Confirm an account number resolves to a real name (prevents failed payouts).
+export async function resolveAccount(accountNumber, bankCode) {
+  const res = await fetch(`${FLW_BASE}/accounts/resolve`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${secret()}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ account_number: accountNumber, account_bank: bankCode }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.status !== 'success') return null;
+  return data.data?.account_name || null;
+}
+
+// Initiate a payout to a bank account. Throws on failure; otherwise returns the
+// queued transfer (it completes asynchronously, confirmed via the transfer webhook).
+export async function createTransfer({ bankCode, accountNumber, amount, currency, reference, narration }) {
+  const res = await fetch(`${FLW_BASE}/transfers`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${secret()}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ account_bank: bankCode, account_number: accountNumber, amount, currency, reference, narration: narration || 'Escrow release' }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.status !== 'success') throw new Error(data.message || 'Transfer could not be created');
+  return data.data; // { id, reference, status, ... }
+}

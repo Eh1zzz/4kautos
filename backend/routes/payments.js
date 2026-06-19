@@ -2,8 +2,9 @@ import express from 'express';
 import crypto from 'crypto';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { toId } from '../utils/validation.js';
-import { findById as findTx, setPaymentInit, findByPaymentRef, markEscrowPaid, markRefunded } from '../models/Transaction.js';
+import { findById as findTx, setPaymentInit, findByPaymentRef, markEscrowPaid, markRefunded, markReleased, revertRelease } from '../models/Transaction.js';
 import { findById as findCar } from '../models/Car.js';
+import { getPayout, setPayout } from '../models/User.js';
 import * as FLW from '../utils/flutterwave.js';
 
 const router = express.Router();
@@ -80,6 +81,83 @@ router.post('/refund', authenticate, async (req, res) => {
   }
 });
 
+// GET /payments/banks — bank list for the seller's payout dropdown.
+router.get('/banks', authenticate, async (_req, res) => {
+  if (!FLW.isConfigured()) return res.status(503).json({ message: 'Payments are not configured yet' });
+  try { res.json(await FLW.getBanks('NG')); }
+  catch { res.status(502).json({ message: 'Could not load banks' }); }
+});
+
+// POST /payments/resolve-account { accountNumber, bankCode } — confirm the name.
+router.post('/resolve-account', authenticate, async (req, res) => {
+  if (!FLW.isConfigured()) return res.status(503).json({ message: 'Payments are not configured yet' });
+  const { accountNumber, bankCode } = req.body;
+  if (!accountNumber || !bankCode) return res.status(400).json({ message: 'accountNumber and bankCode are required' });
+  const name = await FLW.resolveAccount(String(accountNumber).trim(), String(bankCode).trim());
+  if (!name) return res.status(422).json({ message: 'Could not verify that account — check the number and bank' });
+  res.json({ accountName: name });
+});
+
+// GET /payments/payout — the seller's saved payout details.
+router.get('/payout', authenticate, authorize('seller'), async (req, res) => {
+  res.json((await getPayout(req.user.id)) || {});
+});
+
+// POST /payments/payout { bankCode, accountNumber } — seller saves payout details
+// (we resolve + store the verified account name so releases don't fail).
+router.post('/payout', authenticate, authorize('seller'), async (req, res) => {
+  if (!FLW.isConfigured()) return res.status(503).json({ message: 'Payments are not configured yet' });
+  const { bankCode, accountNumber } = req.body;
+  if (!bankCode || !accountNumber) return res.status(400).json({ message: 'bankCode and accountNumber are required' });
+  const accountName = await FLW.resolveAccount(String(accountNumber).trim(), String(bankCode).trim());
+  if (!accountName) return res.status(422).json({ message: 'Could not verify that account — check the number and bank' });
+  const saved = await setPayout(req.user.id, { bankCode: String(bankCode).trim(), accountNumber: String(accountNumber).trim(), accountName });
+  res.json({ message: 'Payout details saved', payout: saved });
+});
+
+// POST /payments/release { transactionId } — buyer (own) or admin confirms receipt;
+// transfers the escrowed funds to the seller and completes the transaction.
+router.post('/release', authenticate, async (req, res) => {
+  try {
+    if (!FLW.isConfigured()) return res.status(503).json({ message: 'Payments are not configured yet' });
+
+    const txId = toId(req.body.transactionId);
+    if (!txId) return res.status(400).json({ message: 'A valid transactionId is required' });
+
+    const tx = await findTx(txId);
+    if (!tx) return res.status(404).json({ message: 'Transaction not found' });
+    if (req.user.role !== 'admin' && req.user.id !== tx.buyer_id)
+      return res.status(403).json({ message: 'Only the buyer can release the funds' });
+    if (tx.status !== 'payment_in_escrow')
+      return res.status(409).json({ message: 'Funds can only be released from escrow' });
+
+    const payout = await getPayout(tx.seller_id);
+    if (!payout?.bank_code || !payout?.account_number)
+      return res.status(409).json({ message: 'The seller has not added payout details yet' });
+
+    const reference = `4kautos-payout-${tx.id}-${crypto.randomBytes(6).toString('hex')}`;
+    let transfer;
+    try {
+      transfer = await FLW.createTransfer({
+        bankCode: payout.bank_code,
+        accountNumber: payout.account_number,
+        amount: Number(tx.amount),
+        currency: tx.currency || 'NGN',
+        reference,
+        narration: `4kautos escrow release #${tx.id}`,
+      });
+    } catch (e) {
+      return res.status(502).json({ message: e.message || 'Payout could not be initiated' });
+    }
+
+    const updated = await markReleased(tx.id, transfer?.id || reference);
+    res.json({ message: 'Funds released to the seller', transaction: updated });
+  } catch (err) {
+    console.error('payment release:', err.message);
+    res.status(502).json({ message: 'Could not release the funds' });
+  }
+});
+
 // POST /payments/webhook — Flutterwave calls this on payment events.
 // Auth = the shared "secret hash" you set in the FLW dashboard (the verif-hash header).
 router.post('/webhook', async (req, res) => {
@@ -92,7 +170,22 @@ router.post('/webhook', async (req, res) => {
   res.status(200).end();
 
   try {
-    const data = (req.body && req.body.data) || {};
+    const evt = req.body || {};
+    const data = evt.data || {};
+
+    // Payout (transfer) events — reconcile a release. If a payout ultimately fails,
+    // put the funds back into escrow so it can be retried.
+    if (evt.event === 'transfer.completed' || (data.reference && String(data.reference).startsWith('4kautos-payout-'))) {
+      if (String(data.status).toUpperCase() === 'FAILED') {
+        const reverted = await revertRelease(data.reference);
+        if (reverted) console.error(`⚠️ payout failed → reverted to escrow: ${data.reference}`);
+      } else {
+        console.log(`✅ payout settled: ${data.reference}`);
+      }
+      return;
+    }
+
+    // Charge (collection) events — fund escrow.
     if (!data.id) return;
 
     // Re-verify server-side — never trust the webhook's amount/status by itself.

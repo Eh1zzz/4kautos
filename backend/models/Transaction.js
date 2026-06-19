@@ -152,3 +152,29 @@ export async function markRefunded(id) {
   const [rows] = await pool.query('SELECT * FROM transactions WHERE id = ?', [numId]);
   return rows[0] || null;
 }
+
+// Release escrow → completed, recording the payout transfer reference. Idempotent
+// (only from payment_in_escrow).
+export async function markReleased(id, transferRef) {
+  const numId = toId(id);
+  if (!numId) return null;
+  const [result] = await pool.query(
+    "UPDATE transactions SET status = 'completed', transfer_ref = ? WHERE id = ? AND status = 'payment_in_escrow'",
+    [transferRef != null ? String(transferRef) : null, numId]
+  );
+  if (result.affectedRows === 0) return null;
+  const [rows] = await pool.query('SELECT * FROM transactions WHERE id = ?', [numId]);
+  return rows[0] || null;
+}
+
+// Put funds back into escrow if the payout transfer ultimately fails (webhook).
+export async function revertRelease(transferRef) {
+  if (!transferRef) return null;
+  const [result] = await pool.query(
+    "UPDATE transactions SET status = 'payment_in_escrow' WHERE transfer_ref = ? AND status = 'completed'",
+    [String(transferRef)]
+  );
+  if (result.affectedRows === 0) return null;
+  const [rows] = await pool.query('SELECT * FROM transactions WHERE transfer_ref = ?', [String(transferRef)]);
+  return rows[0] || null;
+}

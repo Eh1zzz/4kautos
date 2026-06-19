@@ -113,6 +113,13 @@ export async function connectDB() {
   await ensureColumn('transactions', 'paid_at',     'TIMESTAMP NULL');
   await ensureIndex('transactions', 'idx_tx_payment_ref', 'payment_ref');
 
+  // Seller payout details (for releasing escrow via Flutterwave transfers) + the
+  // payout transfer reference on the transaction.
+  await ensureColumn('users', 'bank_code',      'VARCHAR(10)');
+  await ensureColumn('users', 'account_number', 'VARCHAR(20)');
+  await ensureColumn('users', 'account_name',   'VARCHAR(120)');
+  await ensureColumn('transactions', 'transfer_ref', 'VARCHAR(64)');
+
   console.log('✅ MySQL connected and tables ready');
 }
 
