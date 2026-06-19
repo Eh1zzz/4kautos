@@ -57,23 +57,32 @@ export async function deleteById(id) {
   return result.affectedRows > 0 ? { id: numId } : null;
 }
 
-/* ── Seller payout (bank) details ──────────────────────────── */
+/* ── Seller payout details (multi-rail: NG bank or international) ── */
 export async function getPayout(id) {
   const numId = parseInt(id, 10);
   if (isNaN(numId)) return null;
   const [rows] = await pool.query(
-    'SELECT bank_code, account_number, account_name FROM users WHERE id = ?',
+    `SELECT payout_method, bank_code, account_number, account_name,
+            payout_country, payout_currency, payout_details
+     FROM users WHERE id = ?`,
     [numId]
   );
-  return rows[0] || null;
+  const p = rows[0];
+  if (!p) return null;
+  // Back-compat: an NG bank saved before payout_method existed.
+  if (!p.payout_method && p.bank_code) p.payout_method = 'ng_bank';
+  return p;
 }
 
-export async function setPayout(id, { bankCode, accountNumber, accountName }) {
+export async function setPayout(id, p = {}) {
   const numId = parseInt(id, 10);
   if (isNaN(numId)) return null;
   await pool.query(
-    'UPDATE users SET bank_code = ?, account_number = ?, account_name = ? WHERE id = ?',
-    [bankCode, accountNumber, accountName, numId]
+    `UPDATE users SET payout_method = ?, bank_code = ?, account_number = ?, account_name = ?,
+            payout_country = ?, payout_currency = ?, payout_details = ?
+     WHERE id = ?`,
+    [p.method || null, p.bankCode || null, p.accountNumber || null, p.accountName || null,
+     p.country || null, p.currency || null, p.details || null, numId]
   );
   return getPayout(numId);
 }

@@ -120,6 +120,14 @@ export async function connectDB() {
   await ensureColumn('users', 'account_name',   'VARCHAR(120)');
   await ensureColumn('transactions', 'transfer_ref', 'VARCHAR(64)');
 
+  // Multi-rail payouts: payout method + international fields, and the per-release
+  // payout status ('transferred' = auto via Flutterwave, 'pending'/'paid' = manual).
+  await ensureColumn('users', 'payout_method',   'VARCHAR(20)');
+  await ensureColumn('users', 'payout_country',  'VARCHAR(60)');
+  await ensureColumn('users', 'payout_currency', 'VARCHAR(3)');
+  await ensureColumn('users', 'payout_details',  'VARCHAR(500)');
+  await ensureColumn('transactions', 'payout_status', 'VARCHAR(20)');
+
   console.log('✅ MySQL connected and tables ready');
 }
 

@@ -153,14 +153,15 @@ export async function markRefunded(id) {
   return rows[0] || null;
 }
 
-// Release escrow → completed, recording the payout transfer reference. Idempotent
-// (only from payment_in_escrow).
-export async function markReleased(id, transferRef) {
+// Release escrow → completed, recording the payout reference + status
+// ('transferred' = auto via Flutterwave, 'pending' = international/manual).
+// Idempotent (only from payment_in_escrow).
+export async function markReleased(id, transferRef, payoutStatus) {
   const numId = toId(id);
   if (!numId) return null;
   const [result] = await pool.query(
-    "UPDATE transactions SET status = 'completed', transfer_ref = ? WHERE id = ? AND status = 'payment_in_escrow'",
-    [transferRef != null ? String(transferRef) : null, numId]
+    "UPDATE transactions SET status = 'completed', transfer_ref = ?, payout_status = ? WHERE id = ? AND status = 'payment_in_escrow'",
+    [transferRef != null ? String(transferRef) : null, payoutStatus || null, numId]
   );
   if (result.affectedRows === 0) return null;
   const [rows] = await pool.query('SELECT * FROM transactions WHERE id = ?', [numId]);
@@ -171,10 +172,41 @@ export async function markReleased(id, transferRef) {
 export async function revertRelease(transferRef) {
   if (!transferRef) return null;
   const [result] = await pool.query(
-    "UPDATE transactions SET status = 'payment_in_escrow' WHERE transfer_ref = ? AND status = 'completed'",
+    "UPDATE transactions SET status = 'payment_in_escrow', payout_status = NULL WHERE transfer_ref = ? AND status = 'completed'",
     [String(transferRef)]
   );
   if (result.affectedRows === 0) return null;
   const [rows] = await pool.query('SELECT * FROM transactions WHERE transfer_ref = ?', [String(transferRef)]);
+  return rows[0] || null;
+}
+
+// International payouts awaiting manual settlement (admin view) — includes the
+// seller's payout details so the operator can pay them (e.g. via Wise).
+export async function pendingPayouts() {
+  const [rows] = await pool.query(
+    `SELECT t.id, t.amount, t.currency, t.created_at, t.car_id,
+            c.title AS car_title,
+            s.id AS seller_id, s.name AS seller_name, s.email AS seller_email,
+            s.account_name AS payout_name, s.payout_country, s.payout_currency, s.payout_details
+     FROM transactions t
+     JOIN users s ON s.id = t.seller_id
+     LEFT JOIN cars c ON c.id = t.car_id
+     WHERE t.payout_status = 'pending'
+     ORDER BY t.created_at ASC
+     LIMIT 500`
+  );
+  return rows;
+}
+
+// Admin marks an international payout as settled.
+export async function markPayoutPaid(id) {
+  const numId = toId(id);
+  if (!numId) return null;
+  const [result] = await pool.query(
+    "UPDATE transactions SET payout_status = 'paid' WHERE id = ? AND payout_status = 'pending'",
+    [numId]
+  );
+  if (result.affectedRows === 0) return null;
+  const [rows] = await pool.query('SELECT * FROM transactions WHERE id = ?', [numId]);
   return rows[0] || null;
 }

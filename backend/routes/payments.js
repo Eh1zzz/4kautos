@@ -2,9 +2,10 @@ import express from 'express';
 import crypto from 'crypto';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { toId } from '../utils/validation.js';
-import { findById as findTx, setPaymentInit, findByPaymentRef, markEscrowPaid, markRefunded, markReleased, revertRelease } from '../models/Transaction.js';
+import { findById as findTx, setPaymentInit, findByPaymentRef, markEscrowPaid, markRefunded, markReleased, revertRelease, pendingPayouts, markPayoutPaid } from '../models/Transaction.js';
 import { findById as findCar } from '../models/Car.js';
 import { getPayout, setPayout } from '../models/User.js';
+import { payOutToSeller } from '../utils/payout.js';
 import * as FLW from '../utils/flutterwave.js';
 
 const router = express.Router();
@@ -103,24 +104,43 @@ router.get('/payout', authenticate, authorize('seller'), async (req, res) => {
   res.json((await getPayout(req.user.id)) || {});
 });
 
-// POST /payments/payout { bankCode, accountNumber } — seller saves payout details
-// (we resolve + store the verified account name so releases don't fail).
+// POST /payments/payout — seller saves payout details (NG bank or international).
+//   ng_bank:      { method:'ng_bank', bankCode, accountNumber }   (verified via FLW)
+//   international: { method:'international', accountName, country, currency?, details }
 router.post('/payout', authenticate, authorize('seller'), async (req, res) => {
-  if (!FLW.isConfigured()) return res.status(503).json({ message: 'Payments are not configured yet' });
-  const { bankCode, accountNumber } = req.body;
-  if (!bankCode || !accountNumber) return res.status(400).json({ message: 'bankCode and accountNumber are required' });
-  const accountName = await FLW.resolveAccount(String(accountNumber).trim(), String(bankCode).trim());
-  if (!accountName) return res.status(422).json({ message: 'Could not verify that account — check the number and bank' });
-  const saved = await setPayout(req.user.id, { bankCode: String(bankCode).trim(), accountNumber: String(accountNumber).trim(), accountName });
-  res.json({ message: 'Payout details saved', payout: saved });
+  try {
+    const method = req.body.method === 'international' ? 'international' : 'ng_bank';
+
+    if (method === 'ng_bank') {
+      if (!FLW.isConfigured()) return res.status(503).json({ message: 'Payments are not configured yet' });
+      const { bankCode, accountNumber } = req.body;
+      if (!bankCode || !accountNumber) return res.status(400).json({ message: 'bankCode and accountNumber are required' });
+      const accountName = await FLW.resolveAccount(String(accountNumber).trim(), String(bankCode).trim());
+      if (!accountName) return res.status(422).json({ message: 'Could not verify that account — check the number and bank' });
+      const saved = await setPayout(req.user.id, { method: 'ng_bank', bankCode: String(bankCode).trim(), accountNumber: String(accountNumber).trim(), accountName });
+      return res.json({ message: 'Payout details saved', payout: saved });
+    }
+
+    // international — stored for manual/Wise settlement (no Flutterwave verification).
+    const accountName = String(req.body.accountName || '').trim();
+    const country = String(req.body.country || '').trim();
+    const details = String(req.body.details || '').trim();
+    const currency = String(req.body.currency || '').trim().toUpperCase() || null;
+    if (!accountName || !country || !details)
+      return res.status(400).json({ message: 'Account holder name, country and bank details are required' });
+    const saved = await setPayout(req.user.id, { method: 'international', accountName, country, currency, details });
+    res.json({ message: 'International payout details saved', payout: saved });
+  } catch (err) {
+    console.error('save payout:', err.message);
+    res.status(502).json({ message: 'Could not save payout details' });
+  }
 });
 
 // POST /payments/release { transactionId } — buyer (own) or admin confirms receipt;
-// transfers the escrowed funds to the seller and completes the transaction.
+// pays the seller via their chosen rail (Flutterwave for NG, manual/Wise for
+// international) and completes the transaction.
 router.post('/release', authenticate, async (req, res) => {
   try {
-    if (!FLW.isConfigured()) return res.status(503).json({ message: 'Payments are not configured yet' });
-
     const txId = toId(req.body.transactionId);
     if (!txId) return res.status(400).json({ message: 'A valid transactionId is required' });
 
@@ -132,30 +152,50 @@ router.post('/release', authenticate, async (req, res) => {
       return res.status(409).json({ message: 'Funds can only be released from escrow' });
 
     const payout = await getPayout(tx.seller_id);
-    if (!payout?.bank_code || !payout?.account_number)
+    if (!payout?.payout_method)
       return res.status(409).json({ message: 'The seller has not added payout details yet' });
+    if (payout.payout_method === 'ng_bank') {
+      if (!payout.bank_code || !payout.account_number)
+        return res.status(409).json({ message: 'The seller has not added payout details yet' });
+      if (!FLW.isConfigured())
+        return res.status(503).json({ message: 'Payments are not configured yet' });
+    }
 
-    const reference = `4kautos-payout-${tx.id}-${crypto.randomBytes(6).toString('hex')}`;
-    let transfer;
+    let result;
     try {
-      transfer = await FLW.createTransfer({
-        bankCode: payout.bank_code,
-        accountNumber: payout.account_number,
-        amount: Number(tx.amount),
-        currency: tx.currency || 'NGN',
-        reference,
-        narration: `4kautos escrow release #${tx.id}`,
-      });
+      result = await payOutToSeller(payout, { amount: Number(tx.amount), currency: tx.currency || 'NGN', txId: tx.id });
     } catch (e) {
       return res.status(502).json({ message: e.message || 'Payout could not be initiated' });
     }
 
-    const updated = await markReleased(tx.id, transfer?.id || reference);
-    res.json({ message: 'Funds released to the seller', transaction: updated });
+    const updated = await markReleased(tx.id, result.transferRef, result.status);
+    res.json({
+      message: result.status === 'pending'
+        ? 'Released — the international payout is queued for settlement'
+        : 'Funds released to the seller',
+      transaction: updated,
+    });
   } catch (err) {
     console.error('payment release:', err.message);
     res.status(502).json({ message: 'Could not release the funds' });
   }
+});
+
+// GET /payments/pending-payouts — admin: international releases awaiting manual settlement.
+router.get('/pending-payouts', authenticate, authorize('admin'), async (_req, res) => {
+  try { res.json(await pendingPayouts()); }
+  catch (err) { console.error('pending payouts:', err.message); res.status(500).json({ message: 'Failed to load pending payouts' }); }
+});
+
+// POST /payments/mark-payout-paid { transactionId } — admin marks an international payout settled.
+router.post('/mark-payout-paid', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const txId = toId(req.body.transactionId);
+    if (!txId) return res.status(400).json({ message: 'A valid transactionId is required' });
+    const updated = await markPayoutPaid(txId);
+    if (!updated) return res.status(409).json({ message: 'No pending payout for that transaction' });
+    res.json({ message: 'Marked as paid', transaction: updated });
+  } catch (err) { console.error('mark payout paid:', err.message); res.status(500).json({ message: 'Failed to update' }); }
 });
 
 // POST /payments/webhook — Flutterwave calls this on payment events.

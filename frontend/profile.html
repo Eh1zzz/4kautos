@@ -131,6 +131,10 @@
     <!-- Admin Tab (admin role only) -->
     <div class="profile-tab hidden" id="tab-admin">
       <div class="panel">
+        <div class="panel-head"><h3>Pending international payouts</h3><span style="font-size:.75rem;color:var(--text3)">pay via Wise, then mark settled</span></div>
+        <div id="admin-payouts"><div class="spinner-wrap"><div class="spinner"></div></div></div>
+      </div>
+      <div class="panel">
         <div class="panel-head"><h3>Users</h3><span style="font-size:.75rem;color:var(--text3)" id="admin-user-count"></span></div>
         <div id="admin-users"><div class="spinner-wrap"><div class="spinner"></div></div></div>
       </div>
@@ -389,31 +393,52 @@
     catch (e) { toast(e.message || 'Release failed', 'error'); btn.disabled = false; btn.textContent = orig; }
   }
 
-  // Seller payout details (bank account we send their sales to).
+  // Seller payout details — two rails: a Nigerian bank (auto via Flutterwave) or
+  // an international account (settled manually / via Wise for now).
   let _payoutBanks = [];
   async function loadPayout() {
     const el = document.getElementById('payout-content');
+    const fld = 'background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:8px;font-size:.85rem';
     try {
       const [payout, banks] = await Promise.all([
         API.getPayout().catch(() => ({})),
         API.getBanks().catch(() => []),
       ]);
       _payoutBanks = banks;
-      const saved = payout && payout.account_number;
-      const savedBankName = saved ? (banks.find(b => b.code === payout.bank_code)?.name || '') : '';
-      // A <datalist> gives a native type-to-search box over the long bank list.
-      const opts = banks.map(b => `<option value="${esc(b.name)}"></option>`).join('');
+      const m = payout?.payout_method || 'ng_bank';
+      const savedNg = payout?.payout_method === 'ng_bank' && payout.account_number;
+      const savedIntl = payout?.payout_method === 'international';
+      const savedBankName = savedNg ? (banks.find(b => b.code === payout.bank_code)?.name || '') : '';
+      const bankOpts = banks.map(b => `<option value="${esc(b.name)}"></option>`).join('');
+      const summary = payout?.payout_method
+        ? `<p style="color:var(--text2);font-size:.85rem;margin-bottom:.85rem">Paying out to <b>${esc(payout.account_name || '')}</b>${savedIntl ? ` · ${esc(payout.payout_country || '')} (international)` : payout.account_number ? ` · ${esc(payout.account_number)}` : ''}</p>`
+        : `<p style="color:var(--text3);font-size:.85rem;margin-bottom:.85rem">Add where we should pay you so buyers can release funds.</p>`;
       el.innerHTML = `
-        ${saved
-          ? `<p style="color:var(--text2);font-size:.85rem;margin-bottom:.75rem">Paying out to <b>${esc(payout.account_name || '')}</b> · ${esc(payout.account_number)}</p>`
-          : `<p style="color:var(--text3);font-size:.85rem;margin-bottom:.75rem">Add a bank account so buyers can release funds to you.</p>`}
-        <form id="payout-form" style="display:flex;flex-wrap:wrap;gap:.6rem;align-items:center">
-          <input id="po-bank" list="bank-list" autocomplete="off" placeholder="Type your bank…" value="${esc(savedBankName)}" required style="flex:1 1 180px;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:8px;font-size:.85rem">
-          <datalist id="bank-list">${opts}</datalist>
-          <input id="po-acct" inputmode="numeric" placeholder="Account number" value="${saved ? esc(payout.account_number) : ''}" required style="flex:1 1 150px;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:8px;font-size:.85rem">
-          <button type="submit" class="pay-btn">Save payout</button>
+        ${summary}
+        <div class="payout-tabs" style="display:flex;gap:.5rem;margin-bottom:.9rem">
+          <button type="button" class="po-tab ${m === 'ng_bank' ? 'pay-btn' : 'adm-btn'}" data-m="ng_bank">🇳🇬 Nigerian bank</button>
+          <button type="button" class="po-tab ${m === 'international' ? 'pay-btn' : 'adm-btn'}" data-m="international">🌍 International</button>
+        </div>
+        <form id="payout-form">
+          <div class="po-fields ${m === 'ng_bank' ? '' : 'hidden'}" data-m="ng_bank" style="display:flex;flex-wrap:wrap;gap:.6rem">
+            <input id="po-bank" list="bank-list" autocomplete="off" placeholder="Type your bank…" value="${esc(savedBankName)}" style="flex:1 1 180px;${fld}">
+            <datalist id="bank-list">${bankOpts}</datalist>
+            <input id="po-acct" inputmode="numeric" placeholder="Account number" value="${savedNg ? esc(payout.account_number) : ''}" style="flex:1 1 150px;${fld}">
+          </div>
+          <div class="po-fields ${m === 'international' ? '' : 'hidden'}" data-m="international" style="display:flex;flex-wrap:wrap;gap:.6rem">
+            <input id="po-name" placeholder="Account holder name" value="${savedIntl ? esc(payout.account_name || '') : ''}" style="flex:1 1 180px;${fld}">
+            <input id="po-country" placeholder="Country (e.g. United States)" value="${savedIntl ? esc(payout.payout_country || '') : ''}" style="flex:1 1 150px;${fld}">
+            <input id="po-currency" maxlength="3" placeholder="Cur (USD)" value="${savedIntl ? esc(payout.payout_currency || '') : ''}" style="flex:0 1 90px;${fld}">
+            <input id="po-details" placeholder="IBAN / SWIFT / account + routing" value="${savedIntl ? esc(payout.payout_details || '') : ''}" style="flex:1 1 100%;${fld}">
+          </div>
+          <button type="submit" class="pay-btn" style="margin-top:.7rem">Save payout</button>
         </form>
-        ${banks.length === 0 ? '<p style="color:var(--text3);font-size:.72rem;margin-top:.5rem">Bank list unavailable — payments may not be configured yet.</p>' : ''}`;
+        ${banks.length === 0 ? '<p style="color:var(--text3);font-size:.72rem;margin-top:.5rem">Nigerian bank list unavailable — payments may not be configured yet.</p>' : ''}`;
+      el.querySelectorAll('.po-tab').forEach(tab => tab.addEventListener('click', () => {
+        const method = tab.dataset.m;
+        el.querySelectorAll('.po-tab').forEach(t => { t.classList.toggle('pay-btn', t.dataset.m === method); t.classList.toggle('adm-btn', t.dataset.m !== method); });
+        el.querySelectorAll('.po-fields').forEach(f => f.classList.toggle('hidden', f.dataset.m !== method));
+      }));
       document.getElementById('payout-form').addEventListener('submit', savePayoutDetails);
     } catch (e) {
       el.innerHTML = `<p style="color:var(--red);font-size:.85rem">${esc(e.message || 'Could not load payout settings')}</p>`;
@@ -423,15 +448,27 @@
   async function savePayoutDetails(e) {
     e.preventDefault();
     const btn = e.target.querySelector('button[type=submit]');
-    const typed = document.getElementById('po-bank').value.trim();
-    const accountNumber = document.getElementById('po-acct').value.trim();
-    const bank = _payoutBanks.find(b => b.name.toLowerCase() === typed.toLowerCase());
-    if (!bank) { toast('Pick your bank from the list', 'error'); return; }
-    if (!accountNumber) { toast('Enter your account number', 'error'); return; }
-    btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Verifying…';
+    const method = document.querySelector('.po-fields:not(.hidden)')?.dataset.m || 'ng_bank';
+    let payload;
+    if (method === 'ng_bank') {
+      const typed = document.getElementById('po-bank').value.trim();
+      const accountNumber = document.getElementById('po-acct').value.trim();
+      const bank = _payoutBanks.find(b => b.name.toLowerCase() === typed.toLowerCase());
+      if (!bank) { toast('Pick your bank from the list', 'error'); return; }
+      if (!accountNumber) { toast('Enter your account number', 'error'); return; }
+      payload = { method: 'ng_bank', bankCode: bank.code, accountNumber };
+    } else {
+      const accountName = document.getElementById('po-name').value.trim();
+      const country = document.getElementById('po-country').value.trim();
+      const currency = document.getElementById('po-currency').value.trim();
+      const details = document.getElementById('po-details').value.trim();
+      if (!accountName || !country || !details) { toast('Name, country and bank details are required', 'error'); return; }
+      payload = { method: 'international', accountName, country, currency, details };
+    }
+    btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Saving…';
     try {
-      const { payout } = await API.savePayout(bank.code, accountNumber);
-      toast(`Verified: ${payout.account_name}`, 'success');
+      const { payout } = await API.savePayout(payload);
+      toast(payout?.account_name ? `Saved: ${payout.account_name}` : 'Payout details saved', 'success');
       loadPayout();
     } catch (err) { toast(err.message || 'Could not save', 'error'); btn.disabled = false; btn.textContent = orig; }
   }
@@ -467,7 +504,35 @@
   }
 
   /* ── Admin: users + listings management ── */
+  // Admin: international payouts awaiting manual settlement.
+  async function loadPendingPayouts() {
+    const el = document.getElementById('admin-payouts');
+    try {
+      const rows = await API.adminPendingPayouts();
+      if (!rows.length) { el.innerHTML = '<p style="color:var(--text3);font-size:.85rem;padding:.4rem 0">No payouts awaiting settlement. 🎉</p>'; return; }
+      el.innerHTML = rows.map(r => `
+        <div class="tx-row admin-row">
+          <div>
+            <div class="tx-car">${esc(r.payout_name || r.seller_name)}</div>
+            <div class="tx-meta">${esc(r.car_title || 'Listing')} · ${Money.fmt(r.amount, r.currency || 'NGN')} → ${esc(r.payout_country || '')} ${esc(r.payout_currency || '')}</div>
+            <div class="tx-meta" style="margin-top:.25rem;color:var(--text2)">${esc(r.payout_details || '')}</div>
+          </div>
+          <div class="admin-actions">
+            <button class="adm-btn" onclick="markPaid('${esc(r.id)}', this)">Mark paid</button>
+          </div>
+        </div>`).join('');
+    } catch (e) { el.innerHTML = `<p class="empty-state">Failed: ${esc(e.message)}</p>`; }
+  }
+
+  async function markPaid(id, btn) {
+    if (!confirm('Mark this international payout as settled? Only after you have actually sent the funds.')) return;
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try { await API.adminMarkPayoutPaid(id); toast('Marked as paid', 'success'); loadPendingPayouts(); }
+    catch (e) { toast(e.message, 'error'); btn.disabled = false; btn.textContent = 'Mark paid'; }
+  }
+
   async function loadAdmin() {
+    loadPendingPayouts();
     const usersEl = document.getElementById('admin-users');
     const carsEl  = document.getElementById('admin-cars');
     usersEl.innerHTML = carsEl.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div></div>';

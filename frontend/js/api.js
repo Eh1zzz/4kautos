@@ -117,7 +117,9 @@ const API = {
   releasePayment(transactionId)  { return req('POST', '/payments/release',  { transactionId }); },
   getBanks()                     { return req('GET',  '/payments/banks'); },
   getPayout()                    { return req('GET',  '/payments/payout'); },
-  savePayout(bankCode, accountNumber) { return req('POST', '/payments/payout', { bankCode, accountNumber }); },
+  savePayout(payload)            { return req('POST', '/payments/payout', payload); },
+  adminPendingPayouts()          { return req('GET',  '/payments/pending-payouts'); },
+  adminMarkPayoutPaid(transactionId) { return req('POST', '/payments/mark-payout-paid', { transactionId }); },
 
   /* ── CHATBOT ── */
   // carId (optional) lets AutoBot answer about a specific listing — the server
