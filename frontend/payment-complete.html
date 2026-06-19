@@ -39,17 +39,18 @@
   if (status === 'successful' || status === 'completed') {
     icon.textContent = '✅';
     title.textContent = 'Payment received';
-    msg.textContent = 'Your funds are now held safely in escrow. They’re released to the seller only once you confirm the vehicle. Taking you to your dashboard…';
-    setTimeout(() => { location.href = 'profile.html'; }, 3500); // back into the app
+    msg.textContent = 'Your funds are now held safely in escrow — released to the seller only once you confirm the vehicle. Taking you to your dashboard…';
   } else if (status === 'cancelled') {
     icon.textContent = '↩️';
     title.textContent = 'Payment cancelled';
-    msg.textContent = 'No charge was made. You can start the payment again from your dashboard whenever you’re ready.';
+    msg.textContent = 'No charge was made. Returning you to your dashboard — you can start the payment again anytime.';
   } else {
-    icon.textContent = '⚠️';
-    title.textContent = 'Payment status pending';
-    msg.textContent = 'If you completed the payment, your dashboard will update shortly — we confirm every payment securely on our server.';
+    icon.textContent = '⏳';
+    title.textContent = 'Checking your payment…';
+    msg.textContent = 'Your dashboard will show the latest status — we confirm every payment securely on our server. Taking you there now…';
   }
+  // Always return to the app — the dashboard reflects the real (webhook-confirmed) status.
+  setTimeout(() => { location.href = 'profile.html'; }, 3000);
 </script>
 </body>
 </html>

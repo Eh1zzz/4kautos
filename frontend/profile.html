@@ -396,6 +396,8 @@
   // Seller payout details — two rails: a Nigerian bank (auto via Flutterwave) or
   // an international account (settled manually / via Wise for now).
   let _payoutBanks = [];
+  const COUNTRIES = ['United States','United Kingdom','Canada','Germany','France','Netherlands','Belgium','Spain','Italy','Ireland','Sweden','Switzerland','Austria','Denmark','Norway','Finland','Portugal','Poland','Greece','Japan','China','South Korea','Hong Kong','Singapore','United Arab Emirates','Saudi Arabia','Qatar','India','Pakistan','South Africa','Ghana','Kenya','Egypt','Australia','New Zealand','Brazil','Mexico','Turkey','Nigeria'];
+  const CURRENCIES = ['USD','EUR','GBP','JPY','CNY','AED','SAR','QAR','CAD','AUD','NZD','CHF','SEK','ZAR','GHS','KES','INR','NGN','BRL','TRY'];
   async function loadPayout() {
     const el = document.getElementById('payout-content');
     const fld = 'background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:8px;font-size:.85rem';
@@ -410,6 +412,8 @@
       const savedIntl = payout?.payout_method === 'international';
       const savedBankName = savedNg ? (banks.find(b => b.code === payout.bank_code)?.name || '') : '';
       const bankOpts = banks.map(b => `<option value="${esc(b.name)}"></option>`).join('');
+      const countryOpts = COUNTRIES.map(c => `<option value="${esc(c)}" ${savedIntl && payout.payout_country === c ? 'selected' : ''}>${esc(c)}</option>`).join('');
+      const currencyOpts = CURRENCIES.map(c => `<option value="${esc(c)}" ${savedIntl && payout.payout_currency === c ? 'selected' : ''}>${esc(c)}</option>`).join('');
       const summary = payout?.payout_method
         ? `<p style="color:var(--text2);font-size:.85rem;margin-bottom:.85rem">Paying out to <b>${esc(payout.account_name || '')}</b>${savedIntl ? ` · ${esc(payout.payout_country || '')} (international)` : payout.account_number ? ` · ${esc(payout.account_number)}` : ''}</p>`
         : `<p style="color:var(--text3);font-size:.85rem;margin-bottom:.85rem">Add where we should pay you so buyers can release funds.</p>`;
@@ -427,8 +431,8 @@
           </div>
           <div class="po-fields ${m === 'international' ? '' : 'hidden'}" data-m="international" style="display:flex;flex-wrap:wrap;gap:.6rem">
             <input id="po-name" placeholder="Account holder name" value="${savedIntl ? esc(payout.account_name || '') : ''}" style="flex:1 1 180px;${fld}">
-            <input id="po-country" placeholder="Country (e.g. United States)" value="${savedIntl ? esc(payout.payout_country || '') : ''}" style="flex:1 1 150px;${fld}">
-            <input id="po-currency" maxlength="3" placeholder="Cur (USD)" value="${savedIntl ? esc(payout.payout_currency || '') : ''}" style="flex:0 1 90px;${fld}">
+            <select id="po-country" style="flex:1 1 150px;${fld}"><option value="">Country…</option>${countryOpts}</select>
+            <select id="po-currency" style="flex:0 1 110px;${fld}"><option value="">Currency…</option>${currencyOpts}</select>
             <input id="po-details" placeholder="IBAN / SWIFT / account + routing" value="${savedIntl ? esc(payout.payout_details || '') : ''}" style="flex:1 1 100%;${fld}">
           </div>
           <button type="submit" class="pay-btn" style="margin-top:.7rem">Save payout</button>
