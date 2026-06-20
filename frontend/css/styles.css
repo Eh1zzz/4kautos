@@ -934,6 +934,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:3rem 2re
 .eval-high{color:#d68a1e;background:rgba(214,138,30,.13);border-color:rgba(214,138,30,.32)}
 .card-price-wrap .price-eval{margin-top:.35rem}
 #d-price + .price-eval{margin-top:.5rem}
+.owner-actions{display:flex;flex-direction:column;gap:.6rem;margin-bottom:.6rem}
 
 /* ── Dual-currency price ── */
 .card-price{display:flex;flex-direction:column;align-items:flex-start;line-height:1.1}

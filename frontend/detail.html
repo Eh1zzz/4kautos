@@ -184,14 +184,25 @@
       document.getElementById('seller-name').textContent = seller?.name || 'Unknown Seller';
       if (!seller?.verified) document.getElementById('seller-badge').innerHTML = '<span style="color:var(--text3)">Unverified</span>';
 
-      // If the logged-in user owns this listing, the buyer-facing widgets
-      // (Message the seller, Ask AutoBot, comparable listings) are pointless —
-      // hide them so the owner sees a clean view of their own car.
+      // If the logged-in user owns this listing, the buyer-facing actions
+      // (Buy, Save, Message, Ask AutoBot, comparable listings, escrow note) are
+      // pointless — hide them and offer owner actions (Edit, Share) instead.
       const me = API.getUser();
       const isOwner = !!(me && seller && me.id === seller.id);
       if (isOwner) {
-        document.getElementById('message-btn')?.style.setProperty('display', 'none');
-        document.getElementById('chat-enquire-btn')?.style.setProperty('display', 'none');
+        ['buy-btn', 'save-btn', 'message-btn', 'chat-enquire-btn'].forEach(id =>
+          document.getElementById(id)?.style.setProperty('display', 'none'));
+        document.querySelector('.safety-note')?.style.setProperty('display', 'none');
+        const actions = document.createElement('div');
+        actions.className = 'owner-actions';
+        actions.innerHTML =
+          `<a class="cta-btn cta-btn-primary" href="profile.html?edit=${encodeURIComponent(car.id)}">✎ Edit listing</a>` +
+          `<button class="cta-btn cta-btn-secondary" type="button" id="share-btn">🔗 Share listing</button>`;
+        document.getElementById('buy-btn').insertAdjacentElement('beforebegin', actions);
+        document.getElementById('share-btn').addEventListener('click', async () => {
+          try { await navigator.clipboard.writeText(location.href); toast('Listing link copied', 'success'); }
+          catch { toast('Copy this link: ' + location.href, 'info'); }
+        });
       }
 
       // Gallery

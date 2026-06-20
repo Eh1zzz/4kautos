@@ -297,6 +297,10 @@
       document.getElementById('stat-listings').textContent = listings.value?.length ?? '—';
       document.getElementById('stat-tx').textContent = txs.value?.length ?? '—';
     } catch {}
+
+    // Deep-link from a listing's detail page: ?edit=<id> opens that car in the edit form.
+    const editId = new URLSearchParams(location.search).get('edit');
+    if (editId && user.role === 'seller') editListing(editId);
   }
 
   async function loadMyListings() {
