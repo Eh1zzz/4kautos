@@ -184,6 +184,16 @@
       document.getElementById('seller-name').textContent = seller?.name || 'Unknown Seller';
       if (!seller?.verified) document.getElementById('seller-badge').innerHTML = '<span style="color:var(--text3)">Unverified</span>';
 
+      // If the logged-in user owns this listing, the buyer-facing widgets
+      // (Message the seller, Ask AutoBot, comparable listings) are pointless —
+      // hide them so the owner sees a clean view of their own car.
+      const me = API.getUser();
+      const isOwner = !!(me && seller && me.id === seller.id);
+      if (isOwner) {
+        document.getElementById('message-btn')?.style.setProperty('display', 'none');
+        document.getElementById('chat-enquire-btn')?.style.setProperty('display', 'none');
+      }
+
       // Gallery
       photos = car.photos?.length ? car.photos : [`https://placehold.co/800x500/12121f/8b7cff?text=${encodeURIComponent(car.make||'Car')}`];
       document.getElementById('gallery-main-img').src = photos[0];
@@ -231,7 +241,7 @@
 
       renderLanded(car);
       initMap(car);
-      loadSimilar(car.id);
+      if (!isOwner) loadSimilar(car.id);   // owners don't need the comparables strip
     } catch(e) {
       document.getElementById('detail-spinner').innerHTML = `<div class="empty-state"><h3>Car Not Found</h3><p><a href="listings.html" style="color:var(--accent)">Browse all listings</a></p></div>`;
     }
