@@ -922,6 +922,9 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:3rem 2re
 .brand-name{font-size:.72rem;color:var(--text2);font-weight:500;letter-spacing:.3px;text-align:center}
 .brand-strip-sm .brand-tile{padding:.6rem .4rem}
 .brand-strip-sm .brand-name{font-size:.64rem}
+.brand-tile-other .brand-logo{color:var(--text3)}
+.brand-more{grid-column:1/-1;justify-self:center;margin-top:.5rem;padding:.55rem 1.5rem;background:var(--surface);border:1.5px solid var(--border);border-radius:999px;color:var(--text2);font:inherit;font-size:.82rem;font-weight:600;cursor:pointer;transition:border-color var(--speed),color var(--speed),background var(--speed)}
+.brand-more:hover{border-color:var(--border-hi);color:var(--accent);background:var(--surface2)}
 
 /* ── Dual-currency price ── */
 .card-price{display:flex;flex-direction:column;align-items:flex-start;line-height:1.1}
@@ -1118,13 +1121,16 @@ html.js-reveal .cars-grid>.reveal.in:nth-child(n+5){transition-delay:.2s}
   background:var(--bg2);
   background-image:radial-gradient(70% 90% at 50% -10%, rgba(139,124,255,.12), transparent 70%);
   padding:5.5rem clamp(1.25rem,4vw,3rem) 1.6rem;overflow:hidden;isolation:isolate;
-  /* the skew: angled top edge (lower-left → higher-right) */
-  clip-path:polygon(0 44px,100% 0,100% 100%,0 100%);
-}
-.footer-car{
-  position:absolute;top:14px;left:50%;transform:translateX(-50%);
-  width:min(640px,86%);height:auto;opacity:.13;color:var(--accent);
-  pointer-events:none;z-index:0;
+  /* smooth curved top edge — a gentle vehicle-profile sweep. A fixed-height cap mask
+     keeps the curve depth constant regardless of footer height; the body stays solid
+     below the cap (second mask layer). */
+  --footer-cap:56px;
+  -webkit-mask:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1440' height='56' viewBox='0 0 1440 56' preserveAspectRatio='none'%3E%3Cpath d='M0,30 C480,2 960,2 1440,30 L1440,56 L0,56 Z' fill='black'/%3E%3C/svg%3E") top/100% var(--footer-cap) no-repeat,
+    linear-gradient(#000,#000) bottom/100% calc(100% - var(--footer-cap) + 1px) no-repeat;
+          mask:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1440' height='56' viewBox='0 0 1440 56' preserveAspectRatio='none'%3E%3Cpath d='M0,30 C480,2 960,2 1440,30 L1440,56 L0,56 Z' fill='black'/%3E%3C/svg%3E") top/100% var(--footer-cap) no-repeat,
+    linear-gradient(#000,#000) bottom/100% calc(100% - var(--footer-cap) + 1px) no-repeat;
 }
 .site-footer .footer-inner{position:relative;z-index:1;max-width:1320px;margin:0 auto}
 .site-footer .footer-bottom{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;padding-top:1.5rem;margin-top:2.5rem;border-top:1px solid var(--border);font-size:.78rem;color:var(--text3)}
@@ -1144,7 +1150,7 @@ html.js-reveal .cars-grid>.reveal.in:nth-child(n+5){transition-delay:.2s}
 ═══════════════════════════════════════════ */
 @media(max-width:640px){
   .theme-toggle{width:34px;height:34px}
-  .site-footer{margin-top:4rem;padding-top:4.5rem;clip-path:polygon(0 26px,100% 0,100% 100%,0 100%)}
+  .site-footer{margin-top:4rem;padding-top:4.5rem;--footer-cap:38px}
 }
 
 /* ══════════════════════════════════════════

@@ -571,18 +571,39 @@ const BRANDS = [
   { name: 'Mini', slug: 'mini' }, { name: 'Acura', slug: 'acura' },
   { name: 'Infiniti', slug: 'infiniti' }, { name: 'Fiat', slug: 'fiat' },
 ];
+// Three-dot "Other" glyph → routes to the full listings page (any make, incl.
+// unlisted ones via the search box there).
+const OTHER_TILE = `<a class="brand-tile brand-tile-other" href="listings.html" title="Browse every make">
+    <span class="brand-logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/></svg></span>
+    <span class="brand-name">Other</span></a>`;
+
 window.renderBrandStrip = function (selector) {
   const host = document.querySelector(selector);
   if (!host) return;
+  // Listings page uses a compact horizontal scroller (.brand-strip-sm) — show all
+  // there. The home grid caps the list behind a "Show more" toggle.
+  const compact = host.classList.contains('brand-strip-sm');
+  const INITIAL = 12;
+  let expanded = false;
+
+  const tile = (b, col) => {
+    const logo = BRAND_SVG[b.name]
+      ? `<span class="brand-logo">${BRAND_SVG[b.name]}</span>`
+      : `<span class="brand-logo"><img src="https://cdn.simpleicons.org/${b.slug}/${col}" alt="${esc(b.name)} logo" loading="lazy"></span>`;
+    return `<a class="brand-tile" href="listings.html?make=${encodeURIComponent(b.name)}" title="${esc(b.name)} for sale">${logo}<span class="brand-name">${esc(b.name)}</span></a>`;
+  };
+
   // Colour the CDN icons to match the theme text so they never fade into the tile.
   function render() {
     const col = document.documentElement.getAttribute('data-theme') === 'light' ? '4b4b66' : 'a6a6c6';
-    host.innerHTML = BRANDS.map(b => {
-      const logo = BRAND_SVG[b.name]
-        ? `<span class="brand-logo">${BRAND_SVG[b.name]}</span>`
-        : `<span class="brand-logo"><img src="https://cdn.simpleicons.org/${b.slug}/${col}" alt="${esc(b.name)} logo" loading="lazy"></span>`;
-      return `<a class="brand-tile" href="listings.html?make=${encodeURIComponent(b.name)}" title="${esc(b.name)} for sale">${logo}<span class="brand-name">${esc(b.name)}</span></a>`;
-    }).join('');
+    const list = (compact || expanded) ? BRANDS : BRANDS.slice(0, INITIAL);
+    let html = list.map(b => tile(b, col)).join('') + OTHER_TILE;
+    if (!compact && BRANDS.length > INITIAL) {
+      html += `<button type="button" class="brand-more" aria-expanded="${expanded}">${expanded ? 'Show less ▲' : `Show ${BRANDS.length - INITIAL} more ▾`}</button>`;
+    }
+    host.innerHTML = html;
+    const btn = host.querySelector('.brand-more');
+    if (btn) btn.onclick = () => { expanded = !expanded; render(); };
   }
   render();
   document.addEventListener('themechange', render); // recolour CDN icons on theme switch
@@ -718,18 +739,10 @@ document.addEventListener('keydown', e => {
 (function () {
   if (document.querySelector('.site-footer')) return;
   const year = new Date().getFullYear();
-  const carSvg = `<svg class="footer-car" viewBox="0 0 680 150" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">
-    <path d="M30 105 q8 -29 45 -31 l80 -2 q26 -39 82 -41 l150 -2 q63 0 101 45 l66 6 q41 6 47 31"/>
-    <path d="M30 105 L300 105 M372 107 L520 111"/>
-    <circle cx="198" cy="111" r="31"/><circle cx="198" cy="111" r="12.5"/>
-    <circle cx="496" cy="111" r="31"/><circle cx="496" cy="111" r="12.5"/>
-    <path d="M152 71 q9 -22 31 -24 l80 -2 0 31 -111 0z"/>
-    <path d="M289 44 l130 4 q31 4 45 25 l-175 0z"/>
-  </svg>`;
   const footer = document.createElement('footer');
   footer.className = 'site-footer';
   const SOC = {
-    yt: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.8-.5-5.6a2.9 2.9 0 0 0-2-2C18.7 4 12 4 12 4s-6.7 0-8.5.4a2.9 2.9 0 0 0-2 2C1 8.2 1 12 1 12s0 3.8.5 5.6a2.9 2.9 0 0 0 2 2C5.3 20 12 20 12 20s6.7 0 8.5-.4a2.9 2.9 0 0 0 2-2C23 15.8 23 12 23 12zM10 15.5v-7l6 3.5-6 3.5z"/></svg>`,
+    wa: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5.1-1.3A10 10 0 1 0 12 2zm0 18.1a8 8 0 0 1-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8.1 8.1 0 1 1 12 20.1zm4.5-6c-.2-.1-1.4-.7-1.7-.8-.2-.1-.4-.1-.5.1l-.8 1c-.1.1-.3.2-.5 0a6.6 6.6 0 0 1-3.3-2.8c-.2-.4.2-.4.5-1.2.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.5-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2c0 1.2.9 2.4 1 2.6.1.2 1.7 2.7 4.2 3.8 2.5 1.1 2.5.7 3 .7.5 0 1.4-.6 1.6-1.1.2-.6.2-1 .1-1.2 0-.1-.2-.1-.5-.3z"/></svg>`,
     ig: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.1" fill="currentColor" stroke="none"/></svg>`,
     fb: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-7H16l.5-3h-3V9c0-.8.3-1.3 1.4-1.3H17V5.1C16.6 5 15.6 5 14.8 5c-2 0-3.3 1.2-3.3 3.5V11H9v3h2.5v7h2z"/></svg>`,
     tt: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 4c.4 2 1.8 3.5 3.8 3.8v3c-1.4 0-2.7-.4-3.8-1.1V15a5.5 5.5 0 1 1-5.5-5.5c.3 0 .6 0 .9.1v3.1a2.4 2.4 0 1 0 1.7 2.3V4H16z"/></svg>`,
@@ -738,16 +751,15 @@ document.addEventListener('keydown', e => {
   const APPLE = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.7 3c.1 1-.3 1.9-.9 2.6-.6.7-1.6 1.2-2.5 1.1-.1-.9.3-1.9.9-2.5.6-.7 1.7-1.2 2.5-1.2zM19 17.2c-.5 1.1-.7 1.6-1.3 2.6-.9 1.3-2.2 3-3.8 3-1.4 0-1.8-.9-3.7-.9s-2.3.9-3.7.9c-1.6 0-2.7-1.5-3.7-2.8C-.7 16-1 10.2 2.5 8.4c1.2-.6 2.2-.3 3.2-.3 1.1 0 1.8.3 2.9.3.9 0 1.6-.4 2.9-.4.8 0 1.8.2 2.6.7-2.3 1.4-1.9 4.7.4 5.7z"/></svg>`;
   const PLAY = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 3.2v17.6c0 .5.5.8 1 .6l13-8.8c.5-.3.5-1 0-1.3L5 2.6c-.5-.3-1 0-1 .6z"/></svg>`;
 
-  footer.innerHTML = `${carSvg}
+  footer.innerHTML = `
     <div class="footer-inner">
       <div class="footer-grid">
         <div class="footer-brand">
           <a href="index.html" class="nav-logo" style="display:inline-flex;margin-bottom:.6rem"></a>
           <p>A global preowned-car marketplace — buy verified vehicles from international sellers, with customs clearance and delivery handled across Nigeria.</p>
           <div class="footer-social">
-            <a href="#" aria-label="YouTube">${SOC.yt}</a>
+            <a href="#" aria-label="WhatsApp">${SOC.wa}</a>
             <a href="#" aria-label="Instagram">${SOC.ig}</a>
-            <a href="#" aria-label="Facebook">${SOC.fb}</a>
             <a href="#" aria-label="TikTok">${SOC.tt}</a>
             <a href="#" aria-label="X">${SOC.x}</a>
           </div>
