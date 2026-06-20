@@ -1,9 +1,13 @@
 import express from 'express';
+import crypto from 'crypto';
 import jwt    from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
-import { findByEmail, create } from '../models/User.js';
+import { findByEmail, create, setResetToken, findByResetToken, updatePassword } from '../models/User.js';
 import { isValidEmail } from '../utils/validation.js';
 import { authLimiter } from '../middleware/security.js';
+import { sendPasswordReset } from '../utils/email.js';
+
+const hashToken = t => crypto.createHash('sha256').update(String(t)).digest('hex');
 
 const router = express.Router();
 
@@ -65,6 +69,48 @@ router.post('/login', authLimiter, async (req, res) => {
   } catch (err) {
     console.error('Login:', err.message);
     res.status(500).json({ message: 'Login failed' });
+  }
+});
+
+// POST /auth/forgot { email } — always 200 (never reveal whether an account exists).
+router.post('/forgot', authLimiter, async (req, res) => {
+  const ok = { message: 'If that email has an account, a reset link is on its way.' };
+  try {
+    const email = String(req.body.email || '').trim();
+    if (isValidEmail(email)) {
+      const user = await findByEmail(email);
+      if (user) {
+        const token = crypto.randomBytes(32).toString('hex');
+        const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+        await setResetToken(user.id, hashToken(token), expires);
+        let base = process.env.APP_BASE_URL || `${req.protocol}://${req.get('host')}`;
+        try { base = new URL(base).origin; } catch { base = `${req.protocol}://${req.get('host')}`; }
+        sendPasswordReset(user.email, `${base}/reset.html?token=${token}`).catch(() => {}); // no-ops at $0
+      }
+    }
+    res.json(ok);
+  } catch (err) {
+    console.error('forgot:', err.message);
+    res.json(ok); // still don't leak anything
+  }
+});
+
+// POST /auth/reset { token, password } — consume a valid token and set the new password.
+router.post('/reset', authLimiter, async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password) return res.status(400).json({ message: 'Token and new password are required' });
+    if (password.length < 6)  return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    if (password.length > 200) return res.status(400).json({ message: 'Password is too long' });
+
+    const user = await findByResetToken(hashToken(token));
+    if (!user) return res.status(400).json({ message: 'This reset link is invalid or has expired' });
+
+    await updatePassword(user.id, await bcrypt.hash(password, 12));
+    res.json({ message: 'Password updated — you can now sign in' });
+  } catch (err) {
+    console.error('reset:', err.message);
+    res.status(500).json({ message: 'Could not reset password' });
   }
 });
 

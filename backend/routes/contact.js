@@ -10,6 +10,7 @@ const router = express.Router();
 const contactLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, max: 5,
   standardHeaders: true, legacyHeaders: false,
+  skip: () => process.env.NODE_ENV === 'test',
   message: { message: 'Too many messages — please try again later.' },
 });
 

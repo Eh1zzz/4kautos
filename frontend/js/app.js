@@ -60,6 +60,7 @@ document.addEventListener('click', e => {
             </div>
             <div class="form-error hidden" id="login-error"></div>
             <button class="form-submit" id="login-btn">Sign In</button>
+            <p class="form-alt" style="margin-top:.6rem"><a id="go-forgot" style="cursor:pointer">Forgot password?</a></p>
             <p class="form-alt">No account? <a id="go-signup">Create one</a></p>
           </div>
           <!-- Signup -->
@@ -104,6 +105,7 @@ document.addEventListener('click', e => {
   document.querySelectorAll('.modal-tab').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
   document.getElementById('go-signup')?.addEventListener('click', () => switchTab('signup'));
   document.getElementById('go-login')?.addEventListener('click',  () => switchTab('login'));
+  document.getElementById('go-forgot')?.addEventListener('click', () => { closeAuth(); window.openForgot?.(); });
   document.getElementById('auth-modal-close').addEventListener('click', () => closeAuth());
   document.getElementById('auth-modal').addEventListener('click', e => { if (e.target.id === 'auth-modal') closeAuth(); });
 
@@ -805,6 +807,48 @@ document.addEventListener('keydown', e => {
       ['ct-name', 'ct-email', 'ct-msg'].forEach(id => document.getElementById(id).value = '');
       close();
     } catch (e) { err.textContent = e.message || 'Could not send your message'; err.classList.remove('hidden'); }
+    finally { btn.disabled = false; btn.textContent = o; }
+  });
+})();
+
+/* ── FORGOT-PASSWORD MODAL ── */
+(function () {
+  if (document.getElementById('forgot-modal')) return;
+  const html = `
+    <div class="modal-overlay" id="forgot-modal">
+      <div class="modal">
+        <div class="modal-head">
+          <h2>Reset your password</h2>
+          <button class="modal-close" id="forgot-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p style="color:var(--text2);font-size:.88rem;margin:0 0 1rem">Enter your account email and we'll send a reset link.</p>
+          <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" id="fp-email" placeholder="you@example.com" autocomplete="email"></div>
+          <div class="form-error hidden" id="fp-error"></div>
+          <div class="hidden" id="fp-ok" style="color:var(--accent);font-size:.85rem;margin-bottom:.6rem"></div>
+          <button class="form-submit" id="fp-submit">Send reset link</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+  const modal = document.getElementById('forgot-modal');
+  const close = () => modal.classList.remove('open');
+  window.openForgot = () => { document.getElementById('fp-ok').classList.add('hidden'); document.getElementById('fp-error').classList.add('hidden'); modal.classList.add('open'); };
+  document.getElementById('forgot-close').addEventListener('click', close);
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+  document.getElementById('fp-submit').addEventListener('click', async () => {
+    const email = document.getElementById('fp-email').value.trim();
+    const err = document.getElementById('fp-error'), ok = document.getElementById('fp-ok');
+    err.classList.add('hidden'); ok.classList.add('hidden');
+    if (!email) { err.textContent = 'Enter your email.'; err.classList.remove('hidden'); return; }
+    const btn = document.getElementById('fp-submit'); btn.disabled = true; const o = btn.textContent; btn.textContent = 'Sending…';
+    try {
+      const r = await API.forgotPassword(email);
+      ok.textContent = r.message || "If that email has an account, a reset link is on its way.";
+      ok.classList.remove('hidden');
+    } catch (e) { err.textContent = e.message || 'Something went wrong'; err.classList.remove('hidden'); }
     finally { btn.disabled = false; btn.textContent = o; }
   });
 })();

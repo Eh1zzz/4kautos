@@ -94,3 +94,12 @@ export async function notifyContactMessage({ name, email, message }) {
        <p><b>Message:</b></p>
        <p style="white-space:pre-wrap;background:#f6f6fb;padding:12px;border-radius:8px">${esc(message)}</p>`));
 }
+
+// Password-reset link (expires in 1 hour).
+export async function sendPasswordReset(email, link) {
+  return sendMail(email, 'Reset your 4Kautos password',
+    shell('Password reset',
+      `<p>We received a request to reset your password. This link expires in 1 hour:</p>
+       <p><a href="${esc(link)}" style="display:inline-block;background:#6d4dff;color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px;font-weight:700">Reset password</a></p>
+       <p style="font-size:12px;color:#888">If you didn't request this, you can safely ignore this email.</p>`));
+}

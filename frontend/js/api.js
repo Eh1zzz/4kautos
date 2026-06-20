@@ -58,6 +58,8 @@ const API = {
     if (data.token) { setToken(data.token); localStorage.setItem('4k_user', JSON.stringify(data.user)); }
     return data;
   },
+  forgotPassword(email)          { return req('POST', '/auth/forgot', { email }); },
+  resetPassword(token, password) { return req('POST', '/auth/reset', { token, password }); },
   logout() { clearToken(); window.location.href = '/'; },
   getUser,
   isLoggedIn() { return !!getToken(); },

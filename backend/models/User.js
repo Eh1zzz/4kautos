@@ -11,6 +11,29 @@ export async function findByEmail(email) {
   return rows[0] || null;
 }
 
+/* ── Password reset ── */
+export async function setResetToken(userId, tokenHash, expires) {
+  await pool.query(
+    'UPDATE users SET reset_token_hash = ?, reset_expires = ? WHERE id = ?',
+    [tokenHash, expires, userId]
+  );
+}
+
+export async function findByResetToken(tokenHash) {
+  const [rows] = await pool.query(
+    'SELECT * FROM users WHERE reset_token_hash = ? AND reset_expires > NOW()',
+    [tokenHash]
+  );
+  return rows[0] || null;
+}
+
+export async function updatePassword(userId, hashedPassword) {
+  await pool.query(
+    'UPDATE users SET password = ?, reset_token_hash = NULL, reset_expires = NULL WHERE id = ?',
+    [hashedPassword, userId]
+  );
+}
+
 export async function findById(id) {
   const numId = parseInt(id, 10);
   if (isNaN(numId)) return null;

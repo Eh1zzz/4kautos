@@ -161,6 +161,10 @@ export async function connectDB() {
   await ensureColumn('users', 'payout_country',  'VARCHAR(60)');
   await ensureColumn('users', 'payout_currency', 'VARCHAR(3)');
   await ensureColumn('users', 'payout_details',  'VARCHAR(500)');
+
+  // Password reset (hashed, single-use, time-limited token).
+  await ensureColumn('users', 'reset_token_hash', 'VARCHAR(64)');
+  await ensureColumn('users', 'reset_expires',    'DATETIME');
   await ensureColumn('transactions', 'payout_status', 'VARCHAR(20)');
 
   console.log('✅ MySQL connected and tables ready');

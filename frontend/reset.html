@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reset Password — 4Kautos</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <script>try{var t=localStorage.getItem('4k_theme')||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','dark');}</script>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<nav class="navbar">
+  <a href="index.html" class="nav-logo"></a>
+</nav>
+
+<div style="max-width:440px;margin:0 auto;padding:4rem 1.5rem">
+  <h1 style="font-family:var(--font-display);margin:0 0 .5rem">Reset your password</h1>
+  <p style="color:var(--text2);line-height:1.6;margin-bottom:1.5rem">Choose a new password for your account.</p>
+
+  <div id="reset-form">
+    <div class="form-group">
+      <label class="form-label">New password</label>
+      <input class="form-input" type="password" id="rp-password" placeholder="Min. 6 characters" autocomplete="new-password">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Confirm password</label>
+      <input class="form-input" type="password" id="rp-confirm" placeholder="Re-enter password" autocomplete="new-password">
+    </div>
+    <div class="form-error hidden" id="rp-error"></div>
+    <button class="form-submit" id="rp-submit">Update password</button>
+  </div>
+
+  <div id="reset-done" class="hidden" style="text-align:center">
+    <div style="font-size:2.5rem">✅</div>
+    <h2 style="font-family:var(--font-display)">Password updated</h2>
+    <p style="color:var(--text2)">You can now sign in with your new password.</p>
+    <a href="index.html" class="cta-btn cta-btn-primary" style="display:inline-flex;margin-top:1rem;text-decoration:none">Go to 4Kautos →</a>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  const token = new URLSearchParams(location.search).get('token');
+  const err = document.getElementById('rp-error');
+  const submit = document.getElementById('rp-submit');
+  if (!token) {
+    err.textContent = 'This reset link is missing its token. Request a new one from the login screen.';
+    err.classList.remove('hidden');
+    submit.disabled = true;
+  }
+  submit.addEventListener('click', async () => {
+    const pw = document.getElementById('rp-password').value;
+    const cf = document.getElementById('rp-confirm').value;
+    err.classList.add('hidden');
+    if (pw.length < 6) { err.textContent = 'Password must be at least 6 characters.'; err.classList.remove('hidden'); return; }
+    if (pw !== cf)     { err.textContent = 'Passwords do not match.'; err.classList.remove('hidden'); return; }
+    submit.disabled = true; const o = submit.textContent; submit.textContent = 'Updating…';
+    try {
+      await API.resetPassword(token, pw);
+      document.getElementById('reset-form').classList.add('hidden');
+      document.getElementById('reset-done').classList.remove('hidden');
+    } catch (e) {
+      err.textContent = e.message || 'Could not reset password — the link may have expired.';
+      err.classList.remove('hidden');
+      submit.disabled = false; submit.textContent = o;
+    }
+  });
+</script>
+</body>
+</html>
