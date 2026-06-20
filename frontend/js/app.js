@@ -508,6 +508,10 @@ window.carCard = function (c) {
   const locHtml = c.location
     ? `<div class="card-loc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${esc(c.location)}</div>`
     : '';
+  // Price-evaluator badge (only the meaningful verdicts — 'fair' stays unmarked).
+  const VEVAL = { great: 'Great price', good: 'Good price', high: 'Above market' };
+  const vv = c.valuation && c.valuation.verdict;
+  const evalHtml = (vv && VEVAL[vv]) ? `<span class="price-eval eval-${vv}" title="vs. ${c.valuation.sampleSize || 0} similar listings">${VEVAL[vv]}</span>` : '';
 
   return `
     <div class="car-card reveal" data-id="${esc(c.id)}">
@@ -527,6 +531,7 @@ window.carCard = function (c) {
         <div class="card-footer">
           <div class="card-price-wrap">
             ${priceHtml}
+            ${evalHtml}
             ${landedHtml}
           </div>
           <button class="card-cta">View Details</button>

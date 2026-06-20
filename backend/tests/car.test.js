@@ -186,3 +186,33 @@ describe('PUT /cars/:id', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('GET /cars/:id/valuation', () => {
+  // USD-priced so the verdict is independent of the live FX rate.
+  const mk = (price, vin, over = {}) => request(app).post('/cars')
+    .set('Authorization', `Bearer ${sellerToken}`)
+    .send(validCar({ make: 'Toyota', model: 'Camry', currency: 'USD', price, vin, ...over }));
+
+  it('flags a clearly underpriced car as a great price', async () => {
+    const a = await mk(5000,  '1HGCM82633A004352');
+    await mk(9000,  '1HGCM82633A004353');
+    await mk(10000, '1HGCM82633A004354');
+    await mk(11000, '1HGCM82633A004355'); // comparables avg = 10000
+    const res = await request(app).get(`/cars/${a.body.car.id}/valuation`);
+    expect(res.status).toBe(200);
+    expect(res.body.verdict).toBe('great');   // 5000 vs 10000 = -50%
+    expect(res.body.sampleSize).toBe(3);
+  });
+
+  it('returns no verdict when there are too few comparables', async () => {
+    const u = await mk(3000000, '1HGCM82633A004399', { make: 'Koenigsegg', model: 'Jesko' });
+    const res = await request(app).get(`/cars/${u.body.car.id}/valuation`);
+    expect(res.status).toBe(200);
+    expect(res.body.verdict).toBeNull();
+  });
+
+  it('404s for an unknown car', async () => {
+    const res = await request(app).get('/cars/999999/valuation');
+    expect(res.status).toBe(404);
+  });
+});

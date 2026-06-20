@@ -242,6 +242,7 @@
       renderLanded(car);
       initMap(car);
       if (!isOwner) loadSimilar(car.id);   // owners don't need the comparables strip
+      loadValuation(car.id);
     } catch(e) {
       document.getElementById('detail-spinner').innerHTML = `<div class="empty-state"><h3>Car Not Found</h3><p><a href="listings.html" style="color:var(--accent)">Browse all listings</a></p></div>`;
     }
@@ -258,6 +259,20 @@
       window.observeReveals?.();   // animate the injected cards in
       Money.repriceAll?.();        // show prices in the active currency
     } catch (e) { /* non-critical — leave the section hidden */ }
+  }
+
+  // "Good price" verdict vs comparable listings — shown under the price.
+  async function loadValuation(id) {
+    try {
+      const v = await API.getValuation(id);
+      if (!v || !v.verdict) return;
+      const LBL = { great: 'Great price', good: 'Good price', fair: 'Fair price', high: 'Above market' };
+      const chip = document.createElement('span');
+      chip.className = 'price-eval eval-' + v.verdict;
+      chip.title = `vs. ${v.sampleSize} similar listings`;
+      chip.textContent = LBL[v.verdict] || '';
+      document.getElementById('d-price').insertAdjacentElement('afterend', chip);
+    } catch { /* non-critical */ }
   }
 
   // Buy button

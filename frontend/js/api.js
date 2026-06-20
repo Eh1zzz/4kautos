@@ -86,6 +86,7 @@ const API = {
   },
   getCar(id)        { return req('GET', `/cars/${id}`); },
   getSimilar(id, limit = 4) { return req('GET', `/cars/${id}/similar?limit=${limit}`); },
+  getValuation(id)  { return req('GET', `/cars/${id}/valuation`); },
   createCar(data)   { return req('POST', '/cars', data); },
   updateCar(id, data) { return req('PUT', `/cars/${id}`, data); },
   deleteCar(id)     { return req('DELETE', `/cars/${id}`); },

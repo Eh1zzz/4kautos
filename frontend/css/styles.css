@@ -926,6 +926,15 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:3rem 2re
 .brand-more{grid-column:1/-1;justify-self:center;margin-top:.5rem;padding:.55rem 1.5rem;background:var(--surface);border:1.5px solid var(--border);border-radius:999px;color:var(--text2);font:inherit;font-size:.82rem;font-weight:600;cursor:pointer;transition:border-color var(--speed),color var(--speed),background var(--speed)}
 .brand-more:hover{border-color:var(--border-hi);color:var(--accent);background:var(--surface2)}
 
+/* Price-evaluator badge (valuation) */
+.price-eval{display:inline-flex;align-items:center;gap:.35rem;font-size:.7rem;font-weight:700;padding:.2rem .55rem;border-radius:999px;border:1px solid transparent;white-space:nowrap;line-height:1}
+.price-eval::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.eval-great,.eval-good{color:#16a06a;background:rgba(22,160,106,.13);border-color:rgba(22,160,106,.3)}
+.eval-fair{color:var(--text2);background:var(--surface2);border-color:var(--border)}
+.eval-high{color:#d68a1e;background:rgba(214,138,30,.13);border-color:rgba(214,138,30,.32)}
+.card-price-wrap .price-eval{margin-top:.35rem}
+#d-price + .price-eval{margin-top:.5rem}
+
 /* ── Dual-currency price ── */
 .card-price{display:flex;flex-direction:column;align-items:flex-start;line-height:1.1}
 .cta-price{display:flex;flex-direction:column;align-items:center;line-height:1.1}
