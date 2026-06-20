@@ -37,7 +37,7 @@ Everything else (layout, motion, components) is open to modification.
 ### A. General / Shared
 - [ ] UI redesign + motion across landing/browse (extend existing IO scroll-reveal; lib only for page transitions) — **XL**
 - [ ] Body-type emoji → SVG sprite keyed by `body_type` — **M**
-- [ ] Footer: remove car-outline SVG; skew → smooth curve; YouTube→WhatsApp (+ IG/TikTok/X) — **M**
+- [x] Footer: remove car-outline SVG; skew → smooth curve; YouTube→WhatsApp (+ IG/TikTok/X) — **M** ✅ Phase 0
 - [ ] Real production images + responsive `srcset`/Cloudflare resizing (R2 live ✅) — **M**
 - [ ] "Send Us a Message" floating panel + Contact Us section — **M**
 - [ ] Forgot-password / recovery wizard — **M** ⛔email
@@ -45,18 +45,19 @@ Everything else (layout, motion, components) is open to modification.
 
 ### B. Buyer
 - [ ] Browse grids + empty-state recommendations (saved search) — **M**
-- [ ] Brand "Show More" + "Other" — **S**
+- [x] Brand "Show More" + "Other" — **S** ✅ Phase 0
 - [ ] Hot Sales / ad banner — **S–M**
 - [ ] "Good Price" valuation badge on cards/detail — **S**
 - [ ] Identity verification UI (vendor SDK flow) — **M** 🔴vendor
-- [ ] Dashboard: confirm add-listing hidden for buyers; delete cancelled transaction — **S**
+- [x] Dashboard: add-listing hidden for buyers (verified); delete cancelled transaction — **S** ✅ Phase 0
 
 ### C. Seller
 - [ ] Advanced intake wizard (animated steps) + new fields: ext/int color, engine,
       transmission, drivetrain, MPG, HP, seats; conditional max-towing (Truck only) — **L**
 - [ ] Optional extras tabs (Comfort, Safety, Modifications) + media slots — **M**
 - [ ] Identity verification before submit (same vendor) — **M** 🔴vendor
-- [ ] Remove stray similar/ask widgets from owner view; add make/model "Other" — **S**
+- [x] Hide similar/message/ask-AutoBot widgets on the owner's own listing — **S** ✅ Phase 0
+- [ ] Add make/model "Other" free-text in the intake form — **S** (Phase 1, pairs with backend unlisted-brand handling)
 
 ### D. Admin
 - [ ] Rebuild admin panel to Figma/Darkone style (cards/tables/charts) on theme tokens;
@@ -85,7 +86,7 @@ Everything else (layout, motion, components) is open to modification.
 
 ## 3. Phased sequence
 - **Phase 0 — quick wins (free, unblocked):** dashboard cleanups, delete-cancelled-tx,
-  footer overhaul, brand Show More/Other. ← *in progress*
+  footer overhaul, brand Show More/Other, owner-widget hiding. ✅ **DONE & deployed (2026-06-20)**
 - **Phase 1 — data & reuse:** extended schema + intake wizard, body-type SVGs,
   valuation badge, saved-searches table.
 - **Phase 2 — recs + media:** empty-state recs, responsive images, Hot Sales.
