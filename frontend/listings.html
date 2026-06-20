@@ -195,6 +195,36 @@
   document.getElementById('f-reset').addEventListener('click', () => { location.href = 'listings.html'; });
   document.getElementById('sort-select').addEventListener('change', () => loadListings(1));
 
+  /* ── Save this search (server-side) ── */
+  function searchLabel(f) {
+    const parts = [];
+    if (f.make) parts.push(f.make);
+    if (f.model) parts.push(f.model);
+    if (f.type) parts.push(f.type);
+    if (f.condition) parts.push(f.condition);
+    if (f.q) parts.push(`"${f.q}"`);
+    if (f.minUsd || f.maxUsd) parts.push(`$${f.minUsd || '0'}–${f.maxUsd || '∞'}`);
+    else if (f.minPrice || f.maxPrice) parts.push(`₦${f.minPrice || '0'}–${f.maxPrice || '∞'}`);
+    if (f.minMileage || f.maxMileage) parts.push(`${f.minMileage || '0'}–${f.maxMileage || '∞'} km`);
+    return parts.join(' · ') || 'All listings';
+  }
+  async function saveCurrentSearch() {
+    if (!API.isLoggedIn()) { toast('Sign in to save searches', 'info'); if (window.openAuth) openAuth('login'); return; }
+    const f = buildParams(); delete f.sort;
+    try { await API.saveSearch(searchLabel(f), f); toast('Search saved — find it in your dashboard', 'success'); }
+    catch (e) { toast(e.message || 'Could not save search', 'error'); }
+  }
+  (function () {
+    const sort = document.getElementById('sort-select');
+    if (!sort) return;
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.id = 'save-search-btn'; btn.className = 'nav-btn nav-btn-ghost';
+    btn.style.cssText = 'padding:6px 12px;font-size:.8rem;margin-right:.5rem';
+    btn.textContent = '🔖 Save search';
+    btn.addEventListener('click', saveCurrentSearch);
+    sort.insertAdjacentElement('beforebegin', btn);
+  })();
+
   /* Mobile: collapse the filter panel behind a toggle so cars show first. */
   (function () {
     const layout = document.querySelector('.listings-layout');

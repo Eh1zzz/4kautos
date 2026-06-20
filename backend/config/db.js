@@ -111,6 +111,17 @@ export async function connectDB() {
     )
   `);
 
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS saved_searches (
+      id         INT          AUTO_INCREMENT PRIMARY KEY,
+      user_id    INT          NOT NULL,
+      label      VARCHAR(160) NOT NULL,
+      filters    JSON         NOT NULL,
+      created_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
   // Indexes for the columns we filter/sort on (seller_id is already indexed by its FK).
   await ensureIndex('cars', 'idx_cars_created',   'created_at');
   await ensureIndex('cars', 'idx_cars_body_type', 'body_type');

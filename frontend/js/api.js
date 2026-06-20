@@ -177,6 +177,11 @@ const API = {
     localStorage.setItem('4k_saved', JSON.stringify([...set]));
     return set.has(id);
   },
+
+  /* ── SAVED SEARCHES (server-side) ── */
+  getSavedSearches()         { return req('GET', '/saved-searches'); },
+  saveSearch(label, filters) { return req('POST', '/saved-searches', { label, filters }); },
+  deleteSavedSearch(id)      { return req('DELETE', `/saved-searches/${id}`); },
 };
 
 window.API = API;
