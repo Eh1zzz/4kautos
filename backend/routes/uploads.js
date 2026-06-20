@@ -2,8 +2,8 @@ import express from 'express';
 import multer from 'multer';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { writeLimiter } from '../middleware/security.js';
-import { isImage, optimize } from '../utils/image.js';
-import { hashKey, putObject } from '../utils/storage.js';
+import { isImage, optimizeSizes } from '../utils/image.js';
+import { hashBase, putObject } from '../utils/storage.js';
 
 const router = express.Router();
 
@@ -21,8 +21,16 @@ router.post('/', writeLimiter, authenticate, authorize('seller'), upload.array('
     for (const f of req.files) {
       if (!isImage(f.buffer))
         return res.status(415).json({ message: 'Only JPEG, PNG or WebP images are allowed' });
-      const optimized = await optimize(f.buffer);
-      urls.push(await putObject(hashKey(optimized), optimized));
+      // Responsive variants (400/800/1600w) sharing one content-hash base, so the
+      // frontend can derive a srcset from the returned _1600 URL.
+      const base = hashBase(f.buffer);
+      const sizes = await optimizeSizes(f.buffer);
+      let mainUrl = '';
+      for (const { width, buffer } of sizes) {
+        const url = await putObject(`${base}_${width}.webp`, buffer);
+        if (width === 1600) mainUrl = url;
+      }
+      urls.push(mainUrl);
     }
     res.status(201).json({ urls });
   } catch (err) {

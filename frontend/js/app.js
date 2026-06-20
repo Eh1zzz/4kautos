@@ -507,6 +507,13 @@ const BODY_ICONS = {
 };
 window.bodyIcon = t => BODY_ICONS[t] || _veh('<path d="M12 13 16 8h14l4 5"/>');
 
+/* Build a srcset from a responsive _1600.webp URL (no-op for legacy single URLs). */
+window.imgSrcset = function (url) {
+  if (typeof url !== 'string' || !/_1600\.webp$/.test(url)) return '';
+  const b = url.replace(/_1600\.webp$/, '');
+  return `${b}_400.webp 400w, ${b}_800.webp 800w, ${b}_1600.webp 1600w`;
+};
+
 window.carCard = function (c) {
   const native = c.currency || 'NGN';
   const img = c.photos?.[0] || `https://placehold.co/600x400/12121f/8b7cff?text=${encodeURIComponent(c.make || 'Car')}`;
@@ -534,7 +541,7 @@ window.carCard = function (c) {
   return `
     <div class="car-card reveal" data-id="${esc(c.id)}">
       <div class="card-img-wrap">
-        <img class="card-img" src="${esc(img)}" alt="${esc(title)}" loading="lazy" onerror="this.src='https://placehold.co/600x400/12121f/8b7cff?text=No+Photo'">
+        <img class="card-img" src="${esc(img)}"${window.imgSrcset(img) ? ` srcset="${window.imgSrcset(img)}" sizes="(max-width:640px) 100vw, 340px"` : ''} alt="${esc(title)}" loading="lazy" onerror="this.onerror=null;this.removeAttribute('srcset');this.src='https://placehold.co/600x400/12121f/8b7cff?text=No+Photo'">
         ${badge}
         <button class="card-saves ${saved ? 'saved' : ''}" title="Save" data-save="${esc(c.id)}">${saved ? '♥' : '♡'}</button>
       </div>

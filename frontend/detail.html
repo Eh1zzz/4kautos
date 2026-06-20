@@ -149,7 +149,12 @@
   function setPhoto(i) {
     if (!photos.length) return;
     currentPhoto = (i + photos.length) % photos.length;
-    document.getElementById('gallery-main-img').src = photos[currentPhoto];
+    const main = document.getElementById('gallery-main-img');
+    const url = photos[currentPhoto];
+    main.src = url;
+    const ss = window.imgSrcset?.(url);
+    if (ss) { main.srcset = ss; main.sizes = '(max-width:900px) 100vw, 760px'; }
+    else { main.removeAttribute('srcset'); main.removeAttribute('sizes'); }
     document.querySelectorAll('.gallery-thumb').forEach((t,j) => t.classList.toggle('active', j === currentPhoto));
   }
 
@@ -207,11 +212,11 @@
 
       // Gallery
       photos = car.photos?.length ? car.photos : [`https://placehold.co/800x500/12121f/8b7cff?text=${encodeURIComponent(car.make||'Car')}`];
-      document.getElementById('gallery-main-img').src = photos[0];
+      setPhoto(0);
       const thumbsEl = document.getElementById('gallery-thumbs');
       if (photos.length > 1) {
         thumbsEl.innerHTML = photos.map((p,i) =>
-          `<div class="gallery-thumb ${i===0?'active':''}" data-i="${i}"><img src="${p}" alt="Photo ${i+1}" loading="lazy"></div>`
+          `<div class="gallery-thumb ${i===0?'active':''}" data-i="${i}"><img src="${p}" ${window.imgSrcset?.(p) ? `srcset="${window.imgSrcset(p)}" sizes="90px"` : ''} alt="Photo ${i+1}" loading="lazy"></div>`
         ).join('');
         thumbsEl.querySelectorAll('.gallery-thumb').forEach(t =>
           t.addEventListener('click', () => setPhoto(+t.dataset.i))

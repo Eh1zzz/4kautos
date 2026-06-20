@@ -44,6 +44,12 @@ export function hashKey(buffer, ext = 'webp') {
   return crypto.createHash('sha256').update(buffer).digest('hex').slice(0, 32) + '.' + ext;
 }
 
+// 32-char content-hash base (no extension) — for responsive variants that share
+// one base and differ only by a _<width>.webp suffix.
+export function hashBase(buffer) {
+  return crypto.createHash('sha256').update(buffer).digest('hex').slice(0, 32);
+}
+
 export async function putObject(key, buffer, contentType = 'image/webp') {
   if (useS3) {
     const { PutObjectCommand } = await import('@aws-sdk/client-s3');

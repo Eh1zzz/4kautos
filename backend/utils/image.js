@@ -25,3 +25,17 @@ export async function optimize(buffer) {
     .webp({ quality: 80 })
     .toBuffer();
 }
+
+/* Re-encode to WebP at several widths for a responsive <img srcset>. Same security
+   guarantee as optimize() — every output is a fresh decode → re-encode. */
+export async function optimizeSizes(buffer, widths = [400, 800, 1600]) {
+  if (!isImage(buffer)) throw new Error('Unsupported image type');
+  const oriented = sharp(buffer).rotate();
+  return Promise.all(widths.map(async width => ({
+    width,
+    buffer: await oriented.clone()
+      .resize({ width, height: width, fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 80 })
+      .toBuffer(),
+  })));
+}
