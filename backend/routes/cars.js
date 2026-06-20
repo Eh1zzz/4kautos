@@ -1,5 +1,5 @@
 import express from 'express';
-import { findAll, findById, findSimilar, create, deleteById, deleteByIdAndSeller } from '../models/Car.js';
+import { findAll, findById, findSimilar, create, update, deleteById, deleteByIdAndSeller } from '../models/Car.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { validateCarInput } from '../utils/validation.js';
 import { getRate } from './fx.js';
@@ -61,6 +61,29 @@ router.post('/', authenticate, authorize('seller'), async (req, res) => {
   } catch (err) {
     console.error('POST /cars:', err.message);
     res.status(500).json({ message: 'Failed to add car' });
+  }
+});
+
+// PUT /cars/:id — update a listing (the owning seller, or an admin)
+router.put('/:id', authenticate, async (req, res) => {
+  try {
+    if (req.user.role !== 'seller' && req.user.role !== 'admin')
+      return res.status(403).json({ message: 'Forbidden' });
+
+    const existing = await findById(req.params.id);
+    if (!existing) return res.status(404).json({ message: 'Car not found' });
+    if (req.user.role !== 'admin' && Number(existing.seller_id) !== Number(req.user.id))
+      return res.status(403).json({ message: 'You can only edit your own listings' });
+
+    const { errors, value } = validateCarInput(req.body);
+    if (errors.length)
+      return res.status(400).json({ message: errors[0], errors });
+
+    const car = await update(req.params.id, value);
+    res.json({ message: 'Listing updated successfully', car });
+  } catch (err) {
+    console.error('PUT /cars/:id:', err.message);
+    res.status(500).json({ message: 'Failed to update car' });
   }
 });
 

@@ -2,7 +2,7 @@ import request from 'supertest';
 import app     from '../server.js';
 import { pool, connectDB } from '../config/db.js';
 
-let sellerToken, buyerToken;
+let sellerToken, buyerToken, seller2Token;
 
 // A fully valid listing payload that satisfies the upload validation rules.
 const validCar = (over = {}) => ({
@@ -26,6 +26,9 @@ beforeAll(async () => {
   const s = await request(app).post('/auth/signup')
     .send({ name:'Seller', email:'seller@test.com', password:'password123', role:'seller' });
   sellerToken = s.body.token;
+  const s2 = await request(app).post('/auth/signup')
+    .send({ name:'Seller Two', email:'seller2@test.com', password:'password123', role:'seller' });
+  seller2Token = s2.body.token;
   const b = await request(app).post('/auth/signup')
     .send({ name:'Buyer', email:'buyer@test.com', password:'password123', role:'buyer' });
   buyerToken = b.body.token;
@@ -126,6 +129,60 @@ describe('GET /cars/:id/similar', () => {
 
   it('returns 404 for an unknown car', async () => {
     const res = await request(app).get('/cars/999999/similar');
+    expect(res.status).toBe(404);
+  });
+});
+
+describe('PUT /cars/:id', () => {
+  const makeCar = (over = {}) => request(app).post('/cars')
+    .set('Authorization', `Bearer ${sellerToken}`)
+    .send(validCar(over));
+
+  it('lets the owning seller update their listing', async () => {
+    const id = (await makeCar()).body.car.id;
+    const res = await request(app).put(`/cars/${id}`)
+      .set('Authorization', `Bearer ${sellerToken}`)
+      .send(validCar({ price: 12000000, mileage: 50000, title: '2020 Toyota Camry XSE (updated)' }));
+    expect(res.status).toBe(200);
+    expect(Number(res.body.car.price)).toBe(12000000);
+    expect(res.body.car.mileage).toBe(50000);
+    expect(res.body.car.id).toBe(id);
+  });
+
+  it('blocks a different seller from editing another seller’s listing', async () => {
+    const id = (await makeCar()).body.car.id;
+    const res = await request(app).put(`/cars/${id}`)
+      .set('Authorization', `Bearer ${seller2Token}`)
+      .send(validCar({ price: 1 }));
+    expect(res.status).toBe(403);
+  });
+
+  it('blocks buyers', async () => {
+    const id = (await makeCar()).body.car.id;
+    const res = await request(app).put(`/cars/${id}`)
+      .set('Authorization', `Bearer ${buyerToken}`)
+      .send(validCar());
+    expect(res.status).toBe(403);
+  });
+
+  it('blocks unauthenticated', async () => {
+    const id = (await makeCar()).body.car.id;
+    const res = await request(app).put(`/cars/${id}`).send(validCar());
+    expect(res.status).toBe(401);
+  });
+
+  it('validates the payload (rejects a bad VIN)', async () => {
+    const id = (await makeCar()).body.car.id;
+    const res = await request(app).put(`/cars/${id}`)
+      .set('Authorization', `Bearer ${sellerToken}`)
+      .send(validCar({ vin: 'NOTAVIN' }));
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 404 for an unknown car', async () => {
+    const res = await request(app).put('/cars/999999')
+      .set('Authorization', `Bearer ${sellerToken}`)
+      .send(validCar());
     expect(res.status).toBe(404);
   });
 });

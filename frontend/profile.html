@@ -102,7 +102,7 @@
       <div class="panel">
         <div class="panel-head">
           <h3>My Listings</h3>
-          <button class="nav-btn nav-btn-accent" onclick="switchTab('add-car')" id="new-listing-btn" style="display:none;padding:6px 14px;font-size:.78rem">+ New Listing</button>
+          <button class="nav-btn nav-btn-accent" onclick="newListing()" id="new-listing-btn" style="display:none;padding:6px 14px;font-size:.78rem">+ New Listing</button>
         </div>
         <div id="my-listings-content"><div class="spinner-wrap"><div class="spinner"></div></div></div>
       </div>
@@ -147,7 +147,7 @@
     <!-- Add Listing Tab (sellers only) -->
     <div class="profile-tab hidden" id="tab-add-car">
       <div class="panel">
-        <div class="panel-head"><h3>Add New Listing</h3></div>
+        <div class="panel-head"><h3 id="add-car-title">Add New Listing</h3></div>
         <div class="panel-body">
           <div class="upload-help">
             <strong>Listing standards.</strong> Every car needs a valid 17-character VIN, accurate mileage, and clear photos of the required angles below (minimum 800×600). Listings that don't meet these standards can't be published.
@@ -258,6 +258,7 @@
   document.querySelectorAll('.profile-nav-link[data-tab]').forEach(link => {
     link.addEventListener('click', () => {
       switchTab(link.dataset.tab);
+      if (link.dataset.tab === 'add-car')      resetListingForm();
       if (link.dataset.tab === 'listings')     loadMyListings();
       if (link.dataset.tab === 'transactions') loadTransactions();
       if (link.dataset.tab === 'messages')     loadThreads();
@@ -312,6 +313,7 @@
             <div class="tx-meta"><span class="js-price" data-amount="${esc(c.price)}" data-native="${esc(c.currency||'NGN')}">${Money.fmt(c.price, c.currency||'NGN')}</span> · ${esc(c.condition)} · ${Number(c.mileage||0).toLocaleString()} km</div>
           </div>
           <a href="detail.html?id=${esc(c.id)}" class="card-cta" style="text-decoration:none;font-size:.75rem">View</a>
+          <button onclick="editListing('${esc(c.id)}')" style="color:var(--accent);font-size:.78rem;padding:4px 10px;border-radius:6px;background:rgba(139,124,255,.1);border:1px solid rgba(139,124,255,.28);cursor:pointer">Edit</button>
           <button onclick="deleteCar('${esc(c.id)}')" style="color:var(--red);font-size:.78rem;padding:4px 10px;border-radius:6px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2)">Delete</button>
         </div>`).join('');
     } catch(e) { el.innerHTML = `<p class="empty-state">Failed: ${e.message}</p>`; }
@@ -589,6 +591,7 @@
   ];
   const VIN_RE = /^[A-HJ-NPR-Z0-9]{17}$/;
   const val = id => (document.getElementById(id)?.value || '').trim();
+  let editingId = null;   // null = creating a new listing; a car id = editing that one
 
   /* Location geocoding + map preview */
   let geo = { lat: null, lng: null, display: null };
@@ -735,6 +738,63 @@
   });
   refreshForm();
 
+  /* ── Create vs Edit: one form does both, toggled by editingId ── */
+  function resetListingForm() {
+    editingId = null;
+    ['car-title','car-make','car-model','car-year','car-price','car-mileage','car-vin','car-desc','car-location','car-photos-extra']
+      .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    document.getElementById('car-currency').value  = 'NGN';
+    document.getElementById('car-condition').value = 'good';
+    document.getElementById('car-bodytype').value  = '';
+    REQUIRED_SHOTS.forEach(s => {
+      const el = document.getElementById('shot-' + s.key); if (el) el.value = '';
+      const b  = document.getElementById('badge-' + s.key); if (b) { b.className = 'shot-badge'; b.textContent = ''; }
+    });
+    geo = { lat: null, lng: null, display: null };
+    const vh = document.getElementById('vin-hint'); vh.className = 'field-hint'; vh.textContent = '17 characters · letters I, O, Q are not allowed';
+    const lh = document.getElementById('loc-hint'); lh.className = 'field-hint'; lh.textContent = "City and country — we'll pin it on the map for buyers.";
+    document.getElementById('upload-map').style.display = 'none';
+    document.getElementById('add-car-title').textContent  = 'Add New Listing';
+    document.getElementById('submit-car-btn').textContent = '📋 Submit Listing';
+    document.getElementById('car-form-error').classList.add('hidden');
+    refreshForm();
+  }
+
+  function fillListingForm(car) {
+    editingId = car.id;
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = (v ?? ''); };
+    set('car-title', car.title); set('car-make', car.make);     set('car-model', car.model);
+    set('car-year', car.year);   set('car-price', car.price);   set('car-mileage', car.mileage);
+    set('car-vin', car.vin);     set('car-desc', car.description); set('car-location', car.location);
+    document.getElementById('car-currency').value  = (car.currency === 'USD' ? 'USD' : 'NGN');
+    document.getElementById('car-condition').value = (['excellent','good','fair','poor'].includes(car.condition) ? car.condition : 'good');
+    document.getElementById('car-bodytype').value  = car.body_type || '';
+    geo = { lat: car.latitude ?? null, lng: car.longitude ?? null, display: car.location || null };
+    // Existing photos: first N fill the required-angle slots, the rest go to "additional".
+    const photos = Array.isArray(car.photos) ? car.photos : [];
+    REQUIRED_SHOTS.forEach((s, i) => {
+      const el = document.getElementById('shot-' + s.key);
+      if (el) { el.value = photos[i] || ''; checkImageQuality(el.value, document.getElementById('badge-' + s.key)); }
+    });
+    document.getElementById('car-photos-extra').value = photos.slice(REQUIRED_SHOTS.length).join('\n');
+    const vh = document.getElementById('vin-hint'); vh.className = 'field-hint ok'; vh.textContent = '✓ Valid VIN format';
+    document.getElementById('add-car-title').textContent  = 'Edit Listing';
+    document.getElementById('submit-car-btn').textContent = '💾 Save Changes';
+    document.getElementById('car-form-error').classList.add('hidden');
+    refreshForm();
+  }
+
+  async function editListing(id) {
+    try {
+      const car = await API.getCar(id);
+      fillListingForm(car);
+      switchTab('add-car');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (e) { toast(e.message || 'Could not load that listing', 'error'); }
+  }
+
+  function newListing() { resetListingForm(); switchTab('add-car'); }
+
   document.getElementById('submit-car-btn').addEventListener('click', async () => {
     const errEl = document.getElementById('car-form-error');
     errEl.classList.add('hidden');
@@ -760,16 +820,22 @@
       photos:      collectPhotos(),
     };
     const btn = document.getElementById('submit-car-btn');
-    const orig = btn.textContent;
-    btn.disabled = true; btn.textContent = 'Submitting…';
+    btn.disabled = true;
+    btn.textContent = editingId ? 'Saving…' : 'Submitting…';
     try {
-      await API.createCar(data);
-      toast('Listing created! 🚗', 'success');
+      if (editingId) {
+        await API.updateCar(editingId, data);
+        toast('Listing updated ✓', 'success');
+      } else {
+        await API.createCar(data);
+        toast('Listing created! 🚗', 'success');
+      }
+      resetListingForm();            // clears the form + restores create-mode labels
       switchTab('listings'); loadMyListings();
     } catch(e) {
       errEl.textContent = e.message; errEl.classList.remove('hidden');
-    } finally {
-      btn.textContent = orig; refreshForm();
+      btn.textContent = editingId ? '💾 Save Changes' : '📋 Submit Listing';
+      refreshForm();
     }
   });
 

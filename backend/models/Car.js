@@ -153,6 +153,36 @@ export async function create({ title, make, model, year, mileage, vin, condition
   return findById(result.insertId);
 }
 
+// Update a listing's editable fields. Ownership is enforced by the route
+// (findById → owner/admin check) so this stays a plain write; returns the
+// refreshed car. Never touches seller_id or created_at.
+export async function update(id, { title, make, model, year, mileage, vin, condition, bodyType, description, photos, price, currency, location, latitude, longitude }) {
+  const numId = toId(id);
+  if (!numId) return null;
+  await pool.query(
+    'UPDATE cars SET title=?, make=?, model=?, year=?, mileage=?, vin=?, `condition`=?, body_type=?, description=?, photos=?, price=?, currency=?, location=?, latitude=?, longitude=? WHERE id=?',
+    [
+      title || null,
+      make  || null,
+      model || null,
+      year    ? parseInt(year, 10)    : null,
+      mileage != null ? parseInt(mileage, 10) : null,
+      vin   || null,
+      condition || 'good',
+      bodyType || null,
+      description || null,
+      JSON.stringify(photos || []),
+      price ? parseFloat(price) : null,
+      CURRENCIES.includes(currency) ? currency : 'NGN',
+      location || null,
+      latitude  != null ? parseFloat(latitude)  : null,
+      longitude != null ? parseFloat(longitude) : null,
+      numId,
+    ]
+  );
+  return findById(numId);
+}
+
 export async function deleteById(id) {
   const numId = toId(id);
   if (!numId) return null;
