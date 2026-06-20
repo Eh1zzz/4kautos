@@ -27,3 +27,14 @@ export const authLimiter = rateLimit({
   skip: () => process.env.NODE_ENV === 'test',
   message: { message: 'Too many attempts. Please try again in a few minutes.' },
 });
+
+// Tighter limiter for write-heavy / abusable endpoints (listing creation, uploads),
+// layered under the global limiter so a single client can't flood them.
+export const writeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 40,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => process.env.NODE_ENV === 'test',
+  message: { message: 'Too many requests — please slow down and try again shortly.' },
+});

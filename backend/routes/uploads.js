@@ -1,6 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import { authenticate, authorize } from '../middleware/auth.js';
+import { writeLimiter } from '../middleware/security.js';
 import { isImage, optimize } from '../utils/image.js';
 import { hashKey, putObject } from '../utils/storage.js';
 
@@ -13,7 +14,7 @@ const upload = multer({
 });
 
 // POST /uploads — sellers upload photos; returns optimized, CDN-ready URLs.
-router.post('/', authenticate, authorize('seller'), upload.array('photos', 10), async (req, res) => {
+router.post('/', writeLimiter, authenticate, authorize('seller'), upload.array('photos', 10), async (req, res) => {
   try {
     if (!req.files?.length) return res.status(400).json({ message: 'No files uploaded' });
     const urls = [];
