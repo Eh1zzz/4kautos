@@ -102,6 +102,9 @@
   </div>
 </section>
 
+<!-- ── HOT TICKER ──────────────────────────── -->
+<div class="ticker" id="ticker" aria-hidden="true"><div class="ticker-track" id="ticker-track"></div></div>
+
 <!-- ── FEATURED LISTINGS ───────────────────── -->
 <section id="hotsales-section" hidden>
   <div class="section-inner">
@@ -325,6 +328,27 @@
     } catch { /* non-critical */ }
   }
 
+  // Hot ticker — latest listings + value props as a scrolling marquee.
+  async function loadTicker() {
+    const track = document.getElementById('ticker-track');
+    if (!track) return;
+    let items = [];
+    try {
+      const cars = await API.getCars({ limit: 6 });
+      items = cars.map(c => {
+        const sym = (c.currency === 'USD') ? '$' : '₦';
+        const price = (c.price != null && c.price !== '') ? `${sym}${Number(c.price).toLocaleString('en-US')}` : 'Enquire';
+        const km = c.mileage ? ` · ${Number(c.mileage).toLocaleString()} km` : '';
+        return `${c.year || ''} ${c.make || ''} ${c.model || ''} — ${price}${km}`.replace(/\s+/g, ' ').trim();
+      });
+    } catch { /* offline — fall back to promos only */ }
+    const promos = ['Escrow-protected payments', 'Customs clearance handled', 'Free inspection reports', '150-point checks on every car'];
+    const all = [...items, ...promos];
+    if (!all.length) return;
+    const row = all.map(t => `<span class="ticker-item">${esc(t)}</span>`).join('');
+    track.innerHTML = row + row;   // duplicate for a seamless loop
+  }
+
   // Subtle car slideshow behind the hero (uses live inventory photos; blurred + dimmed)
   function initHeroSlideshow(cars){
     const host = document.getElementById('hero-slideshow');
@@ -372,6 +396,7 @@
   renderBrandStrip('#brand-strip');
   loadFeatured();
   loadHotSales();
+  loadTicker();
 </script>
 </body>
 </html>
