@@ -165,6 +165,14 @@
             <strong>Listing standards.</strong> Every car needs a valid 17-character VIN, accurate mileage, and clear photos of the required angles below (minimum 800×600). Listings that don't meet these standards can't be published.
           </div>
 
+          <div class="wizard-steps" id="wizard-steps">
+            <button type="button" class="wstep active" data-go="1"><span class="wstep-n">1</span> Basics</button>
+            <button type="button" class="wstep" data-go="2"><span class="wstep-n">2</span> Specs</button>
+            <button type="button" class="wstep" data-go="3"><span class="wstep-n">3</span> Location</button>
+            <button type="button" class="wstep" data-go="4"><span class="wstep-n">4</span> Photos</button>
+          </div>
+
+          <div class="wizard-step active" data-step="1">
           <div class="form-row">
             <div class="form-group">
               <label class="form-label">Title</label>
@@ -230,6 +238,9 @@
             </select>
           </div>
 
+          </div><!-- /step 1 -->
+
+          <div class="wizard-step" data-step="2">
           <h4 class="form-subhead">Specifications</h4>
           <div class="form-row">
             <div class="form-group"><label class="form-label req">Exterior colour</label><input class="form-input" id="car-extcolor" placeholder="e.g. Pearl White"></div>
@@ -261,6 +272,9 @@
           <div class="form-group"><label class="form-label">Comfort &amp; convenience</label><input class="form-input" id="car-comfort" placeholder="Heated seats, Sunroof, Apple CarPlay (comma-separated)"></div>
           <div class="form-group"><label class="form-label">Safety</label><input class="form-input" id="car-safety" placeholder="Blind-spot monitor, Lane assist, 360° camera (comma-separated)"></div>
           <div class="form-group"><label class="form-label">Modifications</label><input class="form-input" id="car-mods" placeholder="Lift kit, Aftermarket exhaust (comma-separated)"></div>
+          </div><!-- /step 2 -->
+
+          <div class="wizard-step" data-step="3">
           <div class="form-group">
             <label class="form-label req">Location (where the car is)</label>
             <div class="location-row">
@@ -275,6 +289,9 @@
             <textarea class="form-input" id="car-desc" rows="4" placeholder="Describe the vehicle's history, features, and any known issues…" style="resize:vertical;min-height:100px"></textarea>
           </div>
 
+          </div><!-- /step 3 -->
+
+          <div class="wizard-step" data-step="4">
           <div class="form-group">
             <label class="form-label req">Required photos</label>
             <div class="photo-checklist" id="photo-checklist"></div>
@@ -284,7 +301,13 @@
 
           <div class="req-summary" id="req-summary"></div>
           <div class="form-error hidden" id="car-form-error"></div>
-          <button class="form-submit" id="submit-car-btn" disabled>📋 Submit Listing</button>
+          </div><!-- /step 4 -->
+
+          <div class="wizard-nav">
+            <button class="nav-btn nav-btn-ghost" type="button" id="wiz-back" style="display:none">← Back</button>
+            <button class="nav-btn nav-btn-accent" type="button" id="wiz-next">Next →</button>
+            <button class="form-submit" id="submit-car-btn" disabled style="display:none">📋 Submit Listing</button>
+          </div>
         </div>
       </div>
     </div>
@@ -871,6 +894,7 @@
     document.getElementById('add-car-title').textContent  = 'Add New Listing';
     document.getElementById('submit-car-btn').textContent = '📋 Submit Listing';
     document.getElementById('car-form-error').classList.add('hidden');
+    showStep(1);
     refreshForm();
   }
 
@@ -904,6 +928,7 @@
     document.getElementById('add-car-title').textContent  = 'Edit Listing';
     document.getElementById('submit-car-btn').textContent = '💾 Save Changes';
     document.getElementById('car-form-error').classList.add('hidden');
+    showStep(1);
     refreshForm();
   }
 
@@ -917,6 +942,26 @@
   }
 
   function newListing() { resetListingForm(); switchTab('add-car'); }
+
+  /* ── Listing wizard (stepped form) ── */
+  let wizStep = 1;
+  function showStep(n) {
+    wizStep = Math.max(1, Math.min(4, n));
+    document.querySelectorAll('#tab-add-car .wizard-step').forEach(s => s.classList.toggle('active', Number(s.dataset.step) === wizStep));
+    document.querySelectorAll('#tab-add-car .wstep').forEach(b => {
+      const k = Number(b.dataset.go);
+      b.classList.toggle('active', k === wizStep);
+      b.classList.toggle('done', k < wizStep);
+    });
+    const back = document.getElementById('wiz-back'), next = document.getElementById('wiz-next'), sub = document.getElementById('submit-car-btn');
+    if (back) back.style.display = wizStep > 1 ? '' : 'none';
+    if (next) next.style.display = wizStep < 4 ? '' : 'none';
+    if (sub)  sub.style.display  = wizStep === 4 ? '' : 'none';
+  }
+  document.getElementById('wiz-next')?.addEventListener('click', () => showStep(wizStep + 1));
+  document.getElementById('wiz-back')?.addEventListener('click', () => showStep(wizStep - 1));
+  document.querySelectorAll('#tab-add-car .wstep').forEach(b => b.addEventListener('click', () => showStep(Number(b.dataset.go))));
+  showStep(1);
 
   document.getElementById('submit-car-btn').addEventListener('click', async () => {
     const errEl = document.getElementById('car-form-error');

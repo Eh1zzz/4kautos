@@ -943,6 +943,21 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:3rem 2re
 .extras-chips{display:flex;flex-wrap:wrap;gap:.4rem}
 .extra-chip{font-size:.78rem;padding:.3rem .7rem;border-radius:999px;background:var(--surface2);border:1px solid var(--border);color:var(--text2)}
 
+/* Listing intake wizard (stepped form) */
+.wizard-steps{display:flex;gap:.5rem;margin:0 0 1.5rem;flex-wrap:wrap}
+.wstep{flex:1 1 80px;display:flex;align-items:center;gap:.45rem;justify-content:center;padding:.55rem .5rem;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;color:var(--text3);font-size:.8rem;font-weight:600;cursor:pointer;transition:color var(--speed),border-color var(--speed),background var(--speed)}
+.wstep .wstep-n{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--border);color:var(--text2);font-size:.72rem;flex-shrink:0;transition:background var(--speed),color var(--speed)}
+.wstep.active{color:var(--accent);border-color:var(--accent)}
+.wstep.active .wstep-n,.wstep.done .wstep-n{background:var(--accent);color:#fff}
+.wstep.done{color:var(--text2)}
+.wizard-step{display:none}
+.wizard-step.active{display:block;animation:wizIn .3s var(--ease,ease) both}
+@keyframes wizIn{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+.wizard-nav{display:flex;align-items:center;gap:.75rem;margin-top:1.5rem}
+.wizard-nav #wiz-next,.wizard-nav .form-submit{margin-left:auto}
+.wizard-nav .form-submit{width:auto}
+@media(prefers-reduced-motion:reduce){.wizard-step.active{animation:none}}
+
 /* ── Dual-currency price ── */
 .card-price{display:flex;flex-direction:column;align-items:flex-start;line-height:1.1}
 .cta-price{display:flex;flex-direction:column;align-items:center;line-height:1.1}
