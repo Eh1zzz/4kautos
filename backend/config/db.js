@@ -57,6 +57,20 @@ export async function connectDB() {
   await ensureColumn('cars', 'latitude',  'DECIMAL(9,6)');
   await ensureColumn('cars', 'longitude', 'DECIMAL(9,6)');
 
+  // Extended vehicle specs (Phase 1).
+  await ensureColumn('cars', 'ext_color',        'VARCHAR(40)');
+  await ensureColumn('cars', 'int_color',        'VARCHAR(40)');
+  await ensureColumn('cars', 'engine',           'VARCHAR(80)');
+  await ensureColumn('cars', 'transmission',     'VARCHAR(20)');
+  await ensureColumn('cars', 'drivetrain',       'VARCHAR(20)');
+  await ensureColumn('cars', 'mpg',              'VARCHAR(30)');
+  await ensureColumn('cars', 'horsepower',       'INT');
+  await ensureColumn('cars', 'seats',            'INT');
+  await ensureColumn('cars', 'towing_capacity',  'VARCHAR(40)');
+  await ensureColumn('cars', 'comfort_features', 'JSON');
+  await ensureColumn('cars', 'safety_features',  'JSON');
+  await ensureColumn('cars', 'modifications',    'JSON');
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS transactions (
       id          INT           AUTO_INCREMENT PRIMARY KEY,

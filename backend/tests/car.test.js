@@ -216,3 +216,40 @@ describe('GET /cars/:id/valuation', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('Extended vehicle specs', () => {
+  it('round-trips the new spec fields on create', async () => {
+    const res = await request(app).post('/cars').set('Authorization', `Bearer ${sellerToken}`)
+      .send(validCar({
+        make: 'Ford', model: 'F-150', bodyType: 'Pickup', vin: '1FTFW1ET5DFC10001',
+        extColor: 'Magnetic Grey', intColor: 'Black', engine: '3.5L V6 EcoBoost',
+        transmission: 'Automatic', drivetrain: '4WD', mpg: '20 combined',
+        horsepower: 400, seats: 5, towingCapacity: '5,000 kg',
+        comfortFeatures: ['Heated seats', 'Apple CarPlay'], safetyFeatures: ['Blind-spot monitor'],
+        modifications: ['Lift kit'],
+      }));
+    expect(res.status).toBe(201);
+    const c = res.body.car;
+    expect(c.engine).toBe('3.5L V6 EcoBoost');
+    expect(c.transmission).toBe('Automatic');
+    expect(c.drivetrain).toBe('4WD');
+    expect(c.horsepower).toBe(400);
+    expect(c.seats).toBe(5);
+    expect(c.towing_capacity).toBe('5,000 kg');           // stored — it's a Pickup
+    expect(c.comfort_features).toEqual(['Heated seats', 'Apple CarPlay']);
+    expect(c.safety_features).toEqual(['Blind-spot monitor']);
+  });
+
+  it('rejects an invalid transmission', async () => {
+    const res = await request(app).post('/cars').set('Authorization', `Bearer ${sellerToken}`)
+      .send(validCar({ vin: '1FTFW1ET5DFC10002', transmission: 'Warp drive' }));
+    expect(res.status).toBe(400);
+  });
+
+  it('does not store towing capacity for non-trucks', async () => {
+    const res = await request(app).post('/cars').set('Authorization', `Bearer ${sellerToken}`)
+      .send(validCar({ make: 'Mazda', model: '3', bodyType: 'Sedan', vin: '1FTFW1ET5DFC10003', towingCapacity: '3000 kg' }));
+    expect(res.status).toBe(201);
+    expect(res.body.car.towing_capacity).toBeNull();      // not a Pickup → ignored
+  });
+});

@@ -5,6 +5,8 @@
 export const CONDITIONS = ['excellent', 'good', 'fair', 'poor'];
 export const CURRENCIES = ['NGN', 'USD'];
 export const BODY_TYPES = ['SUV', 'Sedan', 'Hatchback', 'Coupe', 'Pickup', 'Convertible', 'Wagon', 'Van', 'Minivan', 'Crossover'];
+export const TRANSMISSIONS = ['Automatic', 'Manual', 'CVT', 'Semi-automatic', 'Dual-clutch'];
+export const DRIVETRAINS = ['FWD', 'RWD', 'AWD', '4WD'];
 
 // Minimum photos a listing must include. The seller UI maps these to the
 // required angles: front, rear, interior, dashboard/odometer, engine bay.
@@ -117,6 +119,43 @@ export function validateCarInput(body = {}) {
     ? body.title.trim()
     : [value.year, value.make, value.model].filter(Boolean).join(' ');
   value.title = title || null;
+
+  // ── Extended specs ──────────────────────────────────────────
+  // Optional at the API layer (so existing/seed listings and the test suite stay
+  // valid); the listing form enforces them on NEW listings. Format is validated
+  // here whenever a value is supplied. Accepts camelCase or snake_case keys.
+  const pick = (a, b) => (typeof a === 'string' ? a : typeof b === 'string' ? b : '').trim();
+  value.extColor = pick(body.extColor, body.ext_color).slice(0, 40) || null;
+  value.intColor = pick(body.intColor, body.int_color).slice(0, 40) || null;
+  value.engine   = pick(body.engine).slice(0, 80) || null;
+
+  const transmission = pick(body.transmission).slice(0, 20);
+  if (transmission && !TRANSMISSIONS.includes(transmission)) errors.push(`Transmission must be one of: ${TRANSMISSIONS.join(', ')}`);
+  value.transmission = transmission || null;
+
+  const drivetrain = pick(body.drivetrain).slice(0, 20);
+  if (drivetrain && !DRIVETRAINS.includes(drivetrain)) errors.push(`Drivetrain must be one of: ${DRIVETRAINS.join(', ')}`);
+  value.drivetrain = drivetrain || null;
+
+  value.mpg = pick(body.mpg).slice(0, 30) || null;
+
+  const hp = body.horsepower != null && body.horsepower !== '' ? Number.parseInt(body.horsepower, 10) : null;
+  if (hp != null && (!Number.isInteger(hp) || hp < 0 || hp > 5000)) errors.push('Horsepower must be between 0 and 5000');
+  value.horsepower = Number.isInteger(hp) && hp >= 0 && hp <= 5000 ? hp : null;
+
+  const seats = body.seats != null && body.seats !== '' ? Number.parseInt(body.seats, 10) : null;
+  if (seats != null && (!Number.isInteger(seats) || seats < 1 || seats > 50)) errors.push('Seats must be between 1 and 50');
+  value.seats = Number.isInteger(seats) && seats >= 1 && seats <= 50 ? seats : null;
+
+  // Towing capacity is only meaningful for trucks/pickups — only stored there.
+  const towing = pick(body.towingCapacity, body.towing_capacity).slice(0, 40);
+  value.towingCapacity = (value.bodyType === 'Pickup' ? towing : '') || null;
+
+  // Optional extras: arrays of short strings, never required.
+  const arr = v => Array.isArray(v) ? v.filter(x => typeof x === 'string' && x.trim()).map(x => x.trim().slice(0, 60)).slice(0, 40) : [];
+  value.comfortFeatures = arr(body.comfortFeatures ?? body.comfort_features);
+  value.safetyFeatures  = arr(body.safetyFeatures ?? body.safety_features);
+  value.modifications   = arr(body.modifications);
 
   return { errors, value };
 }
