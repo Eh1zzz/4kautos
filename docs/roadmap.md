@@ -87,8 +87,9 @@ Everything else (layout, motion, components) is open to modification.
 ## 3. Phased sequence
 - **Phase 0 — quick wins (free, unblocked):** dashboard cleanups, delete-cancelled-tx,
   footer overhaul, brand Show More/Other, owner-widget hiding. ✅ **DONE & deployed (2026-06-20)**
-- **Phase 1 — data & reuse:** extended schema + intake wizard, body-type SVGs,
-  valuation badge, saved-searches table.
+- **Phase 1 — data & reuse:** ✅ valuation badge, body-type SVGs, owner Edit/Share,
+  extended schema + spec fields (required-on-new), make/model "Other". ⏳ remaining:
+  saved_searches table, animated multi-step wizard. (2026-06-20)
 - **Phase 2 — recs + media:** empty-state recs, responsive images, Hot Sales.
 - **Phase 3 — AI streaming** ⛔ AI key + budget.
 - **Phase 4 — "domain day" bundle:** email → password reset, contact, push. ⛔ domain.
