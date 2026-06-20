@@ -103,12 +103,25 @@
 </section>
 
 <!-- ── FEATURED LISTINGS ───────────────────── -->
+<section id="hotsales-section" hidden>
+  <div class="section-inner">
+    <div class="section-head">
+      <div>
+        <div class="section-label" style="color:var(--accent)">🔥 Hot Sales</div>
+        <h2 class="section-title">Deals worth grabbing</h2>
+      </div>
+      <a href="listings.html" class="view-all">View All Cars →</a>
+    </div>
+    <div class="cars-grid" id="hotsales-grid"></div>
+  </div>
+</section>
+
 <section>
   <div class="section-inner">
     <div class="section-head">
       <div>
         <div class="section-label">Fresh Inventory</div>
-        <h2 class="section-title">Featured Listings</h2>
+        <h2 class="section-title">Latest Arrivals</h2>
       </div>
       <a href="listings.html" class="view-all">View All Cars →</a>
     </div>
@@ -300,6 +313,18 @@
     }
   }
 
+  // 🔥 Hot Sales — admin-featured cars; the section stays hidden when there are none.
+  async function loadHotSales() {
+    try {
+      const cars = await API.getCars({ featured: 1, limit: 8 });
+      if (!cars.length) return;
+      document.getElementById('hotsales-grid').innerHTML = cars.map(c => carCard(c)).join('');
+      document.getElementById('hotsales-section').hidden = false;
+      window.observeReveals?.();
+      Money.repriceAll?.();
+    } catch { /* non-critical */ }
+  }
+
   // Subtle car slideshow behind the hero (uses live inventory photos; blurred + dimmed)
   function initHeroSlideshow(cars){
     const host = document.getElementById('hero-slideshow');
@@ -346,6 +371,7 @@
 
   renderBrandStrip('#brand-strip');
   loadFeatured();
+  loadHotSales();
 </script>
 </body>
 </html>

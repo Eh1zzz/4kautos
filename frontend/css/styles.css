@@ -958,6 +958,10 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:3rem 2re
 .wizard-nav .form-submit{width:auto}
 @media(prefers-reduced-motion:reduce){.wizard-step.active{animation:none}}
 
+/* Empty-result recommendations */
+#recs-wrap{margin-top:2.5rem}
+.recs-title{font-family:var(--font-display);font-size:1.1rem;font-weight:700;margin:0 0 1.1rem;color:var(--text);text-align:left}
+
 /* ── Dual-currency price ── */
 .card-price{display:flex;flex-direction:column;align-items:flex-start;line-height:1.1}
 .cta-price{display:flex;flex-direction:column;align-items:center;line-height:1.1}

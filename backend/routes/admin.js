@@ -1,6 +1,6 @@
 import express from 'express';
 import { findAll as findAllUsers, verifyById, deleteById as deleteUserById } from '../models/User.js';
-import { findAllAdmin, deleteById as deleteCarById } from '../models/Car.js';
+import { findAllAdmin, deleteById as deleteCarById, setFeatured } from '../models/Car.js';
 import { findAll as findAllTx, setDisputed } from '../models/Transaction.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { toId } from '../utils/validation.js';
@@ -43,6 +43,15 @@ router.delete('/cars/:id', async (req, res) => {
     if (!deleted) return res.status(404).json({ message: 'Car not found' });
     res.json({ message: 'Deleted' });
   } catch { res.status(500).json({ message: 'Failed to delete car' }); }
+});
+
+// PATCH /admin/cars/:id/feature { featured } — toggle the Hot-Sales flag
+router.patch('/cars/:id/feature', async (req, res) => {
+  try {
+    const updated = await setFeatured(req.params.id, !!req.body.featured);
+    if (!updated) return res.status(404).json({ message: 'Car not found' });
+    res.json({ message: req.body.featured ? 'Added to Hot Sales' : 'Removed from Hot Sales', car: updated });
+  } catch (err) { console.error('admin feature:', err.message); res.status(500).json({ message: 'Failed to update' }); }
 });
 
 router.get('/transactions', async (_req, res) => {

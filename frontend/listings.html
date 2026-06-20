@@ -152,6 +152,7 @@
     const empty = document.getElementById('listings-empty');
     const pag = document.getElementById('pagination');
     spinner.classList.remove('hidden'); grid.classList.add('hidden'); empty.classList.add('hidden'); pag.classList.add('hidden');
+    document.getElementById('recs-wrap')?.remove();
 
     try {
       const { cars, total, pages } = await API.getCarsPage({ ...buildParams(), page, limit: PAGE_SIZE });
@@ -160,13 +161,38 @@
       const from = total ? (page - 1) * PAGE_SIZE + 1 : 0;
       const to = (page - 1) * PAGE_SIZE + cars.length;
       document.getElementById('results-count').textContent = total ? `${from}–${to} of ${total}` : '0';
-      if (!cars.length) { empty.classList.remove('hidden'); return; }
+      if (!cars.length) { empty.classList.remove('hidden'); renderRecommendations(); return; }
       grid.classList.remove('hidden');
       grid.innerHTML = cars.map(c => carCard(c)).join('');   // carCard + clicks/saves are shared (app.js)
       renderPagination();
     } catch (e) {
       spinner.innerHTML = `<p class="empty-state">Backend offline. Start the server with <code>npm start</code></p>`;
     }
+  }
+
+  // When a search returns nothing, suggest cars — matched to the buyer's saved
+  // searches if they have any, otherwise the latest listings.
+  async function renderRecommendations() {
+    const empty = document.getElementById('listings-empty');
+    try {
+      let recs = [], heading = 'You might like these';
+      if (API.isLoggedIn()) {
+        const saved = await API.getSavedSearches().catch(() => []);
+        for (const s of saved) {
+          const got = await API.getCars({ ...(s.filters || {}), limit: 4 }).catch(() => []);
+          if (got.length) { recs = got; heading = `From your saved search · ${esc(s.label)}`; break; }
+        }
+      }
+      if (!recs.length) recs = await API.getCars({ limit: 4 }).catch(() => []);
+      recs = recs.slice(0, 4);
+      if (!recs.length) return;
+      const wrap = document.createElement('div');
+      wrap.id = 'recs-wrap';
+      wrap.innerHTML = `<h3 class="recs-title">${heading}</h3><div class="cars-grid">${recs.map(c => carCard(c)).join('')}</div>`;
+      empty.insertAdjacentElement('afterend', wrap);
+      window.observeReveals?.();
+      Money.repriceAll?.();
+    } catch { /* non-critical */ }
   }
 
   function renderPagination() {

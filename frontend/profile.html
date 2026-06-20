@@ -680,6 +680,7 @@
           </div>
           <div class="admin-actions">
             <a href="detail.html?id=${esc(c.id)}" class="adm-btn" style="text-decoration:none">View</a>
+            <button class="adm-btn" onclick="adminFeature('${esc(c.id)}', ${c.featured ? 0 : 1}, this)">${c.featured ? '★ Unfeature' : '☆ Feature'}</button>
             <button class="adm-btn danger" onclick="adminDeleteCar('${esc(c.id)}')">Delete</button>
           </div>
         </div>`).join('') : '<div class="empty-state" style="padding:2rem"><p>No listings.</p></div>';
@@ -691,6 +692,11 @@
     try { await API.adminDeleteUser(id); toast('User deleted', 'success'); loadAdmin(); } catch (e) { toast(e.message, 'error'); }
   }
   async function adminDeleteCar(id) { if (!confirm('Delete this listing?')) return; try { await API.adminDeleteCar(id); toast('Listing removed', 'success'); loadAdmin(); } catch (e) { toast(e.message, 'error'); } }
+  async function adminFeature(id, featured, btn) {
+    btn.disabled = true;
+    try { await API.adminSetFeatured(id, !!featured); toast(featured ? 'Added to Hot Sales 🔥' : 'Removed from Hot Sales', 'success'); loadAdmin(); }
+    catch (e) { btn.disabled = false; toast(e.message, 'error'); }
+  }
 
   /* ── Add Listing: standards-enforced form ── */
   const REQUIRED_SHOTS = [

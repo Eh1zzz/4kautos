@@ -59,3 +59,35 @@ describe('Admin authorization', () => {
     expect(after.body.find(u => u.id === buyerId)).toBeUndefined();
   });
 });
+
+describe('Hot Sales (featured)', () => {
+  let sellerTok, carId;
+  beforeAll(async () => {
+    const s = await request(app).post('/auth/signup').send({ name: 'HS Seller', email: 'hsseller@test.com', password: 'password123', role: 'seller' });
+    sellerTok = s.body.token;
+    const car = await request(app).post('/cars').set('Authorization', `Bearer ${sellerTok}`).send({
+      make: 'Toyota', model: 'Corolla', year: 2021, mileage: 20000, price: 8000000, condition: 'good',
+      vin: '2T1BURHE0JC000001', location: 'Lagos, Nigeria', photos: ['a', 'b', 'c', 'd', 'e'],
+    });
+    carId = car.body.car.id;
+  });
+
+  it('blocks non-admins from featuring (403)', async () => {
+    const r = await request(app).patch(`/admin/cars/${carId}/feature`).set('Authorization', `Bearer ${sellerTok}`).send({ featured: true });
+    expect(r.status).toBe(403);
+  });
+
+  it('lets an admin feature a car, and it shows under ?featured=1', async () => {
+    const r = await request(app).patch(`/admin/cars/${carId}/feature`).set('Authorization', `Bearer ${adminToken}`).send({ featured: true });
+    expect(r.status).toBe(200);
+    const feat = await request(app).get('/cars?featured=1');
+    expect(feat.body.some(c => c.id === carId)).toBe(true);
+  });
+
+  it('unfeatures a car', async () => {
+    const r = await request(app).patch(`/admin/cars/${carId}/feature`).set('Authorization', `Bearer ${adminToken}`).send({ featured: false });
+    expect(r.status).toBe(200);
+    const feat = await request(app).get('/cars?featured=1');
+    expect(feat.body.some(c => c.id === carId)).toBe(false);
+  });
+});

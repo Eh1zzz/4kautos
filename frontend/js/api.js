@@ -160,6 +160,7 @@ const API = {
   adminDeleteUser(id)    { return req('DELETE', `/admin/users/${id}`); },
   adminCars()            { return req('GET', '/admin/cars'); },
   adminDeleteCar(id)     { return req('DELETE', `/admin/cars/${id}`); },
+  adminSetFeatured(id, featured) { return req('PATCH', `/admin/cars/${id}/feature`, { featured }); },
 
   /* ── CUSTOMS CLEARANCE ── */
   getClearanceAgents()      { return req('GET', '/clearance/agents'); },
