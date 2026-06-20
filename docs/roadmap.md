@@ -90,10 +90,33 @@ Everything else (layout, motion, components) is open to modification.
 - **Phase 1 — data & reuse:** ✅ **COMPLETE (2026-06-20)** — valuation badge, body-type
   SVGs, owner Edit/Share, extended schema + spec fields (required-on-new), make/model
   "Other", saved_searches, animated multi-step intake wizard.
-- **Phase 2 — recs + media:** empty-state recs, responsive images, Hot Sales.
+- **Phase 2 — recs + media:** ✅ empty-state recs + Hot Sales **DONE (2026-06-20)**; ⏳ responsive images (R2 srcset) remains.
 - **Phase 3 — AI streaming** ⛔ AI key + budget.
 - **Phase 4 — "domain day" bundle:** email → password reset, contact, push. ⛔ domain.
 - **Phase 5 — KYC** (buyer+seller+admin review). 🔴 vendor seat.
 - **Phase 6 — full UI redesign + admin rebuild** (style the final component set once).
 
 Tags: **S**≈<½d · **M**≈1–2d · **L**≈3–5d · **XL**≈week+ · ⛔ blocked · 🔴 high-risk/vendor.
+
+---
+
+## 4. $0 / Low-Burn Track (current operating mode)
+
+Bootstrapping at ~$0 — **freeze all paid infra**, build everything that needs no spend.
+
+### ❄️ Frozen (don't buy yet) → $0 substitute in use
+- **Custom domain** → stay on `*.up.railway.app` + `pub-*.r2.dev` (R2 dev URL; rate-limited, fine pre-launch).
+- **Resend + email domain** → the **Gmail SMTP fallback** already in `utils/email.js`: a free Gmail App Password covers password reset + contact alerts at low volume (~500/day, deliverability caveats). Resend is a later deliverability upgrade, not a prerequisite.
+- **Anthropic API (live AutoBot)** → keep the offline `localAnswer` fallback. NOTE: Claude *Pro* ≠ API access (separate, pay-per-use). When enabled, set a hard monthly spend cap.
+- **Smile ID (KYC)** → build the verification UI + a manual admin-toggled `kyc_status`; the paid vendor drops in behind the same field later. Don't gate listings on it yet.
+
+### ✅ Buildable now at $0 (recommended order)
+1. Pinned **payout-status display** fix.
+2. **Contact form** — floating panel + Contact-Us section + persist messages + admin inbox + Gmail-SMTP alert.
+3. **Password reset** — signed, time-locked token via Gmail SMTP.
+4. **Per-route rate limits** on auth/listing/contact + input sanitisation on the rich vehicle fields.
+5. **Phase 6 redesign** — pure CSS/markup; highest visible impact, zero cost. Retains theme + accents + caution-cone cursor.
+6. **Polish** — responsive images (srcset / Cloudflare resize in front of R2), a11y, performance, SEO (Next.js SSR already in place), more tests, better seed data.
+
+### 💸 Unfreeze later, in this order (only when traction justifies the spend)
+custom domain → email (Resend) → AI key (with a spend cap) → KYC vendor.
