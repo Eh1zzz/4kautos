@@ -333,8 +333,10 @@
     ],
   };
   function renderBrowse(kind){
-    document.getElementById('browse-grid').innerHTML = BROWSE[kind].map(b =>
-      `<a class="browse-tile" href="listings.html?${b.q}"><span class="browse-ico">${carIco}</span><span class="browse-label">${b.label}</span></a>`).join('');
+    document.getElementById('browse-grid').innerHTML = BROWSE[kind].map(b => {
+      const ico = (kind === 'type' && window.bodyIcon) ? window.bodyIcon(b.label) : carIco;
+      return `<a class="browse-tile" href="listings.html?${b.q}"><span class="browse-ico">${ico}</span><span class="browse-label">${b.label}</span></a>`;
+    }).join('');
   }
   document.querySelectorAll('.browse-tab').forEach(t => t.addEventListener('click', () => {
     document.querySelectorAll('.browse-tab').forEach(x => x.classList.remove('active'));

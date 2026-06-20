@@ -1283,7 +1283,7 @@ html.has-cursor-warn,html.has-cursor-warn *{cursor:none!important}
 .browse-tile{display:flex;align-items:center;gap:.75rem;padding:1rem 1.1rem;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);font-weight:600;font-size:.9rem;color:var(--text);transition:transform var(--speed),border-color var(--speed),box-shadow var(--speed)}
 .browse-tile:hover{border-color:var(--border-hi);transform:translateY(-2px);box-shadow:var(--glow-soft)}
 .browse-ico{width:38px;height:38px;border-radius:10px;background:var(--grad-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent)}
-.browse-ico svg{width:20px;height:20px}
+.browse-ico svg{width:26px;height:auto}
 
 .why-section{background:var(--bg2)}
 .why-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1.25rem}

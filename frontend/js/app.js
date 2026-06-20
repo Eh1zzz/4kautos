@@ -489,6 +489,22 @@ const Landed = (function () {
 window.Landed = Landed;
 
 /* ── SHARED CAR CARD ──────────────────────── */
+/* ── BODY-TYPE ICONS — a distinct line-art silhouette per type ── */
+const _veh = roof => `<svg viewBox="0 0 48 26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19V15q0-2 3-2h36q3 0 3 2v4"/>${roof}<circle cx="14" cy="20" r="3.2"/><circle cx="34" cy="20" r="3.2"/></svg>`;
+const BODY_ICONS = {
+  Sedan:       _veh('<path d="M12 13 16 8h14l4 5"/>'),
+  SUV:         _veh('<path d="M11 13 13 6h20l2 7"/>'),
+  Crossover:   _veh('<path d="M11 13 13 6h20l2 7"/>'),
+  Hatchback:   _veh('<path d="M12 13 16 8h11l5 5"/>'),
+  Coupe:       _veh('<path d="M13 13q7-7 15-6 4 1 6 6"/>'),
+  Pickup:      _veh('<path d="M12 13 15 8h8l1 5"/><path d="M24 13v-2h16"/>'),
+  Convertible: _veh('<path d="M14 13 18 9l2 4"/>'),
+  Wagon:       _veh('<path d="M12 13 15 7h20l2 6"/>'),
+  Van:         _veh('<path d="M7 13 9 6h30l2 6"/>'),
+  Minivan:     _veh('<path d="M8 13 11 6h26l3 6"/>'),
+};
+window.bodyIcon = t => BODY_ICONS[t] || _veh('<path d="M12 13 16 8h14l4 5"/>');
+
 window.carCard = function (c) {
   const native = c.currency || 'NGN';
   const img = c.photos?.[0] || `https://placehold.co/600x400/12121f/8b7cff?text=${encodeURIComponent(c.make || 'Car')}`;
