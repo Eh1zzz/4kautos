@@ -26,6 +26,7 @@
 
   /* brand accents (shared across themes) */
   --accent:    #8b7cff;   /* electric violet */
+  --hot:       #dc1212;   /* "hot" red accent — sales / ticker / urgency */
   --hot:       #dc1212;   /* red "hot" accent — sales / ticker / urgency */
   --accent-dk: #6d4dff;
   --accent-lt: #a99bff;
@@ -69,6 +70,7 @@
 /* ── LIGHT THEME ──────────────────────────── */
 [data-theme="light"] {
   --accent:    #6d3aff;
+  --hot:       #dc1212;
   --accent-dk: #5a2be0;
   --accent-lt: #8b5cff;
   --accent2:   #0891b2;
@@ -971,6 +973,15 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:3rem 2re
 .stat-ico svg{width:22px;height:22px}
 .stat-num{font-family:var(--font-display);font-size:1.7rem;font-weight:700;color:var(--text);line-height:1}
 .stat-lbl{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);margin-top:4px}
+
+/* Hot ticker (redesign — racing-style marquee with the red "hot" accent) */
+.ticker{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);overflow:hidden;white-space:nowrap}
+.ticker-track{display:inline-flex;align-items:center;will-change:transform;animation:tickerScroll 45s linear infinite}
+.ticker:hover .ticker-track{animation-play-state:paused}
+.ticker-item{display:inline-flex;align-items:center;gap:.6rem;padding:.7rem 1.5rem;font-size:.76rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text2);white-space:nowrap}
+.ticker-item::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--hot);box-shadow:0 0 8px var(--hot);flex-shrink:0}
+@keyframes tickerScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media(prefers-reduced-motion:reduce){.ticker-track{animation:none}}
 
 /* Hot ticker (redesign — racing-style marquee with the red hot accent) */
 .ticker{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);overflow:hidden;white-space:nowrap}
