@@ -757,6 +757,58 @@ document.addEventListener('keydown', e => {
 })();
 
 /* ── SHARED CAR-OUTLINE FOOTER ────────────── */
+/* ── CONTACT MODAL ("Send us a message") ── */
+(function () {
+  if (document.getElementById('contact-modal')) return;
+  const html = `
+    <div class="modal-overlay" id="contact-modal">
+      <div class="modal">
+        <div class="modal-head">
+          <h2>Send us a message</h2>
+          <button class="modal-close" id="contact-modal-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p style="color:var(--text2);font-size:.88rem;margin:0 0 1rem">Questions, feedback, or help with a listing — we'll get back to you by email.</p>
+          <div class="form-group"><label class="form-label">Your name</label><input class="form-input" id="ct-name" autocomplete="name"></div>
+          <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" id="ct-email" placeholder="you@example.com" autocomplete="email"></div>
+          <div class="form-group"><label class="form-label">Message</label><textarea class="form-input" id="ct-msg" rows="4" placeholder="How can we help?" style="resize:vertical"></textarea></div>
+          <input type="text" id="ct-hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
+          <div class="form-error hidden" id="ct-error"></div>
+          <button class="form-submit" id="ct-submit">Send message</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+  const modal = document.getElementById('contact-modal');
+  const close = () => modal.classList.remove('open');
+  window.openContact = () => {
+    const u = API.getUser?.();
+    if (u) { const n = document.getElementById('ct-name'), e = document.getElementById('ct-email'); if (!n.value) n.value = u.name || ''; if (!e.value) e.value = u.email || ''; }
+    modal.classList.add('open');
+  };
+  document.getElementById('contact-modal-close').addEventListener('click', close);
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+  document.getElementById('ct-submit').addEventListener('click', async () => {
+    const name = document.getElementById('ct-name').value.trim();
+    const email = document.getElementById('ct-email').value.trim();
+    const message = document.getElementById('ct-msg').value.trim();
+    const website = document.getElementById('ct-hp').value;
+    const err = document.getElementById('ct-error');
+    err.classList.add('hidden');
+    if (!name || !email || !message) { err.textContent = 'Please fill in your name, email and message.'; err.classList.remove('hidden'); return; }
+    const btn = document.getElementById('ct-submit'); btn.disabled = true; const o = btn.textContent; btn.textContent = 'Sending…';
+    try {
+      await API.sendContact({ name, email, message, website });
+      toast("Message sent — we'll be in touch ✉️", 'success');
+      ['ct-name', 'ct-email', 'ct-msg'].forEach(id => document.getElementById(id).value = '');
+      close();
+    } catch (e) { err.textContent = e.message || 'Could not send your message'; err.classList.remove('hidden'); }
+    finally { btn.disabled = false; btn.textContent = o; }
+  });
+})();
+
 (function () {
   if (document.querySelector('.site-footer')) return;
   const year = new Date().getFullYear();
@@ -812,9 +864,9 @@ document.addEventListener('keydown', e => {
         </div>
         <div class="footer-col">
           <h5>Support</h5>
-          <a href="#">Help Center</a>
+          <a href="#" onclick="openContact();return false">Help Center</a>
           <a href="#">FAQs</a>
-          <a href="#">Contact Us</a>
+          <a href="#" onclick="openContact();return false">Contact Us</a>
           <a href="#">Terms of Service</a>
           <a href="#">Privacy Policy</a>
         </div>

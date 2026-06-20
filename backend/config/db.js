@@ -122,6 +122,16 @@ export async function connectDB() {
     )
   `);
 
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS contact_messages (
+      id         INT           AUTO_INCREMENT PRIMARY KEY,
+      name       VARCHAR(120)  NOT NULL,
+      email      VARCHAR(255)  NOT NULL,
+      message    VARCHAR(4000) NOT NULL,
+      created_at TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   // Indexes for the columns we filter/sort on (seller_id is already indexed by its FK).
   await ensureIndex('cars', 'idx_cars_created',   'created_at');
   await ensureIndex('cars', 'idx_cars_body_type', 'body_type');

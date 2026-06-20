@@ -2,6 +2,7 @@ import express from 'express';
 import { findAll as findAllUsers, verifyById, deleteById as deleteUserById } from '../models/User.js';
 import { findAllAdmin, deleteById as deleteCarById, setFeatured } from '../models/Car.js';
 import { findAll as findAllTx, setDisputed } from '../models/Transaction.js';
+import { findAll as findContactMessages, deleteById as deleteContactMessage } from '../models/ContactMessage.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { toId } from '../utils/validation.js';
 
@@ -65,6 +66,19 @@ router.patch('/transactions/:id/dispute', async (req, res) => {
     if (!t) return res.status(404).json({ message: 'Transaction not found' });
     res.json({ message: 'Disputed', transaction: t });
   } catch { res.status(500).json({ message: 'Failed to dispute transaction' }); }
+});
+
+router.get('/contact-messages', async (_req, res) => {
+  try { res.json(await findContactMessages()); }
+  catch { res.status(500).json({ message: 'Failed to fetch messages' }); }
+});
+
+router.delete('/contact-messages/:id', async (req, res) => {
+  try {
+    const deleted = await deleteContactMessage(req.params.id);
+    if (!deleted) return res.status(404).json({ message: 'Message not found' });
+    res.json({ message: 'Deleted' });
+  } catch { res.status(500).json({ message: 'Failed to delete message' }); }
 });
 
 export default router;

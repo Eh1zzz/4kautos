@@ -154,6 +154,10 @@
         <div class="panel-head"><h3>All Listings</h3></div>
         <div id="admin-cars"><div class="spinner-wrap"><div class="spinner"></div></div></div>
       </div>
+      <div class="panel">
+        <div class="panel-head"><h3>Contact messages</h3></div>
+        <div id="admin-contact"><div class="spinner-wrap"><div class="spinner"></div></div></div>
+      </div>
     </div>
 
     <!-- Add Listing Tab (sellers only) -->
@@ -651,6 +655,7 @@
 
   async function loadAdmin() {
     loadPendingPayouts();
+    loadContactMessages();
     const usersEl = document.getElementById('admin-users');
     const carsEl  = document.getElementById('admin-cars');
     usersEl.innerHTML = carsEl.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div></div>';
@@ -696,6 +701,30 @@
     btn.disabled = true;
     try { await API.adminSetFeatured(id, !!featured); toast(featured ? 'Added to Hot Sales 🔥' : 'Removed from Hot Sales', 'success'); loadAdmin(); }
     catch (e) { btn.disabled = false; toast(e.message, 'error'); }
+  }
+  async function loadContactMessages() {
+    const el = document.getElementById('admin-contact');
+    if (!el) return;
+    el.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div></div>';
+    try {
+      const msgs = await API.adminContactMessages();
+      el.innerHTML = msgs.length ? msgs.map(m => `
+        <div class="tx-row admin-row">
+          <div>
+            <div class="tx-car">${esc(m.name)} · <a href="mailto:${esc(m.email)}" style="color:var(--accent)">${esc(m.email)}</a></div>
+            <div class="tx-meta" style="white-space:pre-wrap">${esc(m.message)}</div>
+            <div class="tx-meta" style="color:var(--text3)">${new Date(m.created_at).toLocaleString()}</div>
+          </div>
+          <div class="admin-actions">
+            <button class="adm-btn danger" onclick="removeContact('${esc(m.id)}')">Delete</button>
+          </div>
+        </div>`).join('') : '<div class="empty-state" style="padding:2rem"><p>No messages yet.</p></div>';
+    } catch (e) { el.innerHTML = `<p class="empty-state">Failed: ${esc(e.message)}</p>`; }
+  }
+  async function removeContact(id) {
+    if (!confirm('Delete this message?')) return;
+    try { await API.adminDeleteContact(id); toast('Message deleted', 'success'); loadContactMessages(); }
+    catch (e) { toast(e.message, 'error'); }
   }
 
   /* ── Add Listing: standards-enforced form ── */

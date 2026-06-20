@@ -183,6 +183,11 @@ const API = {
   getSavedSearches()         { return req('GET', '/saved-searches'); },
   saveSearch(label, filters) { return req('POST', '/saved-searches', { label, filters }); },
   deleteSavedSearch(id)      { return req('DELETE', `/saved-searches/${id}`); },
+
+  /* ── CONTACT ── */
+  sendContact(payload)       { return req('POST', '/contact', payload); },
+  adminContactMessages()     { return req('GET', '/admin/contact-messages'); },
+  adminDeleteContact(id)     { return req('DELETE', `/admin/contact-messages/${id}`); },
 };
 
 window.API = API;

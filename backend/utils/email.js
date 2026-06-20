@@ -82,3 +82,15 @@ export async function notifyNewMessage({ buyerId, sellerId, senderId, car }) {
          <p>Open your dashboard → <b>Messages</b> to read and reply.</p>`));
   } catch (e) { console.error('notifyNewMessage:', e.message); return false; }
 }
+
+// Notify the support inbox that a contact-form message arrived. Recipient:
+// CONTACT_EMAIL → ADMIN_EMAIL → GMAIL_USER (else skipped/logged in $0 mode).
+export async function notifyContactMessage({ name, email, message }) {
+  const to = process.env.CONTACT_EMAIL || process.env.ADMIN_EMAIL || process.env.GMAIL_USER;
+  if (!to) { console.log(`[contact email skipped — set CONTACT_EMAIL/ADMIN_EMAIL] from ${email}`); return false; }
+  return sendMail(to, `New contact message from ${name}`,
+    shell('New contact message',
+      `<p><b>From:</b> ${esc(name)} &lt;${esc(email)}&gt;</p>
+       <p><b>Message:</b></p>
+       <p style="white-space:pre-wrap;background:#f6f6fb;padding:12px;border-radius:8px">${esc(message)}</p>`));
+}
