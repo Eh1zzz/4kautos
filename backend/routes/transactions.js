@@ -1,5 +1,5 @@
 import express from 'express';
-import { create, findByUser, findById, updateStatus, findExisting, VALID_STATUSES } from '../models/Transaction.js';
+import { create, findByUser, findById, updateStatus, findExisting, deleteById, VALID_STATUSES } from '../models/Transaction.js';
 import { findById as findCarById } from '../models/Car.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { toId } from '../utils/validation.js';
@@ -80,6 +80,25 @@ router.patch('/:id/status', authenticate, async (req, res) => {
     res.json({ message: 'Transaction updated', transaction: updated });
   } catch (err) {
     res.status(500).json({ message: 'Failed to update transaction' });
+  }
+});
+
+// DELETE /transactions/:id — remove a CANCELLED transaction (history cleanup).
+// Either participant or an admin may delete; only cancelled transactions qualify.
+router.delete('/:id', authenticate, async (req, res) => {
+  try {
+    const t = await findById(req.params.id);
+    if (!t) return res.status(404).json({ message: 'Transaction not found' });
+    if (req.user.role !== 'admin' && ![t.buyer_id, t.seller_id].includes(req.user.id))
+      return res.status(403).json({ message: 'Not authorized' });
+    if (t.status !== 'cancelled')
+      return res.status(409).json({ message: 'Only cancelled transactions can be deleted' });
+
+    await deleteById(req.params.id);
+    res.json({ message: 'Transaction removed' });
+  } catch (err) {
+    console.error('DELETE /transactions/:id:', err.message);
+    res.status(500).json({ message: 'Failed to delete transaction' });
   }
 });
 

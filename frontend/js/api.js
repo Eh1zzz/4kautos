@@ -112,6 +112,7 @@ const API = {
   getMyTx()               { return req('GET', '/transactions'); },
   getTx(id)               { return req('GET', `/transactions/${id}`); },
   updateTxStatus(id, status) { return req('PATCH', `/transactions/${id}/status`, { status }); },
+  deleteTx(id)               { return req('DELETE', `/transactions/${id}`); },
   // Escrow: start paying for a transaction → returns { link } to the Flutterwave checkout.
   initiatePayment(transactionId) { return req('POST', '/payments/initiate', { transactionId }); },
   refundPayment(transactionId)   { return req('POST', '/payments/refund',   { transactionId }); },

@@ -74,3 +74,30 @@ describe('PATCH /transactions/:id/status', () => {
     expect(res.status).toBe(200);
   });
 });
+
+describe('DELETE /transactions/:id (cancelled cleanup)', () => {
+  let delTxId;
+  beforeAll(async () => {
+    // A second buyer opens a transaction on the same car, then cancels it.
+    const r = await request(app).post('/transactions').set('Authorization', `Bearer ${otherToken}`).send({ carId });
+    delTxId = r.body.transaction.id;
+    await request(app).patch(`/transactions/${delTxId}/status`).set('Authorization', `Bearer ${otherToken}`).send({ status: 'cancelled' });
+  });
+
+  it('blocks a non-participant (403)', async () => {
+    const res = await request(app).delete(`/transactions/${delTxId}`).set('Authorization', `Bearer ${buyerToken}`);
+    expect(res.status).toBe(403);
+  });
+
+  it('refuses to delete a non-cancelled transaction (409)', async () => {
+    const res = await request(app).delete(`/transactions/${txId}`).set('Authorization', `Bearer ${buyerToken}`);
+    expect(res.status).toBe(409);
+  });
+
+  it('lets a participant delete a cancelled transaction, and it is gone', async () => {
+    const res = await request(app).delete(`/transactions/${delTxId}`).set('Authorization', `Bearer ${otherToken}`);
+    expect(res.status).toBe(200);
+    const after = await request(app).get(`/transactions/${delTxId}`).set('Authorization', `Bearer ${otherToken}`);
+    expect(after.status).toBe(404);
+  });
+});

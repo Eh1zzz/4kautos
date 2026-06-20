@@ -356,6 +356,7 @@
               <option value="completed">Complete</option>
               <option value="cancelled">Cancel</option>
             </select>
+            ${t.status === 'cancelled' ? `<button class="adm-btn danger" onclick="removeTx('${t.id}', this)">🗑 Delete</button>` : ''}
           </div>
         </div>`;
       }).join('');
@@ -394,6 +395,15 @@
     btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Releasing…';
     try { await API.releasePayment(id); toast('Funds released to the seller', 'success'); loadTransactions(); }
     catch (e) { toast(e.message || 'Release failed', 'error'); btn.disabled = false; btn.textContent = orig; }
+  }
+
+  // Delete a cancelled (dead) transaction from history. Backend enforces
+  // status='cancelled' + that you're a participant.
+  async function removeTx(id, btn) {
+    if (!confirm('Delete this cancelled transaction from your history? This can’t be undone.')) return;
+    btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Deleting…';
+    try { await API.deleteTx(id); toast('Transaction removed', 'success'); loadTransactions(); }
+    catch (e) { toast(e.message || 'Delete failed', 'error'); btn.disabled = false; btn.textContent = orig; }
   }
 
   // Seller payout details — two rails: a Nigerian bank (auto via Flutterwave) or

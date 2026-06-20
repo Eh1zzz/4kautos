@@ -103,6 +103,19 @@ export async function setDisputed(id) {
   return rows[0] || null;
 }
 
+// Delete a transaction — only CANCELLED (dead) records can be removed, so a live
+// or completed deal can never be erased. Ownership is enforced by the route.
+// Returns {id} when a row was actually deleted, else null.
+export async function deleteById(id) {
+  const numId = toId(id);
+  if (!numId) return null;
+  const [result] = await pool.query(
+    "DELETE FROM transactions WHERE id = ? AND status = 'cancelled'",
+    [numId]
+  );
+  return result.affectedRows > 0 ? { id: numId } : null;
+}
+
 /* ── Payments / escrow ─────────────────────────────────────── */
 
 // Snapshot the amount/currency and our payment reference when a buyer starts paying.
