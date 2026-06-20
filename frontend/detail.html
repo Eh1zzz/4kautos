@@ -220,19 +220,43 @@
 
       // Specs table (values escaped — they come from seller-supplied data)
       const specs = [
-        ['Make',       car.make],
-        ['Model',      car.model],
-        ['Year',       car.year],
-        ['Mileage',    car.mileage ? `${Number(car.mileage).toLocaleString()} km` : null],
-        ['Condition',  car.condition],
-        ['VIN',        car.vin],
-        ['Location',   car.location],
-        ['Listed',     car.createdAt ? new Date(car.createdAt).toLocaleDateString() : null],
+        ['Make',         car.make],
+        ['Model',        car.model],
+        ['Year',         car.year],
+        ['Body type',    car.body_type],
+        ['Mileage',      car.mileage ? `${Number(car.mileage).toLocaleString()} km` : null],
+        ['Condition',    car.condition],
+        ['Engine',       car.engine],
+        ['Transmission', car.transmission],
+        ['Drivetrain',   car.drivetrain],
+        ['Horsepower',   car.horsepower ? `${car.horsepower} hp` : null],
+        ['Fuel economy', car.mpg],
+        ['Seats',        car.seats],
+        ['Exterior',     car.ext_color],
+        ['Interior',     car.int_color],
+        ['Towing',       car.towing_capacity],
+        ['VIN',          car.vin],
+        ['Location',     car.location],
+        ['Listed',       car.createdAt ? new Date(car.createdAt).toLocaleDateString() : null],
       ].filter(([,v]) => v);
 
       document.getElementById('specs-dl').innerHTML = specs.map(([k,v]) =>
         `<div class="spec-row"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`
       ).join('');
+
+      // Optional extras (comfort / safety / modifications) as chip groups
+      const extras = [
+        ['Comfort & convenience', car.comfort_features],
+        ['Safety', car.safety_features],
+        ['Modifications', car.modifications],
+      ].filter(([, items]) => Array.isArray(items) && items.length);
+      document.querySelector('.extras-wrap')?.remove();
+      if (extras.length) {
+        const html = extras.map(([label, items]) =>
+          `<div class="extras-group"><h5>${esc(label)}</h5><div class="extras-chips">${items.map(i => `<span class="extra-chip">${esc(i)}</span>`).join('')}</div></div>`
+        ).join('');
+        document.getElementById('specs-dl').insertAdjacentHTML('afterend', `<div class="extras-wrap">${html}</div>`);
+      }
 
       // Save button state
       const saveBtn = document.getElementById('save-btn');

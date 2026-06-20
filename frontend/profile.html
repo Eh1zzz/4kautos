@@ -214,6 +214,38 @@
               <option>Minivan</option><option>Crossover</option>
             </select>
           </div>
+
+          <h4 class="form-subhead">Specifications</h4>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label req">Exterior colour</label><input class="form-input" id="car-extcolor" placeholder="e.g. Pearl White"></div>
+            <div class="form-group"><label class="form-label req">Interior colour</label><input class="form-input" id="car-intcolor" placeholder="e.g. Black leather"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label req">Engine</label><input class="form-input" id="car-engine" placeholder="e.g. 2.0L Turbo I4"></div>
+            <div class="form-group"><label class="form-label req">Fuel economy (MPG)</label><input class="form-input" id="car-mpg" placeholder="e.g. 28 combined"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label req">Transmission</label>
+              <select class="form-select" id="car-transmission"><option value="">Select…</option><option>Automatic</option><option>Manual</option><option>CVT</option><option>Semi-automatic</option><option>Dual-clutch</option></select>
+            </div>
+            <div class="form-group"><label class="form-label req">Drivetrain</label>
+              <select class="form-select" id="car-drivetrain"><option value="">Select…</option><option>FWD</option><option>RWD</option><option>AWD</option><option>4WD</option></select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label req">Horsepower</label><input class="form-input" type="number" id="car-hp" min="0" max="5000" placeholder="e.g. 200"></div>
+            <div class="form-group"><label class="form-label req">Seats</label><input class="form-input" type="number" id="car-seats" min="1" max="50" placeholder="e.g. 5"></div>
+          </div>
+          <div class="form-group" id="towing-group" style="display:none">
+            <label class="form-label req">Max towing capacity</label>
+            <input class="form-input" id="car-towing" placeholder="e.g. 3,500 kg">
+            <div class="field-hint">Required for pickups.</div>
+          </div>
+
+          <h4 class="form-subhead">Optional extras</h4>
+          <div class="form-group"><label class="form-label">Comfort &amp; convenience</label><input class="form-input" id="car-comfort" placeholder="Heated seats, Sunroof, Apple CarPlay (comma-separated)"></div>
+          <div class="form-group"><label class="form-label">Safety</label><input class="form-input" id="car-safety" placeholder="Blind-spot monitor, Lane assist, 360° camera (comma-separated)"></div>
+          <div class="form-group"><label class="form-label">Modifications</label><input class="form-input" id="car-mods" placeholder="Lift kit, Aftermarket exhaust (comma-separated)"></div>
           <div class="form-group">
             <label class="form-label req">Location (where the car is)</label>
             <div class="location-row">
@@ -605,6 +637,7 @@
   ];
   const VIN_RE = /^[A-HJ-NPR-Z0-9]{17}$/;
   const val = id => (document.getElementById(id)?.value || '').trim();
+  const csv = id => (val(id) || '').split(',').map(s => s.trim()).filter(Boolean);
   let editingId = null;   // null = creating a new listing; a car id = editing that one
 
   /* Location geocoding + map preview */
@@ -705,10 +738,31 @@
       ['Location entered', !!val('car-location')],
       [`All ${REQUIRED_SHOTS.length} required photos`, shotsFilled],
     ];
+    // New listings must include the full spec sheet; existing listings are grandfathered.
+    if (!editingId) {
+      checks.push(
+        ['Exterior colour', !!val('car-extcolor')],
+        ['Interior colour', !!val('car-intcolor')],
+        ['Engine', !!val('car-engine')],
+        ['Transmission', !!document.getElementById('car-transmission').value],
+        ['Drivetrain', !!document.getElementById('car-drivetrain').value],
+        ['Fuel economy', !!val('car-mpg')],
+        ['Horsepower', val('car-hp') !== '' && Number(val('car-hp')) >= 0],
+        ['Seats', val('car-seats') !== '' && Number(val('car-seats')) >= 1],
+      );
+      if (document.getElementById('car-bodytype').value === 'Pickup')
+        checks.push(['Max towing (pickup)', !!val('car-towing')]);
+    }
     return { checks, valid: checks.every(c => c[1]) };
   }
 
+  function updateTowingVisibility() {
+    const tg = document.getElementById('towing-group');
+    if (tg) tg.style.display = (document.getElementById('car-bodytype').value === 'Pickup') ? '' : 'none';
+  }
+
   function refreshForm() {
+    updateTowingVisibility();
     const { checks, valid } = formState();
     document.getElementById('req-summary').innerHTML = checks.map(([label, ok]) =>
       `<span class="req-item ${ok ? 'ok' : ''}">${ok ? '✓' : '○'} ${label}</span>`).join('');
@@ -755,11 +809,15 @@
   /* ── Create vs Edit: one form does both, toggled by editingId ── */
   function resetListingForm() {
     editingId = null;
-    ['car-title','car-make','car-model','car-year','car-price','car-mileage','car-vin','car-desc','car-location','car-photos-extra']
+    ['car-title','car-make','car-model','car-year','car-price','car-mileage','car-vin','car-desc','car-location','car-photos-extra',
+     'car-extcolor','car-intcolor','car-engine','car-mpg','car-hp','car-seats','car-towing','car-comfort','car-safety','car-mods']
       .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     document.getElementById('car-currency').value  = 'NGN';
     document.getElementById('car-condition').value = 'good';
     document.getElementById('car-bodytype').value  = '';
+    document.getElementById('car-transmission').value = '';
+    document.getElementById('car-drivetrain').value   = '';
+    updateTowingVisibility();
     REQUIRED_SHOTS.forEach(s => {
       const el = document.getElementById('shot-' + s.key); if (el) el.value = '';
       const b  = document.getElementById('badge-' + s.key); if (b) { b.className = 'shot-badge'; b.textContent = ''; }
@@ -783,6 +841,15 @@
     document.getElementById('car-currency').value  = (car.currency === 'USD' ? 'USD' : 'NGN');
     document.getElementById('car-condition').value = (['excellent','good','fair','poor'].includes(car.condition) ? car.condition : 'good');
     document.getElementById('car-bodytype').value  = car.body_type || '';
+    set('car-extcolor', car.ext_color); set('car-intcolor', car.int_color);
+    set('car-engine', car.engine);      set('car-mpg', car.mpg);
+    set('car-hp', car.horsepower);      set('car-seats', car.seats); set('car-towing', car.towing_capacity);
+    document.getElementById('car-transmission').value = car.transmission || '';
+    document.getElementById('car-drivetrain').value   = car.drivetrain || '';
+    set('car-comfort', (car.comfort_features || []).join(', '));
+    set('car-safety',  (car.safety_features || []).join(', '));
+    set('car-mods',    (car.modifications || []).join(', '));
+    updateTowingVisibility();
     geo = { lat: car.latitude ?? null, lng: car.longitude ?? null, display: car.location || null };
     // Existing photos: first N fill the required-angle slots, the rest go to "additional".
     const photos = Array.isArray(car.photos) ? car.photos : [];
@@ -828,6 +895,18 @@
       condition:   document.getElementById('car-condition').value,
       bodyType:    document.getElementById('car-bodytype').value || undefined,
       description: val('car-desc') || undefined,
+      extColor:    val('car-extcolor') || undefined,
+      intColor:    val('car-intcolor') || undefined,
+      engine:      val('car-engine') || undefined,
+      transmission: document.getElementById('car-transmission').value || undefined,
+      drivetrain:  document.getElementById('car-drivetrain').value || undefined,
+      mpg:         val('car-mpg') || undefined,
+      horsepower:  val('car-hp') || undefined,
+      seats:       val('car-seats') || undefined,
+      towingCapacity: val('car-towing') || undefined,
+      comfortFeatures: csv('car-comfort'),
+      safetyFeatures:  csv('car-safety'),
+      modifications:   csv('car-mods'),
       location:    val('car-location'),
       latitude:    geo.lat,
       longitude:   geo.lng,

@@ -936,6 +936,13 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:3rem 2re
 #d-price + .price-eval{margin-top:.5rem}
 .owner-actions{display:flex;flex-direction:column;gap:.6rem;margin-bottom:.6rem}
 
+/* Listing form section heads + detail-page optional extras */
+.form-subhead{font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--text);margin:1.75rem 0 .85rem;padding-top:1.4rem;border-top:1px solid var(--border)}
+.extras-wrap{margin-top:1.25rem;display:grid;gap:1rem}
+.extras-group h5{font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);margin:0 0 .5rem}
+.extras-chips{display:flex;flex-wrap:wrap;gap:.4rem}
+.extra-chip{font-size:.78rem;padding:.3rem .7rem;border-radius:999px;background:var(--surface2);border:1px solid var(--border);color:var(--text2)}
+
 /* ── Dual-currency price ── */
 .card-price{display:flex;flex-direction:column;align-items:flex-start;line-height:1.1}
 .cta-price{display:flex;flex-direction:column;align-items:center;line-height:1.1}
