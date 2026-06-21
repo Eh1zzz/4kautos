@@ -2,7 +2,7 @@ import express from 'express';
 import crypto from 'crypto';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { toId } from '../utils/validation.js';
-import { findById as findTx, setPaymentInit, findByPaymentRef, markEscrowPaid, markRefunded, markReleased, revertRelease, pendingPayouts, markPayoutPaid } from '../models/Transaction.js';
+import { findById as findTx, setPaymentInit, findByPaymentRef, markEscrowPaid, markRefunded, markReleased, revertRelease, pendingPayouts, markPayoutPaid, claimRelease, unclaimRelease, unrefund } from '../models/Transaction.js';
 import { findById as findCar } from '../models/Car.js';
 import { getPayout, setPayout } from '../models/User.js';
 import { payOutToSeller } from '../utils/payout.js';
@@ -73,11 +73,17 @@ router.post('/refund', authenticate, async (req, res) => {
     if (!tx.flw_tx_id)
       return res.status(400).json({ message: 'No payment on record to refund' });
 
-    const ok = await FLW.refundTransaction(tx.flw_tx_id, tx.amount);
-    if (!ok) return res.status(502).json({ message: 'Refund could not be processed' });
+    // Claim atomically BEFORE the gateway call so two concurrent refunds can't
+    // both credit the buyer; revert the claim if the gateway refund fails.
+    const claimed = await markRefunded(tx.id);
+    if (!claimed) return res.status(409).json({ message: 'This payment is no longer refundable' });
 
-    const updated = await markRefunded(tx.id);
-    res.json({ message: 'Refund issued — the buyer will be credited', transaction: updated });
+    const ok = await FLW.refundTransaction(tx.flw_tx_id, tx.amount);
+    if (!ok) {
+      await unrefund(tx.id);
+      return res.status(502).json({ message: 'Refund could not be processed' });
+    }
+    res.json({ message: 'Refund issued — the buyer will be credited', transaction: claimed });
   } catch (err) {
     console.error('payment refund:', err.message);
     res.status(502).json({ message: 'Could not process the refund' });
@@ -163,10 +169,15 @@ router.post('/release', authenticate, async (req, res) => {
         return res.status(503).json({ message: 'Payments are not configured yet' });
     }
 
+    // Single-flight claim BEFORE the payout — prevents a concurrent double release.
+    if (!(await claimRelease(tx.id)))
+      return res.status(409).json({ message: 'A release is already in progress for this transaction' });
+
     let result;
     try {
       result = await payOutToSeller(payout, { amount: Number(tx.amount), currency: tx.currency || 'NGN', txId: tx.id });
     } catch (e) {
+      await unclaimRelease(tx.id);   // let it be retried
       return res.status(502).json({ message: e.message || 'Payout could not be initiated' });
     }
 

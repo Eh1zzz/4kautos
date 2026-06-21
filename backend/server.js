@@ -86,7 +86,8 @@ app.use(cors({
 
 /* ── BODY PARSING ─────────────────────────── */
 app.use(express.json({ limit: '2mb' }));
-app.use(express.urlencoded({ extended: true }));
+// extended:false (no qs nesting) + caps to blunt parameter-pollution / payload DoS.
+app.use(express.urlencoded({ extended: false, limit: '100kb', parameterLimit: 100 }));
 
 /* ── RATE LIMITING ────────────────────────── */
 app.use(rateLimit({

@@ -193,6 +193,39 @@ export async function revertRelease(transferRef) {
   return rows[0] || null;
 }
 
+// Atomically claim an escrowed transaction for release BEFORE the external payout,
+// so two concurrent /release calls can't both pay the seller. payout_status acts
+// as a single-flight lock (NULL → 'processing'); only the winner gets true.
+export async function claimRelease(id) {
+  const numId = toId(id);
+  if (!numId) return false;
+  const [r] = await pool.query(
+    "UPDATE transactions SET payout_status = 'processing' WHERE id = ? AND status = 'payment_in_escrow' AND payout_status IS NULL",
+    [numId]
+  );
+  return r.affectedRows === 1;
+}
+
+// Release the claim if the payout couldn't even be initiated (so it can retry).
+export async function unclaimRelease(id) {
+  const numId = toId(id);
+  if (!numId) return;
+  await pool.query(
+    "UPDATE transactions SET payout_status = NULL WHERE id = ? AND status = 'payment_in_escrow' AND payout_status = 'processing'",
+    [numId]
+  );
+}
+
+// Revert a refund claim (cancelled → escrow) if the external refund failed.
+export async function unrefund(id) {
+  const numId = toId(id);
+  if (!numId) return;
+  await pool.query(
+    "UPDATE transactions SET status = 'payment_in_escrow' WHERE id = ? AND status = 'cancelled'",
+    [numId]
+  );
+}
+
 // International payouts awaiting manual settlement (admin view) — includes the
 // seller's payout details so the operator can pay them (e.g. via Wise).
 export async function pendingPayouts() {
