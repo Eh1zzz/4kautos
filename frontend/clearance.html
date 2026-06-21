@@ -28,19 +28,19 @@
 
 <section class="clearance-hero">
   <div class="section-inner">
-    <div class="section-label">Import Made Easy</div>
-    <h1 class="section-title">Nigeria Customs Clearance</h1>
-    <p class="section-sub">Estimate import duty on any vehicle and compare verified clearing agents by their all-in rate — so you pay less and clear faster at the port.</p>
+    <div class="section-label" data-i18n="clr.eyebrow">Import Made Easy</div>
+    <h1 class="section-title" data-i18n="clr.title">Nigeria Customs Clearance</h1>
+    <p class="section-sub" data-i18n="clr.sub">Estimate import duty on any vehicle and compare verified clearing agents by their all-in rate — so you pay less and clear faster at the port.</p>
   </div>
 </section>
 
 <div class="clearance-layout">
   <!-- Estimator -->
   <aside class="panel clearance-form">
-    <div class="panel-head"><h3>Duty Estimator</h3></div>
+    <div class="panel-head"><h3 data-i18n="clr.estimator">Duty Estimator</h3></div>
     <div class="panel-body">
       <div class="form-group">
-        <label class="form-label req">Vehicle value (CIF)</label>
+        <label class="form-label req" data-i18n="clr.cifLabel">Vehicle value (CIF)</label>
         <div class="price-currency">
           <input class="form-input" type="number" id="cif-value" placeholder="10000" min="1">
           <select class="form-select" id="cif-cur">
@@ -48,13 +48,13 @@
             <option value="NGN">₦ NGN</option>
           </select>
         </div>
-        <div class="field-hint">Cost + Insurance + Freight — the landed value Customs assesses.</div>
+        <div class="field-hint" data-i18n="clr.cifHint">Cost + Insurance + Freight — the landed value Customs assesses.</div>
       </div>
       <div class="form-group">
-        <label class="form-label">Year of manufacture</label>
+        <label class="form-label" data-i18n="clr.yearLabel">Year of manufacture</label>
         <input class="form-input" type="number" id="cif-year" placeholder="2018" min="1980" max="2027">
       </div>
-      <button class="form-submit" id="estimate-btn">Estimate &amp; Compare Agents</button>
+      <button class="form-submit" id="estimate-btn" data-i18n="clr.estimateBtn">Estimate &amp; Compare Agents</button>
       <p class="fx-note" id="fx-note"></p>
     </div>
   </aside>
@@ -65,7 +65,7 @@
 
     <div id="clearance-intro">
       <div class="panel">
-        <div class="panel-head"><h3>Partner Clearing Agents</h3></div>
+        <div class="panel-head"><h3 data-i18n="clr.partners">Partner Clearing Agents</h3></div>
         <div id="agents-directory" class="agents-list"><div class="spinner-wrap"><div class="spinner"></div></div></div>
       </div>
     </div>

@@ -1329,6 +1329,8 @@ window.RT = (function () {
       'spec.make': 'Make', 'spec.model': 'Model', 'spec.year': 'Year', 'spec.bodyType': 'Body type', 'spec.mileage': 'Mileage', 'spec.condition': 'Condition',
       'spec.engine': 'Engine', 'spec.transmission': 'Transmission', 'spec.drivetrain': 'Drivetrain', 'spec.horsepower': 'Horsepower', 'spec.fuel': 'Fuel economy',
       'spec.seats': 'Seats', 'spec.exterior': 'Exterior', 'spec.interior': 'Interior', 'spec.towing': 'Towing', 'spec.vin': 'VIN', 'spec.location': 'Location', 'spec.listed': 'Listed',
+      'clr.eyebrow': 'Import Made Easy', 'clr.title': 'Nigeria Customs Clearance', 'clr.sub': 'Estimate import duty on any vehicle and compare verified clearing agents by their all-in rate — so you pay less and clear faster at the port.',
+      'clr.estimator': 'Duty Estimator', 'clr.cifLabel': 'Vehicle value (CIF)', 'clr.cifHint': 'Cost + Insurance + Freight — the landed value Customs assesses.', 'clr.yearLabel': 'Year of manufacture', 'clr.estimateBtn': 'Estimate & Compare Agents', 'clr.partners': 'Partner Clearing Agents',
     },
     fr: {
       'nav.home': 'Accueil', 'nav.listings': 'Annonces', 'nav.clearance': 'Dédouanement',
@@ -1368,6 +1370,8 @@ window.RT = (function () {
       'spec.make': 'Marque', 'spec.model': 'Modèle', 'spec.year': 'Année', 'spec.bodyType': 'Carrosserie', 'spec.mileage': 'Kilométrage', 'spec.condition': 'État',
       'spec.engine': 'Moteur', 'spec.transmission': 'Boîte de vitesses', 'spec.drivetrain': 'Roues motrices', 'spec.horsepower': 'Puissance', 'spec.fuel': 'Consommation',
       'spec.seats': 'Sièges', 'spec.exterior': 'Extérieur', 'spec.interior': 'Intérieur', 'spec.towing': 'Remorquage', 'spec.vin': 'VIN', 'spec.location': 'Emplacement', 'spec.listed': 'Publié',
+      'clr.eyebrow': 'Importation simplifiée', 'clr.title': 'Dédouanement au Nigeria', 'clr.sub': "Estimez les droits d'importation sur tout véhicule et comparez des agents vérifiés selon leur tarif tout compris — pour payer moins et dédouaner plus vite au port.",
+      'clr.estimator': 'Estimateur de droits', 'clr.cifLabel': 'Valeur du véhicule (CAF)', 'clr.cifHint': 'Coût + Assurance + Fret — la valeur évaluée par les douanes.', 'clr.yearLabel': 'Année de fabrication', 'clr.estimateBtn': 'Estimer & comparer', 'clr.partners': 'Agents de dédouanement partenaires',
     },
   };
 
