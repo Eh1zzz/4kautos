@@ -255,7 +255,7 @@
         <h3>Selling from abroad? List free this month.</h3>
         <p>Reach thousands of Nigerian buyers. We handle clearance, escrow and delivery — you just hand over the keys.</p>
       </div>
-      <a href="#" class="promo-cta" onclick="event.stopPropagation();openAuth('signup');return false">Start Selling →</a>
+      <a href="#" class="promo-cta" onclick="event.stopPropagation();openAuth('signup',{role:'seller'});return false">Start Selling →</a>
     </div>
   </div>
 </section>
@@ -271,7 +271,7 @@
       document.querySelectorAll('.search-tab').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       if (btn.dataset.type === 'sell') {
-        openAuth('signup');
+        openAuth('signup', { role: 'seller' });
         document.querySelectorAll('.search-tab')[0].classList.add('active');
         btn.classList.remove('active');
       }

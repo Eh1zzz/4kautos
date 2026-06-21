@@ -90,7 +90,7 @@
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1.25rem">
             <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1.25rem">
               <div style="font-family:var(--font-display);font-size:2rem;color:var(--accent)" id="stat-listings">—</div>
-              <div style="font-size:.75rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:2px">Active Listings</div>
+              <div style="font-size:.75rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:2px" id="stat-listings-lbl">Active Listings</div>
             </div>
             <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1.25rem">
               <div style="font-family:var(--font-display);font-size:2rem;color:var(--accent)" id="stat-tx">—</div>
@@ -364,20 +364,41 @@
     document.getElementById('p-name').textContent = user.name || '—';
     document.getElementById('p-role').textContent = user.role?.toUpperCase() || 'BUYER';
 
-    if (user.role === 'seller') {
+    // ── Role-scoped dashboard (strict RBAC) ─────────────────────────────
+    // Admin  → system-wide ops only (no personal listings/tx/messages/saved/overview)
+    // Seller → Overview, My Listings, Add Listing, Transactions, Messages
+    // Buyer  → Overview, Saved searches, Transactions, Messages
+    const navLink = tab => document.querySelector(`.profile-nav-link[data-tab="${tab}"]`);
+    const hideTab = tab => { const l = navLink(tab); if (l) l.style.display = 'none'; };
+
+    if (user.role === 'admin') {
+      ['overview', 'listings', 'transactions', 'messages', 'saved'].forEach(hideTab);
+      document.getElementById('admin-nav').style.display = 'flex';
+      switchTab('admin'); loadAdmin();
+    } else if (user.role === 'seller') {
       document.getElementById('add-car-nav').style.display = 'flex';
       document.getElementById('new-listing-btn').style.display = '';
-    }
-    if (user.role === 'admin') {
-      document.getElementById('admin-nav').style.display = 'flex';
+      hideTab('saved');                 // saved searches is a buyer feature
+    } else { // buyer
+      hideTab('listings');              // "My Listings" is seller inventory
     }
 
-    // Load overview counts
-    try {
-      const [listings, txs] = await Promise.allSettled([API.getCars({ sellerId: user.id }), API.getMyTx()]);
-      document.getElementById('stat-listings').textContent = listings.value?.length ?? '—';
-      document.getElementById('stat-tx').textContent = txs.value?.length ?? '—';
-    } catch {}
+    // Load overview counts (skip for admin — overview is hidden). The first card
+    // is sellers' listing count, repurposed to saved-searches count for buyers.
+    if (user.role !== 'admin') {
+      try {
+        if (user.role === 'seller') {
+          const [listings, txs] = await Promise.allSettled([API.getCars({ sellerId: user.id }), API.getMyTx()]);
+          document.getElementById('stat-listings').textContent = listings.value?.length ?? '—';
+          document.getElementById('stat-tx').textContent = txs.value?.length ?? '—';
+        } else {
+          document.getElementById('stat-listings-lbl').textContent = 'Saved searches';
+          const [saved, txs] = await Promise.allSettled([API.getSavedSearches?.(), API.getMyTx()]);
+          document.getElementById('stat-listings').textContent = saved.value?.length ?? '0';
+          document.getElementById('stat-tx').textContent = txs.value?.length ?? '—';
+        }
+      } catch {}
+    }
 
     // Deep-link from a listing's detail page: ?edit=<id> opens that car in the edit form.
     const editId = new URLSearchParams(location.search).get('edit');
@@ -608,7 +629,10 @@
       const threads = await API.getThreads();
       const me = API.getUser();
       if (!threads.length) {
-        el.innerHTML = `<div class="empty-state" style="padding:2.5rem"><p>No conversations yet. Message a seller from any car page to start one.</p></div>`;
+        const emptyMsg = me?.role === 'seller'
+          ? 'No conversations yet. Awaiting an interested buyer.'
+          : 'No conversations yet. Message a seller from any car page to start one.';
+        el.innerHTML = `<div class="empty-state" style="padding:2.5rem"><p>${emptyMsg}</p></div>`;
         return;
       }
       el.innerHTML = '<div class="thread-list">' + threads.map(t => {

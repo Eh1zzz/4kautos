@@ -80,13 +80,14 @@ document.addEventListener('click', e => {
                 <button type="button" class="pw-toggle" data-pw="signup-password" aria-label="Show password">${EYE_SVG}</button>
               </div>
             </div>
-            <div class="form-group">
+            <div class="form-group" id="signup-role-group">
               <label class="form-label">I am a</label>
               <select class="form-select" id="signup-role">
                 <option value="buyer">Buyer</option>
                 <option value="seller">Seller</option>
               </select>
             </div>
+            <p class="form-alt" id="signup-role-note" style="display:none;margin:-.2rem 0 .6rem;color:var(--text2)">You're creating a <strong>seller</strong> account to list your car. <a id="go-buyer" style="cursor:pointer">Sign up to buy instead</a></p>
             <div class="form-error hidden" id="signup-error"></div>
             <button class="form-submit" id="signup-btn">Create Account</button>
             <p class="form-alt">Already have an account? <a id="go-login">Sign in</a></p>
@@ -109,7 +110,20 @@ document.addEventListener('click', e => {
   document.getElementById('auth-modal-close').addEventListener('click', () => closeAuth());
   document.getElementById('auth-modal').addEventListener('click', e => { if (e.target.id === 'auth-modal') closeAuth(); });
 
-  window.openAuth  = (tab = 'login') => { switchTab(tab); document.getElementById('auth-modal').classList.add('open'); };
+  // Role lock for the signup flow. Sell CTAs pass { role:'seller' } so the modal
+  // opens with Seller pre-selected and the Buyer option hidden from that flow.
+  function applyRoleLock(role) {
+    const group = document.getElementById('signup-role-group');
+    const note  = document.getElementById('signup-role-note');
+    const sel   = document.getElementById('signup-role');
+    const lockSeller = role === 'seller';
+    if (group) group.style.display = lockSeller ? 'none' : '';
+    if (note)  note.style.display  = lockSeller ? ''     : 'none';
+    if (sel)   sel.value = lockSeller ? 'seller' : 'buyer';
+  }
+  document.getElementById('go-buyer')?.addEventListener('click', () => applyRoleLock(null));
+
+  window.openAuth  = (tab = 'login', opts = {}) => { switchTab(tab); applyRoleLock(opts.role); document.getElementById('auth-modal').classList.add('open'); };
   window.closeAuth = () => document.getElementById('auth-modal').classList.remove('open');
 
   // Login
@@ -167,7 +181,7 @@ function updateNavAuth() {
 }
 document.addEventListener('DOMContentLoaded', updateNavAuth);
 document.getElementById('nav-login-btn')?.addEventListener('click', () => openAuth('login'));
-document.getElementById('nav-signup-btn')?.addEventListener('click', () => openAuth('signup'));
+document.getElementById('nav-signup-btn')?.addEventListener('click', () => openAuth('signup', { role: 'seller' }));
 
 /* ── CHATBOT ──────────────────────────────── */
 (function() {
@@ -679,7 +693,7 @@ window.renderBrandStrip = function (selector) {
   drawer.querySelectorAll('a').forEach(a => a.addEventListener('click', () => setMenu(false)));
   drawer.querySelector('.mm-currency').addEventListener('click', () => { Money.toggle(); });
   drawer.querySelector('#mm-login').addEventListener('click', () => { setMenu(false); openAuth('login'); });
-  drawer.querySelector('#mm-signup').addEventListener('click', e => { e.preventDefault(); setMenu(false); openAuth('signup'); });
+  drawer.querySelector('#mm-signup').addEventListener('click', e => { e.preventDefault(); setMenu(false); openAuth('signup', { role: 'seller' }); });
   drawer.querySelector('#mm-logout').addEventListener('click', () => API.logout());
   document.addEventListener('keydown', e => { if (e.key === 'Escape') setMenu(false); });
   window.addEventListener('resize', () => { if (window.innerWidth > 640) setMenu(false); });
@@ -901,7 +915,7 @@ document.addEventListener('keydown', e => {
         </div>
         <div class="footer-col">
           <h5>Sell</h5>
-          <a href="#" onclick="openAuth('signup');return false">List Your Car</a>
+          <a href="#" onclick="openAuth('signup',{role:'seller'});return false">List Your Car</a>
           <a href="profile.html">Seller Dashboard</a>
           <a href="profile.html">Photo Guide</a>
           <a href="clearance.html">Shipping &amp; Clearance</a>
