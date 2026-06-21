@@ -5,6 +5,7 @@ import { findAll as findAllTx, setDisputed } from '../models/Transaction.js';
 import { findAll as findContactMessages, deleteById as deleteContactMessage } from '../models/ContactMessage.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { toId } from '../utils/validation.js';
+import { runBackfill } from '../utils/backfillImages.js';
 
 const router = express.Router();
 router.use(authenticate, authorize('admin'));
@@ -79,6 +80,20 @@ router.delete('/contact-messages/:id', async (req, res) => {
     if (!deleted) return res.status(404).json({ message: 'Message not found' });
     res.json({ message: 'Deleted' });
   } catch { res.status(500).json({ message: 'Failed to delete message' }); }
+});
+
+// POST /admin/backfill-images?apply=1 — regenerate responsive variants for old
+// uploads (runs inside the deployed app, so it has the live R2 + DB env). Dry-run
+// by default; pass ?apply=1 to write. Idempotent + non-destructive.
+router.post('/backfill-images', async (req, res) => {
+  try {
+    const apply = req.query.apply === '1' || req.body?.apply === true;
+    const summary = await runBackfill({ apply });
+    res.json({ message: apply ? 'Image backfill complete' : 'Dry run complete', ...summary });
+  } catch (err) {
+    console.error('admin backfill-images:', err.message);
+    res.status(500).json({ message: err.message || 'Backfill failed' });
+  }
 });
 
 export default router;

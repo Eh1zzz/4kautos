@@ -91,3 +91,19 @@ describe('Hot Sales (featured)', () => {
     expect(feat.body.some(c => c.id === carId)).toBe(false);
   });
 });
+
+describe('Admin image backfill', () => {
+  it('blocks non-admins (403)', async () => {
+    const r = await request(app).post('/admin/backfill-images').set('Authorization', `Bearer ${buyerToken}`);
+    expect(r.status).toBe(403);
+  });
+
+  it('lets an admin run a dry-run and returns a summary (writes nothing)', async () => {
+    const r = await request(app).post('/admin/backfill-images').set('Authorization', `Bearer ${adminToken}`);
+    expect(r.status).toBe(200);
+    expect(r.body.mode).toBe('dry-run');
+    expect(typeof r.body.scanned).toBe('number');
+    expect(r.body).toHaveProperty('converted');
+    expect(r.body).toHaveProperty('skipped');
+  });
+});

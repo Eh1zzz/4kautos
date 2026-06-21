@@ -190,6 +190,7 @@ const API = {
   sendContact(payload)       { return req('POST', '/contact', payload); },
   adminContactMessages()     { return req('GET', '/admin/contact-messages'); },
   adminDeleteContact(id)     { return req('DELETE', `/admin/contact-messages/${id}`); },
+  adminBackfillImages(apply) { return req('POST', `/admin/backfill-images${apply ? '?apply=1' : ''}`); },
 };
 
 window.API = API;

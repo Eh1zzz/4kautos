@@ -17,6 +17,23 @@ It is **idempotent** (already-converted URLs are skipped), **non-destructive**
 
 ## Run it against production (R2 + Railway DB)
 
+### Easiest: the admin dashboard button (no CLI)
+
+Because it must run with the live R2 + DB env, the simplest way is to trigger it
+**from inside the deployed app**:
+
+1. Sign in as an admin → **Dashboard → Admin → Maintenance**.
+2. Click **Preview changes** (dry run — writes nothing) to see how many photos
+   would convert.
+3. Click **Regenerate now** to generate the variants in R2 and repoint the DB.
+
+This calls `POST /admin/backfill-images` (`?apply=1` to write), which runs the
+exact same `runBackfill()` core as the CLI. Best for the usual handful of legacy
+uploads; for a very large library prefer the CLI so it isn't bound by the HTTP
+request lifetime.
+
+### Alternative: the CLI (Railway env)
+
 The variants must land in the same R2 bucket the site serves, and the **prod**
 DB pointers must be updated — so run it with the Railway environment:
 
