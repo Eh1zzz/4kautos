@@ -481,32 +481,45 @@ window.Money = Money;
 /* ── LANDED COST (price + Nigerian import duty + shipping) ── */
 // Duty percentages mirror backend/routes/clearance.js — keep them in sync.
 const Landed = (function () {
-  function dutyUsd(cifUsd) {
-    const importDuty = cifUsd * 0.20, nacLevy = cifUsd * 0.15, etls = cifUsd * 0.005,
-          ciss = cifUsd * 0.01, surcharge = importDuty * 0.07;
-    const vat = (cifUsd + importDuty + nacLevy + etls + ciss + surcharge) * 0.075;
-    return importDuty + nacLevy + etls + ciss + surcharge + vat;
+  // Effective import charges (% of CIF) by destination — mirrors
+  // backend/utils/locale.js (indicative; Nigeria ≈ the detailed duty model).
+  const DEST = {
+    'Nigeria': { pct: 48, aliases: ['nigeria', 'lagos', 'abuja', 'kano', 'ibadan', 'port harcourt', 'benin city', 'enugu'] },
+    'Ghana':   { pct: 35, aliases: ['ghana', 'accra', 'kumasi', 'tema'] },
+    'Togo':    { pct: 30, aliases: ['togo', 'lome', 'lomé'] },
+    'Benin':   { pct: 30, aliases: ['benin', 'cotonou'] },
+    "Côte d'Ivoire": { pct: 35, aliases: ['côte', 'cote d', 'ivoire', 'abidjan', 'ivory coast'] },
+    'Cameroon': { pct: 35, aliases: ['cameroon', 'douala', 'yaound'] },
+    'Senegal': { pct: 40, aliases: ['senegal', 'dakar'] },
+  };
+  function country(loc) {
+    const s = (loc || '').toLowerCase();
+    for (const [c, d] of Object.entries(DEST)) if (d.aliases.some(a => s.includes(a))) return c;
+    return s.trim() ? 'International' : 'Nigeria';
   }
-  // Rough RoRo shipping-to-Nigeria estimate by origin region (USD).
-  function shippingUsd(location) {
-    const s = (location || '').toLowerCase();
-    if (/nigeria|lagos|abuja|kano|ibadan|port\s*harcourt/.test(s)) return 0;       // already in-country
-    if (/ghana|togo|benin|cameroon|niger|chad|africa/.test(s)) return 850;
+  const dutyPct = c => DEST[c]?.pct ?? 40;
+  // RoRo shipping by origin region (USD); 0 when the car is already in the buyer's country.
+  function shippingUsd(originLoc, destCountry) {
+    if (country(originLoc) === destCountry) return 0;
+    const s = (originLoc || '').toLowerCase();
     if (/uk|united kingdom|england|germany|france|belgium|netherlands|spain|italy|poland|europe/.test(s)) return 1600;
     if (/uae|dubai|qatar|saudi|japan|korea|china|india|singapore|asia/.test(s)) return 2100;
     if (/usa|united states|canada|america|, ca|, tx|, ga|, ny|, fl|, nj/.test(s)) return 1900;
+    if (/ghana|togo|benin|cameroon|niger|chad|nigeria|senegal|ivoire|ivory|africa/.test(s)) return 850;
     return 1850;
   }
-  function calc(price, currency, location) {
+  function buyerLocation() { try { return API.getUser()?.location || ''; } catch { return ''; } }
+  function calc(price, currency, originLocation, destLocation) {
     const rate = Money.usdToNgn || 1600;
     const priceUsd = currency === 'USD' ? Number(price) : Number(price) / rate;
-    const ship = shippingUsd(location);
+    const destCountry = country(destLocation != null ? destLocation : buyerLocation());
+    const ship = shippingUsd(originLocation, destCountry);
     const inCountry = ship === 0;
-    const duty = inCountry ? 0 : dutyUsd(priceUsd);
+    const duty = inCountry ? 0 : priceUsd * dutyPct(destCountry) / 100;
     const totalUsd = priceUsd + duty + ship;
-    return { priceUsd, dutyUsd: duty, shippingUsd: ship, totalUsd, totalNgn: totalUsd * rate, inCountry };
+    return { priceUsd, dutyUsd: duty, shippingUsd: ship, totalUsd, totalNgn: totalUsd * rate, inCountry, destCountry };
   }
-  return { calc, dutyUsd, shippingUsd };
+  return { calc, dutyPct, shippingUsd, country };
 })();
 window.Landed = Landed;
 
@@ -548,7 +561,7 @@ window.carCard = function (c) {
   const landed = (c.price != null && c.price !== '') ? Landed.calc(c.price, native, c.location) : null;
   const landedHtml = !landed ? ''
     : landed.inCountry
-      ? `<div class="card-landed in-country">✓ Already in Nigeria</div>`
+      ? `<div class="card-landed in-country">✓ Already in ${esc(landed.destCountry)}</div>`
       : `<div class="card-landed js-landed" data-price="${esc(c.price)}" data-cur="${esc(native)}" data-loc="${esc(c.location || '')}">≈ ${Money.one(landed.totalUsd)} to your door</div>`;
   const locHtml = c.location
     ? `<div class="card-loc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${esc(c.location)}</div>`

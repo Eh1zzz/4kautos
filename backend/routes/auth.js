@@ -55,7 +55,7 @@ router.post('/signup', authLimiter, async (req, res) => {
       return res.status(201).json({
         message: 'Account created — check your email to verify your address before signing in.',
         verifyRequired: true,
-        user: { id: user.id, name: user.name, email: user.email, role: user.role },
+        user: { id: user.id, name: user.name, email: user.email, role: user.role, location: user.location ?? null },
       });
     }
 
@@ -65,7 +65,7 @@ router.post('/signup', authLimiter, async (req, res) => {
     res.status(201).json({
       message: 'Account created',
       token,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      user: { id: user.id, name: user.name, email: user.email, role: user.role, location: user.location ?? null },
     });
   } catch (err) {
     console.error('Signup:', err.message);
@@ -99,7 +99,7 @@ router.post('/login', authLimiter, async (req, res) => {
     res.json({
       message: 'Login successful',
       token,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      user: { id: user.id, name: user.name, email: user.email, role: user.role, location: user.location ?? null },
     });
   } catch (err) {
     console.error('Login:', err.message);

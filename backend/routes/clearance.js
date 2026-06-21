@@ -1,5 +1,6 @@
 import express from 'express';
 import { getRate } from './fx.js';
+import { resolveDestination, DESTINATIONS } from '../utils/locale.js';
 
 const router = express.Router();
 
@@ -46,6 +47,14 @@ router.get('/agents', (_req, res) => {
   res.json(AGENTS);
 });
 
+// GET /clearance/destinations — supported destination profiles (for the UI).
+router.get('/destinations', (_req, res) => {
+  res.json(Object.entries(DESTINATIONS).map(([country, d]) => ({
+    country, port: d.port, currency: d.currency,
+    effectiveDutyPct: d.effectiveDutyPct, estimate: d.estimate,
+  })));
+});
+
 // POST /clearance/estimate — duty + best-rate agent comparison
 // body: { cifValueUsd, year?, currency? ('USD'|'NGN'), cifValueNgn? }
 router.post('/estimate', async (req, res) => {
@@ -59,22 +68,29 @@ router.post('/estimate', async (req, res) => {
     if (!Number.isFinite(cifUsd) || cifUsd <= 0)
       return res.status(400).json({ message: 'A positive vehicle value (cifValueUsd or cifValueNgn) is required' });
 
-    const gov = governmentCharges(cifUsd);
+    // Resolve the destination from the buyer's locale (defaults to Nigeria).
+    const dest = resolveDestination(req.body.destinationLocale);
 
-    const agents = AGENTS.map(a => {
-      const agentFeeUsd = round2(a.baseFeeUsd + (cifUsd * a.ratePercent) / 100);
-      const totalUsd    = round2(gov.total + agentFeeUsd);
-      return {
-        id: a.id, name: a.name, rating: a.rating, reviews: a.reviews,
-        turnaroundDays: a.turnaroundDays, verified: a.verified, port: a.port,
-        phone: a.phone, services: a.services,
-        agentFeeUsd,
-        totalUsd,
-        totalNgn: round2(totalUsd * usdToNgn),
-      };
-    }).sort((x, y) => x.totalUsd - y.totalUsd);
-
-    if (agents.length) agents[0].bestRate = true; // cheapest all-in cost
+    let government, agents = [];
+    if (dest.country === 'Nigeria') {
+      const gov = governmentCharges(cifUsd);
+      government = { ...gov, totalNgn: round2(gov.total * usdToNgn), estimate: false };
+      agents = AGENTS.map(a => {
+        const agentFeeUsd = round2(a.baseFeeUsd + (cifUsd * a.ratePercent) / 100);
+        const totalUsd    = round2(gov.total + agentFeeUsd);
+        return {
+          id: a.id, name: a.name, rating: a.rating, reviews: a.reviews,
+          turnaroundDays: a.turnaroundDays, verified: a.verified, port: a.port,
+          phone: a.phone, services: a.services,
+          agentFeeUsd, totalUsd, totalNgn: round2(totalUsd * usdToNgn),
+        };
+      }).sort((x, y) => x.totalUsd - y.totalUsd);
+      if (agents.length) agents[0].bestRate = true; // cheapest all-in cost
+    } else {
+      // Labeled estimate for non-Nigeria destinations (single effective rate).
+      const total = round2((cifUsd * dest.effectiveDutyPct) / 100);
+      government = { total, totalNgn: round2(total * usdToNgn), effectiveDutyPct: dest.effectiveDutyPct, estimate: true };
+    }
 
     const notes = [];
     const year = Number.parseInt(req.body.year, 10);
@@ -82,18 +98,22 @@ router.post('/estimate', async (req, res) => {
       const age = new Date().getFullYear() - year;
       if (age > 12) notes.push(`This vehicle is ${age} years old — cars over 12 years may face additional age levies or import restrictions.`);
     }
+    if (dest.estimate) notes.push(`Charges for ${dest.country} are an indicative estimate (~${dest.effectiveDutyPct}% of value); final duties are set by local customs.`);
 
     res.json({
       fx: { usdToNgn, updatedAt, source },
       input: { cifValueUsd: round2(cifUsd), cifValueNgn: round2(cifUsd * usdToNgn) },
-      government: {
-        ...gov,
-        totalNgn: round2(gov.total * usdToNgn),
+      destination: {
+        country: dest.country, port: dest.port, currency: dest.currency,
+        effectiveDutyPct: dest.effectiveDutyPct, estimate: dest.estimate, contact: dest.contact,
       },
+      government,
       agents,
       bestAgentId: agents[0]?.id || null,
       notes,
-      disclaimer: 'Indicative estimate only. Final charges are set by the Nigeria Customs Service based on the official valuation.',
+      disclaimer: dest.country === 'Nigeria'
+        ? 'Indicative estimate only. Final charges are set by the Nigeria Customs Service based on the official valuation.'
+        : `Indicative estimate only. Final charges are set by ${dest.country} customs based on the official valuation.`,
     });
   } catch (err) {
     console.error('Clearance estimate:', err.message);

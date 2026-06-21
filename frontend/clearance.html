@@ -72,12 +72,12 @@
 
     <div id="clearance-output" class="hidden">
       <div class="panel">
-        <div class="panel-head"><h3>Estimated Government Charges</h3><span class="duty-total" id="duty-total"></span></div>
+        <div class="panel-head"><h3 id="duty-head">Estimated Government Charges</h3><span class="duty-total" id="duty-total"></span></div>
         <div class="panel-body"><div class="duty-grid" id="duty-grid"></div></div>
       </div>
 
       <div class="panel">
-        <div class="panel-head"><h3>Agents · Best Rate First</h3></div>
+        <div class="panel-head"><h3 id="agents-head">Agents · Best Rate First</h3></div>
         <div class="agents-list" id="agents-list"></div>
       </div>
 
@@ -151,22 +151,35 @@
     spinner.classList.remove('hidden'); intro.classList.add('hidden'); out.classList.add('hidden');
 
     const body = cur === 'USD' ? { cifValueUsd: raw, year } : { cifValueNgn: raw, year };
+    const buyerLoc = (API.getUser && API.getUser()?.location) || '';
+    if (buyerLoc) body.destinationLocale = buyerLoc;
     try {
       const d = await API.estimateClearance(body);
       spinner.classList.add('hidden'); out.classList.remove('hidden');
 
       const g = d.government, rate = d.fx.usdToNgn;
+      const dest = d.destination || { country: 'Nigeria' };
       const line = (label, usd) => `<div class="duty-row"><span>${label}</span><span>${moneyPair(usd * rate, usd)}</span></div>`;
-      document.getElementById('duty-grid').innerHTML =
-        line('Import Duty (20%)', g.importDuty) +
-        line('NAC Levy (15%)', g.nacLevy) +
-        line('ETLS (0.5%)', g.etls) +
-        line('CISS (1%)', g.ciss) +
-        line('Port Surcharge (7%)', g.surcharge) +
-        line('VAT (7.5%)', g.vat);
+
+      document.getElementById('duty-head').textContent = `Estimated Charges · ${dest.country}`;
+      document.getElementById('duty-grid').innerHTML = g.estimate
+        ? line(`Estimated import charges (~${g.effectiveDutyPct}%)`, g.total)
+        : line('Import Duty (20%)', g.importDuty) + line('NAC Levy (15%)', g.nacLevy) +
+          line('ETLS (0.5%)', g.etls) + line('CISS (1%)', g.ciss) +
+          line('Port Surcharge (7%)', g.surcharge) + line('VAT (7.5%)', g.vat);
       document.getElementById('duty-total').innerHTML = moneyPair(g.totalNgn, g.total);
 
-      document.getElementById('agents-list').innerHTML = d.agents.map(a => agentCard(a, rate)).join('');
+      // Nigeria → vetted agents; elsewhere → the destination's contact protocol.
+      if (d.agents && d.agents.length) {
+        document.getElementById('agents-head').textContent = 'Agents · Best Rate First';
+        document.getElementById('agents-list').innerHTML = d.agents.map(a => agentCard(a, rate)).join('');
+      } else {
+        document.getElementById('agents-head').textContent = `Clearance & handover · ${dest.country}`;
+        document.getElementById('agents-list').innerHTML =
+          `<div class="agent-card"><div class="agent-head"><b>${esc(dest.contact?.channel || 'International desk')}</b></div>
+             <p style="color:var(--text2);font-size:.9rem;margin:.4rem 0">${esc(dest.contact?.protocol || '')}</p>
+             <p style="color:var(--text3);font-size:.82rem">Port of entry: ${esc(dest.port || '—')}</p></div>`;
+      }
 
       const note = d.notes && d.notes.length ? `<strong>Note:</strong> ${d.notes.map(esc).join(' ')}<br>` : '';
       const fxLine = `Rate used: $1 = ₦${r(rate)} (${d.fx.source}).`;
