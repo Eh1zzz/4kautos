@@ -98,10 +98,9 @@
       </div>
     </div>
   </div>
+  <div class="hero-dots" id="hero-dots" role="tablist" aria-label="Featured cars"></div>
+  <a class="hero-caption" id="hero-caption" hidden></a>
 </section>
-
-<!-- ── HOT TICKER ──────────────────────────── -->
-<div class="ticker" id="ticker" aria-hidden="true"><div class="ticker-track" id="ticker-track"></div></div>
 
 <!-- ── HOT TICKER ──────────────────────────── -->
 <div class="ticker" id="ticker" aria-hidden="true"><div class="ticker-track" id="ticker-track"></div></div>
@@ -411,18 +410,38 @@
     track.innerHTML = row + row;   // duplicate for a seamless loop
   }
 
-  // Subtle car slideshow behind the hero (uses live inventory photos; blurred + dimmed)
+  // Rotating hero showcase — live inventory photos behind the headline, with
+  // progress dots + a featured-car caption (Figma rotating-hero treatment).
   function initHeroSlideshow(cars){
     const host = document.getElementById('hero-slideshow');
+    const dotsHost = document.getElementById('hero-dots');
+    const cap = document.getElementById('hero-caption');
     if (!host) return;
-    const imgs = [...new Set((cars||[]).map(c => c.photos && c.photos[0]).filter(Boolean))].slice(0, 6);
-    if (!imgs.length) return;
-    host.innerHTML = imgs.map((src, i) =>
-      `<div class="hero-slide${i === 0 ? ' on' : ''}" style="background-image:url('${String(src).replace(/'/g, '%27')}')"></div>`).join('');
+    const feat = (cars || []).filter(c => c.photos && c.photos[0]).slice(0, 6);
+    if (!feat.length) return;
+    host.innerHTML = feat.map((c, i) =>
+      `<div class="hero-slide${i === 0 ? ' on' : ''}" style="background-image:url('${String(c.photos[0]).replace(/'/g, '%27')}')"></div>`).join('');
     const slides = host.querySelectorAll('.hero-slide');
-    if (slides.length < 2 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    let i = 0;
-    setInterval(() => { slides[i].classList.remove('on'); i = (i + 1) % slides.length; slides[i].classList.add('on'); }, 6000);
+    if (dotsHost) dotsHost.innerHTML = feat.map((c, i) =>
+      `<button class="hero-dot${i === 0 ? ' on' : ''}" type="button" role="tab" aria-label="${esc((c.title || `${c.make || ''} ${c.model || ''}`).trim())}" data-i="${i}"></button>`).join('');
+    const dots = dotsHost ? [...dotsHost.querySelectorAll('.hero-dot')] : [];
+    let i = 0, timer = null;
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const show = n => {
+      slides[i]?.classList.remove('on'); dots[i]?.classList.remove('on');
+      i = (n + feat.length) % feat.length;
+      slides[i]?.classList.add('on'); dots[i]?.classList.add('on');
+      const c = feat[i];
+      if (cap) {
+        const name = (c.title || `${c.year || ''} ${c.make || ''} ${c.model || ''}`).replace(/\s+/g, ' ').trim();
+        cap.innerHTML = `<span class="hero-cap-name">${esc(name)}</span><span class="hero-cap-go">View →</span>`;
+        cap.href = 'detail.html?id=' + encodeURIComponent(c.id);
+        cap.hidden = false;
+      }
+    };
+    const restart = () => { if (timer) clearInterval(timer); if (!reduce && feat.length > 1) timer = setInterval(() => show(i + 1), 6000); };
+    show(0); restart();
+    dots.forEach(d => d.addEventListener('click', () => { show(+d.dataset.i); restart(); }));
   }
 
   // Browse By: type / budget / mileage → deep links into listings filters

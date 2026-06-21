@@ -229,6 +229,16 @@ input,select,textarea{font-family:inherit}
 .hero-slide{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1.6s ease;filter:blur(2px) saturate(.85);transform:scale(1.08)}
 .hero-slide.on{opacity:.5;animation:heroKen 9s ease-out forwards}
 @keyframes heroKen{from{transform:scale(1.08)}to{transform:scale(1.18)}}
+/* Rotating-hero progress dots + featured-car caption (Figma treatment) */
+.hero-dots{position:absolute;bottom:1.4rem;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:3}
+.hero-dot{width:8px;height:3px;border-radius:2px;background:rgba(255,255,255,.28);cursor:pointer;padding:0;border:none;transition:width var(--speed),background var(--speed)}
+.hero-dot.on{width:26px;background:var(--hot)}
+.hero-dot:hover{background:rgba(255,255,255,.55)}
+.hero-caption{position:absolute;bottom:1.2rem;right:1.4rem;z-index:3;display:flex;flex-direction:column;align-items:flex-end;gap:2px;text-decoration:none;background:rgba(8,8,16,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.12);padding:.5rem .85rem;border-radius:10px;transition:border-color var(--speed),transform var(--speed)}
+.hero-caption:hover{border-color:var(--hot);transform:translateY(-2px)}
+.hero-cap-name{font-family:var(--font-display);font-size:.8rem;font-weight:700;color:#fff;letter-spacing:.4px}
+.hero-cap-go{font-size:.66rem;color:var(--hot);font-weight:800;letter-spacing:1px;text-transform:uppercase}
+@media(max-width:640px){.hero-caption{display:none}.hero-dots{bottom:.8rem}}
 @keyframes meshDrift{0%{background-position:0% 0%, 0 0}100%{background-position:100% 100%, 0 0}}
 /* Decorative grid lines */
 .hero-bg::after{
