@@ -16,20 +16,20 @@
 <nav class="navbar">
   <a href="index.html" class="nav-logo"></a>
   <ul class="nav-links">
-    <li><a href="index.html" class="active">Home</a></li>
-    <li><a href="listings.html">Listings</a></li>
-    <li><a href="clearance.html">Clearance</a></li>
-    <li><a href="#how-it-works">How It Works</a></li>
+    <li><a href="index.html" class="active" data-i18n="nav.home">Home</a></li>
+    <li><a href="listings.html" data-i18n="nav.listings">Listings</a></li>
+    <li><a href="clearance.html" data-i18n="nav.clearance">Clearance</a></li>
+    <li><a href="#how-it-works" data-i18n="nav.how">How It Works</a></li>
   </ul>
   <div class="nav-search">
     <div class="nav-search-box">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input type="text" id="nav-q" placeholder="Search make, model…" autocomplete="off">
+      <input type="text" id="nav-q" placeholder="Search make, model…" data-i18n-ph="nav.search_ph" autocomplete="off">
     </div>
   </div>
   <div class="nav-actions">
-    <button class="nav-btn nav-btn-ghost" id="nav-login-btn">Sign In</button>
-    <button class="nav-btn nav-btn-accent" id="nav-signup-btn">List Your Car</button>
+    <button class="nav-btn nav-btn-ghost" id="nav-login-btn" data-i18n="nav.signin">Sign In</button>
+    <button class="nav-btn nav-btn-accent" id="nav-signup-btn" data-i18n="nav.sell">List Your Car</button>
     <button class="nav-btn nav-btn-ghost hidden" id="nav-profile-btn" onclick="location.href='profile.html'">
       👤 <span class="nav-user-label">Profile</span>
     </button>
@@ -44,30 +44,30 @@
   <div class="hero-slideshow" id="hero-slideshow" aria-hidden="true"></div>
   <div class="hero-bg"></div>
   <div class="hero-content">
-    <div class="hero-eyebrow">Global Inventory · Cleared & Delivered in Nigeria</div>
-    <h1 class="hero-title">Drive Your <em>Dream</em><br>Without Breaking The Bank</h1>
-    <p class="hero-sub">Buy verified preowned vehicles from trusted international sellers. Secure escrow payments, full inspection reports, and customs clearance handled for you.</p>
+    <div class="hero-eyebrow" data-i18n="hero.eyebrow">Global Inventory · Cleared & Delivered in Nigeria</div>
+    <h1 class="hero-title" data-i18n-html="hero.title">Drive Your <em>Dream</em><br>Without Breaking The Bank</h1>
+    <p class="hero-sub" data-i18n="hero.sub">Buy verified preowned vehicles from trusted international sellers. Secure escrow payments, full inspection reports, and customs clearance handled for you.</p>
 
     <div class="hero-search-card">
       <div class="search-tabs">
-        <button class="search-tab active" data-type="buy">Buy a Car</button>
-        <button class="search-tab" data-type="sell">Sell Your Car</button>
+        <button class="search-tab active" data-type="buy" data-i18n="search.buy">Buy a Car</button>
+        <button class="search-tab" data-type="sell" data-i18n="search.sell">Sell Your Car</button>
       </div>
       <div class="search-fields" id="search-fields">
         <div class="sf-group">
-          <label class="sf-label">Make</label>
-          <input class="sf-input" type="text" id="sf-make" list="sf-makes-list" placeholder="Any make — or type your own" autocomplete="off">
+          <label class="sf-label" data-i18n="search.make">Make</label>
+          <input class="sf-input" type="text" id="sf-make" list="sf-makes-list" placeholder="Any make — or type your own" data-i18n-ph="search.make_ph" autocomplete="off">
           <datalist id="sf-makes-list">
             <option>Toyota</option><option>Honda</option><option>Ford</option><option>BMW</option><option>Mercedes-Benz</option><option>Hyundai</option><option>Kia</option><option>Lexus</option><option>Nissan</option><option>Volkswagen</option><option>Audi</option><option>Mazda</option><option>Tesla</option><option>Porsche</option><option>Subaru</option><option>Jeep</option><option>Chevrolet</option><option>Volvo</option><option>Peugeot</option><option>Mitsubishi</option><option>Suzuki</option><option>Renault</option><option>Mini</option><option>Acura</option><option>Infiniti</option><option>Fiat</option><option>GMC</option><option>Jaguar</option><option>Land Rover</option><option>Ferrari</option>
           </datalist>
         </div>
         <div class="sf-group">
-          <label class="sf-label">Model</label>
-          <input class="sf-input" type="text" id="sf-model" list="sf-models-list" placeholder="Pick a make first, or type any model" autocomplete="off">
+          <label class="sf-label" data-i18n="search.model">Model</label>
+          <input class="sf-input" type="text" id="sf-model" list="sf-models-list" placeholder="Pick a make first, or type any model" data-i18n-ph="search.model_ph" autocomplete="off">
           <datalist id="sf-models-list"></datalist>
         </div>
         <div class="sf-group">
-          <label class="sf-label">Max Price (₦)</label>
+          <label class="sf-label" data-i18n="search.maxprice">Max Price (₦)</label>
           <select class="sf-select" id="sf-price">
             <option value="">Any Price</option>
             <option value="2000000">Under ₦2M</option>
@@ -78,7 +78,7 @@
         </div>
         <button class="search-btn" id="hero-search-btn">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          Search Cars
+          <span data-i18n="search.btn">Search Cars</span>
         </button>
       </div>
     </div>

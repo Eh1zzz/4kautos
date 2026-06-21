@@ -195,6 +195,10 @@ input,select,textarea{font-family:inherit}
 .nav-btn-ghost:hover{border-color:var(--border-hi);color:var(--text)}
 .nav-btn-accent{background:var(--accent);color:#fff}
 .nav-btn-accent:hover{background:var(--accent-lt);transform:translateY(-1px);box-shadow:0 4px 16px rgba(139,124,255,.3)}
+/* Language switcher (injected into .nav-actions site-wide) */
+.lang-switcher{background:var(--surface2);border:1.5px solid var(--border);color:var(--text2);border-radius:8px;padding:.42rem .5rem;font-size:.82rem;font-weight:600;cursor:pointer;letter-spacing:.3px}
+.lang-switcher:hover{border-color:var(--border-hi);color:var(--text)}
+.lang-switcher:focus{outline:none;border-color:var(--accent)}
 
 /* Hamburger */
 .nav-hamburger{display:none;flex-direction:column;gap:5px;width:36px;height:36px;justify-content:center;align-items:center;border-radius:8px;transition:background var(--speed)}

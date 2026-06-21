@@ -995,19 +995,20 @@ document.addEventListener('keydown', e => {
   newsBand.innerHTML = `
     <div class="newsletter-inner">
       <div class="newsletter-copy">
-        <h3>Get the weekly drop</h3>
-        <p>New arrivals &amp; price moves, straight to your inbox.</p>
+        <h3 data-i18n="newsletter.title">Get the weekly drop</h3>
+        <p data-i18n="newsletter.sub">New arrivals &amp; price moves, straight to your inbox.</p>
       </div>
       <div class="newsletter-form-wrap">
         <form class="news-form" id="news-form" novalidate>
-          <input type="email" id="news-email" placeholder="you@example.com" autocomplete="email" aria-label="Email address">
-          <button type="submit">Subscribe</button>
+          <input type="email" id="news-email" placeholder="you@example.com" data-i18n-ph="newsletter.email_ph" autocomplete="email" aria-label="Email address">
+          <button type="submit" data-i18n="newsletter.btn">Subscribe</button>
         </form>
         <div class="news-note" id="news-note"></div>
       </div>
     </div>`;
   document.body.appendChild(newsBand);
   document.body.appendChild(footer);
+  window.applyI18n?.(newsBand);   // translate the just-injected band
   // Populate the footer logo (the page-load logo pass already ran).
   const navLogo = document.querySelector('.navbar .nav-logo');
   const fLogo = footer.querySelector('.nav-logo');
@@ -1258,6 +1259,84 @@ window.RT = (function () {
     RT.connect();                          // live unread nudges
     setInterval(updateUnreadBadge, 30000); // slow fallback
   });
+})();
+
+/* ── i18n (localization scaffold) ───────────────────────────────
+   Structural setup: a dictionary, a t() helper for JS-built strings, and
+   attribute-driven translation of markup:
+     data-i18n="key"       → element.textContent
+     data-i18n-html="key"  → element.innerHTML (for strings with inline markup)
+     data-i18n-ph="key"    → element.placeholder
+   The chosen language persists in localStorage and is applied site-wide via the
+   nav language switcher (injected on every page). Add languages by extending
+   I18N, and grow coverage by tagging more elements with data-i18n. */
+(function () {
+  const LANGS = { en: 'EN', fr: 'FR' };
+  const I18N = {
+    en: {
+      'nav.home': 'Home', 'nav.listings': 'Listings', 'nav.clearance': 'Clearance',
+      'nav.how': 'How It Works', 'nav.signin': 'Sign In', 'nav.sell': 'List Your Car',
+      'nav.search_ph': 'Search make, model…',
+      'hero.eyebrow': 'Global Inventory · Cleared & Delivered in Nigeria',
+      'hero.title': 'Drive Your <em>Dream</em><br>Without Breaking The Bank',
+      'hero.sub': 'Buy verified preowned vehicles from trusted international sellers. Secure escrow payments, full inspection reports, and customs clearance handled for you.',
+      'search.buy': 'Buy a Car', 'search.sell': 'Sell Your Car',
+      'search.make': 'Make', 'search.model': 'Model', 'search.maxprice': 'Max Price (₦)',
+      'search.btn': 'Search Cars',
+      'search.make_ph': 'Any make — or type your own',
+      'search.model_ph': 'Pick a make first, or type any model',
+      'newsletter.title': 'Get the weekly drop',
+      'newsletter.sub': 'New arrivals & price moves, straight to your inbox.',
+      'newsletter.btn': 'Subscribe', 'newsletter.email_ph': 'you@example.com',
+    },
+    fr: {
+      'nav.home': 'Accueil', 'nav.listings': 'Annonces', 'nav.clearance': 'Dédouanement',
+      'nav.how': 'Comment ça marche', 'nav.signin': 'Connexion', 'nav.sell': 'Vendre ma voiture',
+      'nav.search_ph': 'Rechercher marque, modèle…',
+      'hero.eyebrow': 'Stock mondial · Dédouané & livré au Nigeria',
+      'hero.title': 'Roulez vers la <em>voiture</em><br>de vos rêves sans vous ruiner',
+      'hero.sub': "Achetez des véhicules d'occasion vérifiés auprès de vendeurs internationaux de confiance. Paiements sécurisés sous séquestre, rapports d'inspection complets et dédouanement pris en charge.",
+      'search.buy': 'Acheter', 'search.sell': 'Vendre',
+      'search.make': 'Marque', 'search.model': 'Modèle', 'search.maxprice': 'Prix max (₦)',
+      'search.btn': 'Rechercher',
+      'search.make_ph': 'Toute marque — ou saisissez la vôtre',
+      'search.model_ph': "Choisissez d'abord une marque, ou saisissez un modèle",
+      'newsletter.title': "L'actu hebdo",
+      'newsletter.sub': 'Nouveautés et baisses de prix, directement dans votre boîte mail.',
+      'newsletter.btn': "S'abonner", 'newsletter.email_ph': 'vous@exemple.com',
+    },
+  };
+
+  const getLang = () => { const l = localStorage.getItem('4k_lang'); return I18N[l] ? l : 'en'; };
+  const lookup  = key => { const d = I18N[getLang()] || I18N.en; return d[key] ?? I18N.en[key]; };
+
+  window.t = (key, fallback) => lookup(key) ?? fallback ?? key;
+
+  window.applyI18n = (root = document) => {
+    root.querySelectorAll('[data-i18n]').forEach(el => { const v = lookup(el.getAttribute('data-i18n')); if (v != null) el.textContent = v; });
+    root.querySelectorAll('[data-i18n-html]').forEach(el => { const v = lookup(el.getAttribute('data-i18n-html')); if (v != null) el.innerHTML = v; });
+    root.querySelectorAll('[data-i18n-ph]').forEach(el => { const v = lookup(el.getAttribute('data-i18n-ph')); if (v != null) el.setAttribute('placeholder', v); });
+    document.documentElement.lang = getLang();
+  };
+
+  window.setLang = lang => { if (!I18N[lang]) return; localStorage.setItem('4k_lang', lang); window.applyI18n(document); };
+
+  function injectSwitcher() {
+    const actions = document.querySelector('.nav-actions');
+    if (!actions || document.getElementById('lang-switcher')) return;
+    const sel = document.createElement('select');
+    sel.id = 'lang-switcher';
+    sel.className = 'lang-switcher';
+    sel.setAttribute('aria-label', 'Language');
+    sel.innerHTML = Object.entries(LANGS).map(([code, label]) => `<option value="${code}">${label}</option>`).join('');
+    sel.value = getLang();
+    sel.addEventListener('change', () => window.setLang(sel.value));
+    actions.insertBefore(sel, actions.firstChild);
+  }
+
+  function init() { injectSwitcher(); window.applyI18n(document); }
+  if (document.readyState !== 'loading') init();
+  else document.addEventListener('DOMContentLoaded', init);
 })();
 
 /* ── BOOT ─────────────────────────────────── */
