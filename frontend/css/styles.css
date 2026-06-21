@@ -5,7 +5,7 @@
    =========================================== */
 
 /* ── GOOGLE FONTS ─────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Sora:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 /* ── TOKENS (dark = default) ──────────────── */
 :root {
@@ -20,7 +20,7 @@
   --ease-spring: cubic-bezier(.34,1.56,.64,1);
 
   /* fonts */
-  --font-display: 'Sora', sans-serif;
+  --font-display: 'Orbitron', 'Sora', sans-serif;   /* racing display face (Figma) */
   --font-body:    'Plus Jakarta Sans', sans-serif;
   --font-mono:    'Space Grotesk', ui-monospace, monospace;
 
@@ -915,6 +915,12 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:3rem 2re
   .footer-grid{grid-template-columns:1fr 1fr}
 }
 .filters-toggle{display:none}
+/* Orbitron runs wider than Sora — slim the logo on small screens so the nav
+   (logo + language switcher + theme + hamburger) fits without overflow. */
+@media(max-width:560px){
+  .logo-4k{font-size:1.05rem;letter-spacing:0}
+  .logo-autos{font-size:.48rem;letter-spacing:1.2px}
+}
 @media(max-width:900px){
   .listings-layout{grid-template-columns:1fr}
   .listings-main{min-width:0;padding-bottom:4.5rem}  /* shrink to fit + clear the floating chat button */
@@ -1166,6 +1172,9 @@ body.menu-open{overflow:hidden}
   filter:brightness(1.07);transform:translateY(-2px);
   box-shadow:0 12px 32px rgba(124,92,255,.46);
 }
+/* The purchase action is the one place red leads — money/urgency accent (hybrid palette). */
+#buy-btn{background:var(--hot);box-shadow:0 6px 22px rgba(220,18,18,.34)}
+#buy-btn:hover{background:#b91010;filter:none;box-shadow:0 12px 32px rgba(220,18,18,.5)}
 .logo-mark{box-shadow:0 6px 22px rgba(124,92,255,.42)}
 
 /* ── Glassy glowing cards ── */
