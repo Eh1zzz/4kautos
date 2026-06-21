@@ -540,7 +540,10 @@ section{padding:5rem 2rem}
 .gallery-thumb img{width:100%;height:100%;object-fit:cover}
 
 /* Detail info */
-.detail-main{}
+/* min-width:0 lets these grid items shrink below their content's intrinsic size
+   — without it the gallery image forces the column wider than a phone screen
+   (horizontal-scroll bug). */
+.detail-main{min-width:0}
 .detail-breadcrumb{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--text3);margin-bottom:1.25rem}
 .detail-breadcrumb a{color:var(--text3);transition:color var(--speed)}
 .detail-breadcrumb a:hover{color:var(--accent)}
@@ -572,7 +575,7 @@ section{padding:5rem 2rem}
 .detail-desc p{font-size:.9rem;color:var(--text2);line-height:1.75}
 
 /* Sidebar CTA */
-.detail-sidebar{}
+.detail-sidebar{min-width:0}
 .cta-card{
   background:var(--surface);border:1.5px solid var(--border);
   border-radius:var(--radius-lg);padding:1.5rem;
