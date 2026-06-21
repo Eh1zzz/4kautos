@@ -32,9 +32,9 @@
     <!-- Left: Gallery + Specs -->
     <div class="detail-main">
       <div class="detail-breadcrumb">
-        <a href="index.html">Home</a>
+        <a href="index.html" data-i18n="nav.home">Home</a>
         <span>›</span>
-        <a href="listings.html">Listings</a>
+        <a href="listings.html" data-i18n="nav.listings">Listings</a>
         <span>›</span>
         <span id="bc-title">Loading…</span>
       </div>
@@ -55,19 +55,19 @@
 
       <!-- Description -->
       <div class="detail-desc">
-        <h4>Description</h4>
+        <h4 data-i18n="detail.description">Description</h4>
         <p id="car-desc">—</p>
       </div>
 
       <!-- Specs -->
       <div class="specs-table">
-        <div class="specs-table-title">Vehicle Specifications</div>
+        <div class="specs-table-title" data-i18n="detail.specs">Vehicle Specifications</div>
         <dl id="specs-dl"></dl>
       </div>
 
       <!-- Location -->
       <div class="map-card" id="map-card" style="display:none">
-        <div class="specs-table-title">Location <span id="map-loc"></span></div>
+        <div class="specs-table-title"><span data-i18n="detail.location">Location</span> <span id="map-loc"></span></div>
         <div id="car-map" class="car-map"></div>
       </div>
 
@@ -84,7 +84,7 @@
           <h1 class="detail-title" id="d-title">Loading…</h1>
         </div>
         <div class="cta-price-row">
-          <div class="cta-label">Asking Price</div>
+          <div class="cta-label" data-i18n="detail.askingPrice">Asking Price</div>
           <div class="cta-price" id="d-price">—</div>
         </div>
 
@@ -92,15 +92,15 @@
 
         <button class="cta-btn cta-btn-primary" id="buy-btn">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-          Initiate Purchase
+          <span data-i18n="detail.buy">Initiate Purchase</span>
         </button>
-        <button class="cta-btn cta-btn-secondary" id="chat-enquire-btn">
+        <button class="cta-btn cta-btn-secondary" id="chat-enquire-btn" data-i18n="detail.ask">
           💬 Ask AutoBot about this car
         </button>
-        <a class="cta-btn cta-btn-secondary" id="clearance-btn" href="clearance.html">
+        <a class="cta-btn cta-btn-secondary" id="clearance-btn" href="clearance.html" data-i18n="detail.clearance">
           🛃 Estimate import clearance
         </a>
-        <button class="cta-btn cta-btn-secondary" id="message-btn" type="button">💬 Message the seller</button>
+        <button class="cta-btn cta-btn-secondary" id="message-btn" type="button" data-i18n="detail.message">💬 Message the seller</button>
         <button class="cta-btn cta-btn-ghost" id="save-btn" type="button">♡ Save this car</button>
 
         <div class="seller-info">
@@ -130,7 +130,7 @@
     <div class="section-head">
       <div>
         <div class="section-label">Compare your options</div>
-        <h2 class="section-title">Similar listings</h2>
+        <h2 class="section-title" data-i18n="detail.similar">Similar listings</h2>
       </div>
       <a href="listings.html" class="view-all">Browse all cars →</a>
     </div>
@@ -202,7 +202,7 @@
         actions.className = 'owner-actions';
         actions.innerHTML =
           `<a class="cta-btn cta-btn-primary" href="profile.html?edit=${encodeURIComponent(car.id)}">✎ Edit listing</a>` +
-          `<button class="cta-btn cta-btn-secondary" type="button" id="share-btn">🔗 Share listing</button>`;
+          `<button class="cta-btn cta-btn-secondary" type="button" id="share-btn">${window.t('detail.share', '🔗 Share listing')}</button>`;
         document.getElementById('buy-btn').insertAdjacentElement('beforebegin', actions);
         document.getElementById('share-btn').addEventListener('click', async () => {
           try { await navigator.clipboard.writeText(location.href); toast('Listing link copied', 'success'); }
@@ -245,8 +245,9 @@
         ['Listed',       car.createdAt ? new Date(car.createdAt).toLocaleDateString() : null],
       ].filter(([,v]) => v);
 
+      const SPEC_KEYS = { 'Make':'spec.make','Model':'spec.model','Year':'spec.year','Body type':'spec.bodyType','Mileage':'spec.mileage','Condition':'spec.condition','Engine':'spec.engine','Transmission':'spec.transmission','Drivetrain':'spec.drivetrain','Horsepower':'spec.horsepower','Fuel economy':'spec.fuel','Seats':'spec.seats','Exterior':'spec.exterior','Interior':'spec.interior','Towing':'spec.towing','VIN':'spec.vin','Location':'spec.location','Listed':'spec.listed' };
       document.getElementById('specs-dl').innerHTML = specs.map(([k,v]) =>
-        `<div class="spec-row"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`
+        `<div class="spec-row"><dt${SPEC_KEYS[k] ? ` data-i18n="${SPEC_KEYS[k]}"` : ''}>${esc(window.t(SPEC_KEYS[k] || '', k))}</dt><dd>${esc(v)}</dd></div>`
       ).join('');
 
       // Optional extras (comfort / safety / modifications) as chip groups
@@ -268,7 +269,7 @@
       const renderSave = () => {
         const on = API.isSaved(car.id);
         saveBtn.classList.toggle('saved', on);
-        saveBtn.textContent = on ? '♥ Saved' : '♡ Save this car';
+        saveBtn.textContent = on ? window.t('detail.saved', '♥ Saved') : window.t('detail.save', '♡ Save this car');
       };
       renderSave();
       saveBtn.addEventListener('click', () => { API.toggleSaved(car.id); renderSave(); });
@@ -284,7 +285,7 @@
       if (!isOwner) loadSimilar(car.id);   // owners don't need the comparables strip
       loadValuation(car.id);
     } catch(e) {
-      document.getElementById('detail-spinner').innerHTML = `<div class="empty-state"><h3>Car Not Found</h3><p><a href="listings.html" style="color:var(--accent)">Browse all listings</a></p></div>`;
+      document.getElementById('detail-spinner').innerHTML = `<div class="empty-state"><h3>${window.t('detail.notFound', 'Car Not Found')}</h3><p><a href="listings.html" style="color:var(--accent)">Browse all listings</a></p></div>`;
     }
   }
 

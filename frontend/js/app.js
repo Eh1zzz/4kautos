@@ -1322,6 +1322,13 @@ window.RT = (function () {
       'listings.sortNew': 'Newest First', 'listings.sortPriceLow': 'Price: Low → High', 'listings.sortPriceHigh': 'Price: High → Low', 'listings.sortMileage': 'Lowest Mileage',
       'listings.emptyTitle': 'No Cars Found', 'listings.emptyHint': 'Try adjusting your filters', 'listings.save': '🔖 Save search', 'listings.recs': 'You might like these',
       'listings.filtersBtn': '🔍 Filters', 'listings.hideFilters': '✕ Hide filters',
+      'detail.description': 'Description', 'detail.specs': 'Vehicle Specifications', 'detail.location': 'Location', 'detail.askingPrice': 'Asking Price',
+      'detail.buy': 'Initiate Purchase', 'detail.ask': '💬 Ask AutoBot about this car', 'detail.clearance': '🛃 Estimate import clearance',
+      'detail.message': '💬 Message the seller', 'detail.save': '♡ Save this car', 'detail.saved': '♥ Saved', 'detail.share': '🔗 Share listing',
+      'detail.similar': 'Similar listings', 'detail.notFound': 'Car Not Found',
+      'spec.make': 'Make', 'spec.model': 'Model', 'spec.year': 'Year', 'spec.bodyType': 'Body type', 'spec.mileage': 'Mileage', 'spec.condition': 'Condition',
+      'spec.engine': 'Engine', 'spec.transmission': 'Transmission', 'spec.drivetrain': 'Drivetrain', 'spec.horsepower': 'Horsepower', 'spec.fuel': 'Fuel economy',
+      'spec.seats': 'Seats', 'spec.exterior': 'Exterior', 'spec.interior': 'Interior', 'spec.towing': 'Towing', 'spec.vin': 'VIN', 'spec.location': 'Location', 'spec.listed': 'Listed',
     },
     fr: {
       'nav.home': 'Accueil', 'nav.listings': 'Annonces', 'nav.clearance': 'Dédouanement',
@@ -1354,6 +1361,13 @@ window.RT = (function () {
       'listings.sortNew': 'Plus récentes', 'listings.sortPriceLow': 'Prix : croissant', 'listings.sortPriceHigh': 'Prix : décroissant', 'listings.sortMileage': 'Kilométrage le plus bas',
       'listings.emptyTitle': 'Aucune voiture trouvée', 'listings.emptyHint': 'Essayez d’ajuster vos filtres', 'listings.save': '🔖 Enregistrer la recherche', 'listings.recs': 'Vous pourriez aimer',
       'listings.filtersBtn': '🔍 Filtres', 'listings.hideFilters': '✕ Masquer',
+      'detail.description': 'Description', 'detail.specs': 'Caractéristiques du véhicule', 'detail.location': 'Emplacement', 'detail.askingPrice': 'Prix demandé',
+      'detail.buy': "Lancer l'achat", 'detail.ask': '💬 Demander à AutoBot', 'detail.clearance': '🛃 Estimer le dédouanement',
+      'detail.message': '💬 Contacter le vendeur', 'detail.save': '♡ Enregistrer', 'detail.saved': '♥ Enregistré', 'detail.share': '🔗 Partager',
+      'detail.similar': 'Annonces similaires', 'detail.notFound': 'Voiture introuvable',
+      'spec.make': 'Marque', 'spec.model': 'Modèle', 'spec.year': 'Année', 'spec.bodyType': 'Carrosserie', 'spec.mileage': 'Kilométrage', 'spec.condition': 'État',
+      'spec.engine': 'Moteur', 'spec.transmission': 'Boîte de vitesses', 'spec.drivetrain': 'Roues motrices', 'spec.horsepower': 'Puissance', 'spec.fuel': 'Consommation',
+      'spec.seats': 'Sièges', 'spec.exterior': 'Extérieur', 'spec.interior': 'Intérieur', 'spec.towing': 'Remorquage', 'spec.vin': 'VIN', 'spec.location': 'Emplacement', 'spec.listed': 'Publié',
     },
   };
 
