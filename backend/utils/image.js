@@ -13,6 +13,9 @@ function sniff(b) {
 
 export const isImage = buffer => sniff(buffer) !== null;
 
+/* PDF magic bytes (%PDF). Used for document uploads (e.g. inspection reports). */
+export const isPdf = b => !!b && b.length > 4 && b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46;
+
 /* Decode → auto-orient → strip metadata (EXIF/GPS) → resize → re-encode WebP.
    The re-encode is the security control: a polyglot/malicious payload doesn't
    survive being decoded and rewritten, and we never serve the original bytes.

@@ -109,6 +109,21 @@ const API = {
     }
     return res.json(); // { urls: [...] }
   },
+  async uploadDoc(file) {
+    const fd = new FormData();
+    fd.append('document', file);
+    const token = getToken();
+    const res = await fetch(`${BASE}/uploads/doc`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: fd,
+    });
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({ message: res.statusText }));
+      throw new Error(e.message || `HTTP ${res.status}`);
+    }
+    return res.json(); // { url }
+  },
 
   /* ── TRANSACTIONS ── */
   initTx(carId, sellerId) { return req('POST', '/transactions', { carId, sellerId }); },

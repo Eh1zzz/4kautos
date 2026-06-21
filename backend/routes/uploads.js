@@ -2,7 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { writeLimiter } from '../middleware/security.js';
-import { isImage, optimizeSizes } from '../utils/image.js';
+import { isImage, isPdf, optimize, optimizeSizes } from '../utils/image.js';
 import { hashBase, putObject } from '../utils/storage.js';
 
 const router = express.Router();
@@ -35,6 +35,29 @@ router.post('/', writeLimiter, authenticate, authorize('seller'), upload.array('
     res.status(201).json({ urls });
   } catch (err) {
     console.error('upload:', err.message);
+    res.status(500).json({ message: 'Upload failed' });
+  }
+});
+
+// POST /uploads/doc — single document (e.g. a vehicle inspection report).
+// Accepts a PDF (stored as-is) or an image (re-encoded to WebP, same security
+// guarantee as photo uploads). Returns one { url }. Seller-only.
+router.post('/doc', writeLimiter, authenticate, authorize('seller'), upload.single('document'), async (req, res) => {
+  try {
+    const f = req.file;
+    if (!f) return res.status(400).json({ message: 'No file uploaded' });
+    if (isPdf(f.buffer)) {
+      const url = await putObject(`${hashBase(f.buffer)}.pdf`, f.buffer, 'application/pdf');
+      return res.status(201).json({ url });
+    }
+    if (isImage(f.buffer)) {
+      const webp = await optimize(f.buffer);
+      const url = await putObject(`${hashBase(webp)}.webp`, webp, 'image/webp');
+      return res.status(201).json({ url });
+    }
+    return res.status(415).json({ message: 'Only PDF or image files are allowed' });
+  } catch (err) {
+    console.error('doc upload:', err.message);
     res.status(500).json({ message: 'Upload failed' });
   }
 });

@@ -293,6 +293,15 @@
               <div class="field-hint">Helps us assess the vehicle's condition — not shown publicly on your listing.</div>
             </div>
           </div>
+          <div class="form-group">
+            <label class="form-label req">Inspection report</label>
+            <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap">
+              <input type="hidden" id="car-inspection">
+              <label class="shot-file-btn" title="Upload the latest inspection report (PDF or image)">⬆ Upload report<input type="file" id="file-inspection" accept="application/pdf,image/*" hidden></label>
+              <span class="shot-badge" id="badge-inspection"></span>
+            </div>
+            <div class="field-hint">Latest inspection report (PDF or photo) — a backend condition criterion, not shown publicly.</div>
+          </div>
           <div class="form-group" id="towing-group" style="display:none">
             <label class="form-label req">Max towing capacity</label>
             <input class="form-input" id="car-towing" placeholder="e.g. 3,500 kg">
@@ -775,6 +784,7 @@
           </div>
           <div class="admin-actions">
             <a href="detail.html?id=${esc(c.id)}" class="adm-btn" style="text-decoration:none">View</a>
+            ${c.inspection_report ? `<a href="${esc(c.inspection_report)}" target="_blank" rel="noopener" class="adm-btn" style="text-decoration:none">📄 Report</a>` : ''}
             <button class="adm-btn" onclick="adminFeature('${esc(c.id)}', ${c.featured ? 0 : 1}, this)">${c.featured ? '★ Unfeature' : '☆ Feature'}</button>
             <button class="adm-btn danger" onclick="adminDeleteCar('${esc(c.id)}')">Delete</button>
           </div>
@@ -914,6 +924,23 @@
     }
   });
 
+  // Inspection report (PDF or image) → its own document upload slot.
+  document.getElementById('file-inspection')?.addEventListener('change', async e => {
+    const file = e.target.files?.[0]; if (!file) return;
+    const badge = document.getElementById('badge-inspection');
+    e.target.value = '';
+    if (file.size > 20 * 1024 * 1024) { badge.className = 'shot-badge bad'; badge.textContent = '✗ over 20MB'; return; }
+    badge.className = 'shot-badge checking'; badge.textContent = 'Uploading…';
+    try {
+      const { url } = await API.uploadDoc(file);
+      document.getElementById('car-inspection').value = url;
+      badge.className = 'shot-badge ok'; badge.innerHTML = `✓ uploaded · <a href="${esc(url)}" target="_blank" rel="noopener" style="color:var(--accent)">view</a>`;
+      refreshForm();
+    } catch (err) {
+      badge.className = 'shot-badge bad'; badge.textContent = '✗ ' + (err.message || 'upload failed');
+    }
+  });
+
   // Verify a photo actually loads and meets a minimum resolution (quality gate).
   function checkImageQuality(url, badge) {
     if (!url) { badge.className = 'shot-badge'; badge.textContent = ''; return; }
@@ -963,6 +990,7 @@
         ['Horsepower', val('car-hp') !== '' && Number(val('car-hp')) >= 0],
         ['Seats', val('car-seats') !== '' && Number(val('car-seats')) >= 1],
         ['Accident history', !!document.getElementById('car-accident').value],
+        ['Inspection report', !!val('car-inspection')],
       );
       if (document.getElementById('car-bodytype').value === 'Pickup')
         checks.push(['Max towing (pickup)', !!val('car-towing')]);
@@ -1032,6 +1060,8 @@
     document.getElementById('car-transmission').value = '';
     document.getElementById('car-drivetrain').value   = '';
     document.getElementById('car-accident').value     = '';
+    document.getElementById('car-inspection').value   = '';
+    { const b = document.getElementById('badge-inspection'); if (b) { b.className = 'shot-badge'; b.textContent = ''; } }
     updateTowingVisibility();
     REQUIRED_SHOTS.forEach(s => {
       const el = document.getElementById('shot-' + s.key); if (el) el.value = '';
@@ -1063,6 +1093,8 @@
     document.getElementById('car-transmission').value = car.transmission || '';
     document.getElementById('car-drivetrain').value   = car.drivetrain || '';
     document.getElementById('car-accident').value     = car.accident_history || '';
+    document.getElementById('car-inspection').value   = car.inspection_report || '';
+    { const b = document.getElementById('badge-inspection'); if (b) { if (car.inspection_report) { b.className = 'shot-badge ok'; b.innerHTML = `✓ on file · <a href="${esc(car.inspection_report)}" target="_blank" rel="noopener" style="color:var(--accent)">view</a>`; } else { b.className = 'shot-badge'; b.textContent = ''; } } }
     set('car-comfort', (car.comfort_features || []).join(', '));
     set('car-safety',  (car.safety_features || []).join(', '));
     set('car-mods',    (car.modifications || []).join(', '));
@@ -1139,6 +1171,7 @@
       transmission: document.getElementById('car-transmission').value || undefined,
       drivetrain:  document.getElementById('car-drivetrain').value || undefined,
       accidentHistory: document.getElementById('car-accident').value || undefined,
+      inspectionReport: val('car-inspection') || undefined,
       mpg:         val('car-mpg') || undefined,
       horsepower:  val('car-hp') || undefined,
       seats:       val('car-seats') || undefined,
