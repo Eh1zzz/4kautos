@@ -548,12 +548,13 @@ window.imgSrcset = function (url) {
 };
 
 window.carCard = function (c) {
+  const T = (k, f) => (window.t ? window.t(k, f) : f);   // current-lang label (re-switched via data-i18n)
   const native = c.currency || 'NGN';
   const img = c.photos?.[0] || `https://placehold.co/600x400/12121f/8b7cff?text=${encodeURIComponent(c.make || 'Car')}`;
   const saved = API.isSaved(c.id);
   const title = c.title || `${c.year || ''} ${c.make || ''} ${c.model || ''}`.trim();
-  const badge = c.featured ? '<span class="card-badge featured">Featured</span>'
-              : (c.condition === 'excellent' ? '<span class="card-badge new">Excellent</span>' : '');
+  const badge = c.featured ? `<span class="card-badge featured" data-i18n="card.featured">${esc(T('card.featured', 'Featured'))}</span>`
+              : (c.condition === 'excellent' ? `<span class="card-badge new" data-i18n="card.excellent">${esc(T('card.excellent', 'Excellent'))}</span>` : '');
   const priceHtml = (c.price != null && c.price !== '')
     ? `<div class="card-price js-price" data-amount="${esc(c.price)}" data-native="${esc(native)}">${Money.fmt(c.price, native)}</div>`
     : `<div class="card-price">Price on Request</div>`;
@@ -583,7 +584,7 @@ window.carCard = function (c) {
       </div>
       <div class="card-body">
         <div class="card-title">${esc(title)}</div>
-        ${c.seller?.verified ? `<div class="card-verified" title="Identity-verified seller"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V5z"/><path d="m9 12 2 2 4-4"/></svg>Verified seller</div>` : ''}
+        ${c.seller?.verified ? `<div class="card-verified" title="Identity-verified seller"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V5z"/><path d="m9 12 2 2 4-4"/></svg><span data-i18n="card.verified">${esc(T('card.verified', 'Verified seller'))}</span></div>` : ''}
         ${locHtml}
         <div class="card-specs">
           ${c.mileage ? `<span class="spec-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${Number(c.mileage).toLocaleString()} km</span>` : ''}
@@ -596,7 +597,7 @@ window.carCard = function (c) {
             ${evalHtml}
             ${landedHtml}
           </div>
-          <button class="card-cta">View Details</button>
+          <button class="card-cta" data-i18n="card.view">${esc(T('card.view', 'View Details'))}</button>
         </div>
       </div>
     </div>`;
@@ -1313,6 +1314,14 @@ window.RT = (function () {
       'footer.about': 'About Us', 'footer.community': 'Community', 'footer.careers': 'Careers', 'footer.blog': 'The 4K Blog',
       'footer.help': 'Help Center', 'footer.faqs': 'FAQs', 'footer.contact': 'Contact Us', 'footer.tos': 'Terms of Service', 'footer.privacy': 'Privacy Policy',
       'footer.rights': '4Kautos. All rights reserved.', 'footer.terms_s': 'Terms', 'footer.privacy_s': 'Privacy', 'footer.donotsell': 'Do Not Sell My Info',
+      'card.view': 'View Details', 'card.verified': 'Verified seller', 'card.featured': 'Featured', 'card.excellent': 'Excellent',
+      'listings.filterTitle': '🔍 Filter Cars', 'listings.make': 'Make', 'listings.model': 'Model', 'listings.year': 'Year', 'listings.price': 'Price (₦)', 'listings.condition': 'Condition',
+      'cond.excellent': 'Excellent', 'cond.good': 'Good', 'cond.fair': 'Fair',
+      'listings.apply': 'Apply Filters', 'listings.clear': 'Clear All',
+      'listings.showing': 'Showing', 'listings.vehicles': 'vehicles', 'listings.grid': '▦ Grid', 'listings.map': '🗺 Map', 'listings.sortLabel': 'Sort:',
+      'listings.sortNew': 'Newest First', 'listings.sortPriceLow': 'Price: Low → High', 'listings.sortPriceHigh': 'Price: High → Low', 'listings.sortMileage': 'Lowest Mileage',
+      'listings.emptyTitle': 'No Cars Found', 'listings.emptyHint': 'Try adjusting your filters', 'listings.save': '🔖 Save search', 'listings.recs': 'You might like these',
+      'listings.filtersBtn': '🔍 Filters', 'listings.hideFilters': '✕ Hide filters',
     },
     fr: {
       'nav.home': 'Accueil', 'nav.listings': 'Annonces', 'nav.clearance': 'Dédouanement',
@@ -1337,6 +1346,14 @@ window.RT = (function () {
       'footer.about': 'À propos', 'footer.community': 'Communauté', 'footer.careers': 'Carrières', 'footer.blog': 'Le blog 4K',
       'footer.help': "Centre d'aide", 'footer.faqs': 'FAQ', 'footer.contact': 'Nous contacter', 'footer.tos': "Conditions d'utilisation", 'footer.privacy': 'Politique de confidentialité',
       'footer.rights': '4Kautos. Tous droits réservés.', 'footer.terms_s': 'Conditions', 'footer.privacy_s': 'Confidentialité', 'footer.donotsell': 'Ne pas vendre mes infos',
+      'card.view': 'Voir détails', 'card.verified': 'Vendeur vérifié', 'card.featured': 'En vedette', 'card.excellent': 'Excellent',
+      'listings.filterTitle': '🔍 Filtrer', 'listings.make': 'Marque', 'listings.model': 'Modèle', 'listings.year': 'Année', 'listings.price': 'Prix (₦)', 'listings.condition': 'État',
+      'cond.excellent': 'Excellent', 'cond.good': 'Bon', 'cond.fair': 'Correct',
+      'listings.apply': 'Appliquer les filtres', 'listings.clear': 'Tout effacer',
+      'listings.showing': 'Affichage de', 'listings.vehicles': 'véhicules', 'listings.grid': '▦ Grille', 'listings.map': '🗺 Carte', 'listings.sortLabel': 'Trier :',
+      'listings.sortNew': 'Plus récentes', 'listings.sortPriceLow': 'Prix : croissant', 'listings.sortPriceHigh': 'Prix : décroissant', 'listings.sortMileage': 'Kilométrage le plus bas',
+      'listings.emptyTitle': 'Aucune voiture trouvée', 'listings.emptyHint': 'Essayez d’ajuster vos filtres', 'listings.save': '🔖 Enregistrer la recherche', 'listings.recs': 'Vous pourriez aimer',
+      'listings.filtersBtn': '🔍 Filtres', 'listings.hideFilters': '✕ Masquer',
     },
   };
 

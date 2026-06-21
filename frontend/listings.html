@@ -35,10 +35,10 @@
 <div class="listings-layout">
   <!-- Sidebar -->
   <aside class="filter-sidebar">
-    <h3>🔍 Filter Cars</h3>
+    <h3 data-i18n="listings.filterTitle">🔍 Filter Cars</h3>
 
     <div class="filter-group">
-      <label class="filter-label">Make</label>
+      <label class="filter-label" data-i18n="listings.make">Make</label>
       <select class="sf-select" id="f-make">
         <option value="">Any Make</option>
         <option>Toyota</option><option>Honda</option><option>Ford</option>
@@ -48,12 +48,12 @@
     </div>
 
     <div class="filter-group">
-      <label class="filter-label">Model</label>
+      <label class="filter-label" data-i18n="listings.model">Model</label>
       <input class="sf-input" type="text" id="f-model" placeholder="e.g. Camry">
     </div>
 
     <div class="filter-group">
-      <label class="filter-label">Year</label>
+      <label class="filter-label" data-i18n="listings.year">Year</label>
       <div class="price-row">
         <input class="sf-input" type="number" id="f-year-min" placeholder="From" min="1990" max="2025">
         <input class="sf-input" type="number" id="f-year-max" placeholder="To"   min="1990" max="2025">
@@ -61,7 +61,7 @@
     </div>
 
     <div class="filter-group">
-      <label class="filter-label">Price (₦)</label>
+      <label class="filter-label" data-i18n="listings.price">Price (₦)</label>
       <div class="price-row">
         <input class="sf-input" type="number" id="f-price-min" placeholder="Min">
         <input class="sf-input" type="number" id="f-price-max" placeholder="Max">
@@ -69,33 +69,33 @@
     </div>
 
     <div class="filter-group">
-      <label class="filter-label">Condition</label>
-      <label class="filter-check"><input type="checkbox" value="excellent"> Excellent</label>
-      <label class="filter-check"><input type="checkbox" value="good"> Good</label>
-      <label class="filter-check"><input type="checkbox" value="fair"> Fair</label>
+      <label class="filter-label" data-i18n="listings.condition">Condition</label>
+      <label class="filter-check"><input type="checkbox" value="excellent"> <span data-i18n="cond.excellent">Excellent</span></label>
+      <label class="filter-check"><input type="checkbox" value="good"> <span data-i18n="cond.good">Good</span></label>
+      <label class="filter-check"><input type="checkbox" value="fair"> <span data-i18n="cond.fair">Fair</span></label>
     </div>
 
-    <button class="filter-apply" id="f-apply">Apply Filters</button>
-    <button class="filter-reset" id="f-reset">Clear All</button>
+    <button class="filter-apply" id="f-apply" data-i18n="listings.apply">Apply Filters</button>
+    <button class="filter-reset" id="f-reset" data-i18n="listings.clear">Clear All</button>
   </aside>
 
   <!-- Main -->
   <main class="listings-main">
     <div class="brand-strip brand-strip-sm" id="brand-strip"></div>
     <div class="listings-topbar">
-      <div class="listings-count">Showing <strong id="results-count">0</strong> vehicles</div>
+      <div class="listings-count"><span data-i18n="listings.showing">Showing</span> <strong id="results-count">0</strong> <span data-i18n="listings.vehicles">vehicles</span></div>
       <div class="topbar-right">
         <div class="view-toggle">
-          <button class="view-btn active" data-view="grid" id="view-grid">▦ Grid</button>
-          <button class="view-btn" data-view="map" id="view-map">🗺 Map</button>
+          <button class="view-btn active" data-view="grid" id="view-grid" data-i18n="listings.grid">▦ Grid</button>
+          <button class="view-btn" data-view="map" id="view-map" data-i18n="listings.map">🗺 Map</button>
         </div>
         <div class="sort-row">
-          <span class="sort-label">Sort:</span>
+          <span class="sort-label" data-i18n="listings.sortLabel">Sort:</span>
           <select class="sort-select" id="sort-select">
-            <option value="-createdAt">Newest First</option>
-            <option value="price">Price: Low → High</option>
-            <option value="-price">Price: High → Low</option>
-            <option value="mileage">Lowest Mileage</option>
+            <option value="-createdAt" data-i18n="listings.sortNew">Newest First</option>
+            <option value="price" data-i18n="listings.sortPriceLow">Price: Low → High</option>
+            <option value="-price" data-i18n="listings.sortPriceHigh">Price: High → Low</option>
+            <option value="mileage" data-i18n="listings.sortMileage">Lowest Mileage</option>
           </select>
         </div>
       </div>
@@ -106,8 +106,8 @@
     <div id="listings-map" class="listings-map hidden"></div>
     <div class="empty-state hidden" id="listings-empty">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><path d="M5 17H3v-4l2-5h14l2 5v4h-2"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg>
-      <h3>No Cars Found</h3>
-      <p>Try adjusting your filters or <a href="listings.html" style="color:var(--accent)">clear all filters</a></p>
+      <h3 data-i18n="listings.emptyTitle">No Cars Found</h3>
+      <p><span data-i18n="listings.emptyHint">Try adjusting your filters</span> or <a href="listings.html" style="color:var(--accent)">clear all filters</a></p>
     </div>
     <div class="pagination hidden" id="pagination"></div>
   </main>
@@ -175,7 +175,7 @@
   async function renderRecommendations() {
     const empty = document.getElementById('listings-empty');
     try {
-      let recs = [], heading = 'You might like these';
+      let recs = [], heading = window.t('listings.recs', 'You might like these');
       if (API.isLoggedIn()) {
         const saved = await API.getSavedSearches().catch(() => []);
         for (const s of saved) {
@@ -246,7 +246,7 @@
     const btn = document.createElement('button');
     btn.type = 'button'; btn.id = 'save-search-btn'; btn.className = 'nav-btn nav-btn-ghost';
     btn.style.cssText = 'padding:6px 12px;font-size:.8rem;margin-right:.5rem';
-    btn.textContent = '🔖 Save search';
+    btn.textContent = window.t('listings.save', '🔖 Save search');
     btn.addEventListener('click', saveCurrentSearch);
     sort.insertAdjacentElement('beforebegin', btn);
   })();
@@ -260,12 +260,12 @@
     btn.className = 'filters-toggle';
     btn.type = 'button';
     btn.setAttribute('aria-expanded', 'false');
-    btn.textContent = '🔍 Filters';
+    btn.textContent = window.t('listings.filtersBtn', '🔍 Filters');
     layout.prepend(btn);
     const setOpen = (open) => {
       sidebar.classList.toggle('open', open);
       btn.setAttribute('aria-expanded', String(open));
-      btn.textContent = open ? '✕ Hide filters' : '🔍 Filters';
+      btn.textContent = open ? window.t('listings.hideFilters', '✕ Hide filters') : window.t('listings.filtersBtn', '🔍 Filters');
     };
     btn.addEventListener('click', () => setOpen(!sidebar.classList.contains('open')));
     // Collapse again after applying so the results are immediately visible.
