@@ -150,9 +150,15 @@ document.addEventListener('click', e => {
     const errEl = document.getElementById('signup-error');
     errEl.classList.add('hidden');
     try {
-      await API.signup(name, email, pass, role);
-      closeAuth(); toast('Account created! Welcome to 4Kautos 🚗', 'success');
-      updateNavAuth(); setTimeout(() => location.href = '/profile.html', 800);
+      const data = await API.signup(name, email, pass, role);
+      if (data.verifyRequired) {
+        // Email driver is on → no session until they confirm via the emailed link.
+        closeAuth();
+        toast('Account created! Check your email to verify your address before signing in.', 'success');
+      } else {
+        closeAuth(); toast('Account created! Welcome to 4Kautos 🚗', 'success');
+        updateNavAuth(); setTimeout(() => location.href = '/profile.html', 800);
+      }
     } catch(e) {
       errEl.textContent = e.message; errEl.classList.remove('hidden');
     }

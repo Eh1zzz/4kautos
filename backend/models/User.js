@@ -1,7 +1,7 @@
 import { pool } from '../config/db.js';
 import { toId } from '../utils/validation.js';
 
-const SAFE_COLS = 'id, name, email, role, verified, created_at';
+const SAFE_COLS = 'id, name, email, role, verified, email_verified, created_at';
 
 export async function findByEmail(email) {
   const [rows] = await pool.query(
@@ -31,6 +31,29 @@ export async function updatePassword(userId, hashedPassword) {
   await pool.query(
     'UPDATE users SET password = ?, reset_token_hash = NULL, reset_expires = NULL WHERE id = ?',
     [hashedPassword, userId]
+  );
+}
+
+/* ── Email verification ── */
+export async function setVerifyToken(userId, tokenHash, expires) {
+  await pool.query(
+    'UPDATE users SET verify_token_hash = ?, verify_expires = ? WHERE id = ?',
+    [tokenHash, expires, userId]
+  );
+}
+
+export async function findByVerifyToken(tokenHash) {
+  const [rows] = await pool.query(
+    'SELECT * FROM users WHERE verify_token_hash = ? AND verify_expires > NOW()',
+    [tokenHash]
+  );
+  return rows[0] || null;
+}
+
+export async function markEmailVerified(userId) {
+  await pool.query(
+    'UPDATE users SET email_verified = 1, verify_token_hash = NULL, verify_expires = NULL WHERE id = ?',
+    [userId]
   );
 }
 

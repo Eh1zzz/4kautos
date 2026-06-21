@@ -50,6 +50,13 @@ function shell(title, bodyHtml) {
     </div></div>`;
 }
 
+// True when a real delivery driver is configured. Callers use this to decide
+// whether to enforce flows that depend on email actually being sent (e.g. the
+// email-verification login wall) — when false we must not lock users out.
+export function isEmailConfigured() {
+  return !!(process.env.RESEND_API_KEY || (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD));
+}
+
 export async function sendMail(to, subject, html) {
   if (process.env.RESEND_API_KEY) return sendViaResend(to, subject, html);
   const t = getTransporter();
@@ -93,6 +100,15 @@ export async function notifyContactMessage({ name, email, message }) {
       `<p><b>From:</b> ${esc(name)} &lt;${esc(email)}&gt;</p>
        <p><b>Message:</b></p>
        <p style="white-space:pre-wrap;background:#f6f6fb;padding:12px;border-radius:8px">${esc(message)}</p>`));
+}
+
+// Email-verification link (expires in 24 hours).
+export async function sendVerifyEmail(email, link) {
+  return sendMail(email, 'Confirm your 4Kautos email',
+    shell('Confirm your email',
+      `<p>Welcome to 4Kautos! Please confirm this email address to activate your account. This link expires in 24 hours:</p>
+       <p><a href="${esc(link)}" style="display:inline-block;background:#6d4dff;color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px;font-weight:700">Verify email</a></p>
+       <p style="font-size:12px;color:#888">If you didn't create a 4Kautos account, you can safely ignore this email.</p>`));
 }
 
 // Password-reset link (expires in 1 hour).

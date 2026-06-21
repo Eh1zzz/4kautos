@@ -167,6 +167,16 @@ export async function connectDB() {
   await ensureColumn('users', 'reset_expires',    'DATETIME');
   await ensureColumn('transactions', 'payout_status', 'VARCHAR(20)');
 
+  // Email verification (separate from the admin-set `verified` KYC flag). The
+  // login wall is only enforced when an email driver is configured; until then
+  // accounts are auto-verified at signup so $0/no-email mode isn't locked out.
+  const addedEmailVerified = await ensureColumn('users', 'email_verified', 'TINYINT(1) NOT NULL DEFAULT 0');
+  await ensureColumn('users', 'verify_token_hash', 'VARCHAR(64)');
+  await ensureColumn('users', 'verify_expires',    'DATETIME');
+  // Grandfather every pre-existing account the first time this column appears, so
+  // turning on email later never walls out users who signed up before this.
+  if (addedEmailVerified) await pool.query('UPDATE users SET email_verified = 1');
+
   console.log('✅ MySQL connected and tables ready');
 }
 
@@ -193,5 +203,7 @@ async function ensureColumn(table, column, definition) {
   if (rows.length === 0) {
     await pool.query(`ALTER TABLE \`${table}\` ADD COLUMN \`${column}\` ${definition}`);
     console.log(`🔧 Migrated: added ${table}.${column}`);
+    return true; // column was newly added
   }
+  return false;
 }
