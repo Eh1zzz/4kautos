@@ -923,20 +923,29 @@ document.addEventListener('keydown', e => {
         </div>
       </div>
 
-      <div class="footer-news">
-        <h5>Get the weekly drop — new arrivals &amp; price moves</h5>
+      <div class="footer-bottom">
+        <span>© <span class="js-year">${year}</span> 4Kautos. All rights reserved.</span>
+        <span class="footer-legal"><a href="#">Terms</a> · <a href="#">Privacy</a> · <a href="#">Do Not Sell My Info</a></span>
+      </div>
+    </div>`;
+  // Newsletter band — its own section just above the footer (was buried inside it).
+  const newsBand = document.createElement('section');
+  newsBand.className = 'newsletter-band';
+  newsBand.innerHTML = `
+    <div class="newsletter-inner">
+      <div class="newsletter-copy">
+        <h3>Get the weekly drop</h3>
+        <p>New arrivals &amp; price moves, straight to your inbox.</p>
+      </div>
+      <div class="newsletter-form-wrap">
         <form class="news-form" id="news-form" novalidate>
           <input type="email" id="news-email" placeholder="you@example.com" autocomplete="email" aria-label="Email address">
           <button type="submit">Subscribe</button>
         </form>
         <div class="news-note" id="news-note"></div>
       </div>
-
-      <div class="footer-bottom">
-        <span>© <span class="js-year">${year}</span> 4Kautos. All rights reserved.</span>
-        <span class="footer-legal"><a href="#">Terms</a> · <a href="#">Privacy</a> · <a href="#">Do Not Sell My Info</a></span>
-      </div>
     </div>`;
+  document.body.appendChild(newsBand);
   document.body.appendChild(footer);
   // Populate the footer logo (the page-load logo pass already ran).
   const navLogo = document.querySelector('.navbar .nav-logo');
@@ -944,16 +953,16 @@ document.addEventListener('keydown', e => {
   if (navLogo && fLogo) fLogo.innerHTML = navLogo.innerHTML;
 
   // Newsletter subscribe (capture; sending wired separately)
-  footer.querySelector('#news-form')?.addEventListener('submit', async e => {
+  newsBand.querySelector('#news-form')?.addEventListener('submit', async e => {
     e.preventDefault();
-    const email = footer.querySelector('#news-email').value.trim();
-    const note = footer.querySelector('#news-note');
+    const email = newsBand.querySelector('#news-email').value.trim();
+    const note = newsBand.querySelector('#news-note');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { note.className = 'news-note bad'; note.textContent = 'Enter a valid email address.'; return; }
     note.className = 'news-note'; note.textContent = 'Subscribing…';
     try {
       await API.subscribe(email);
       note.className = 'news-note ok'; note.textContent = "✓ You're in — watch your inbox.";
-      footer.querySelector('#news-form').reset();
+      newsBand.querySelector('#news-form').reset();
     } catch (err) {
       note.className = 'news-note bad'; note.textContent = err.message || 'Could not subscribe right now.';
     }

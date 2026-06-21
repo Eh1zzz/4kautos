@@ -1386,6 +1386,14 @@ html.has-cursor-warn,html.has-cursor-warn *{cursor:none!important}
 .news-note.ok{color:var(--green)}.news-note.bad{color:var(--red)}
 .footer-news{margin:1.5rem 0 .5rem;padding-top:1.4rem;border-top:1px solid var(--border)}
 .footer-news h5{font-family:var(--font-display);font-size:.82rem;font-weight:600;letter-spacing:.4px;color:var(--text2);margin-bottom:.2rem}
+
+/* Newsletter band — standalone CTA just above the footer */
+.newsletter-band{background:var(--surface);border-top:1px solid var(--border)}
+.newsletter-inner{max-width:1320px;margin:0 auto;padding:2rem clamp(1.25rem,4vw,3rem);display:flex;align-items:center;justify-content:space-between;gap:1.25rem 2rem;flex-wrap:wrap}
+.newsletter-copy h3{font-family:var(--font-display);font-size:1.3rem;margin:0;color:var(--text)}
+.newsletter-copy p{color:var(--text2);font-size:.9rem;margin:.3rem 0 0;font-weight:300}
+.newsletter-form-wrap{min-width:260px;flex:1;max-width:420px}
+.newsletter-band .news-form{max-width:none;margin-top:0}
 .footer-legal a{color:var(--text3)}
 .footer-legal a:hover{color:var(--accent)}
 @media(max-width:900px){.site-footer .footer-grid{grid-template-columns:1fr 1fr}}

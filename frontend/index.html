@@ -250,12 +250,12 @@
 <!-- ── PROMO / AD ──────────────────────────── -->
 <section>
   <div class="section-inner">
-    <div class="promo-banner">
+    <div class="promo-banner" style="cursor:pointer" onclick="location.href='listings.html'">
       <div class="promo-text">
         <h3>Selling from abroad? List free this month.</h3>
         <p>Reach thousands of Nigerian buyers. We handle clearance, escrow and delivery — you just hand over the keys.</p>
       </div>
-      <a href="#" class="promo-cta" onclick="openAuth('signup');return false">Start Selling →</a>
+      <a href="#" class="promo-cta" onclick="event.stopPropagation();openAuth('signup');return false">Start Selling →</a>
     </div>
   </div>
 </section>
