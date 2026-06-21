@@ -722,16 +722,16 @@ window.renderBrandStrip = function (selector) {
   const drawer = document.createElement('div');
   drawer.className = 'mobile-menu';
   drawer.innerHTML = `
-    <a href="index.html">Home</a>
-    <a href="listings.html">Listings</a>
-    <a href="clearance.html">Customs Clearance</a>
-    <a href="index.html#how-it-works">How It Works</a>
+    <a href="index.html" data-i18n="nav.home">Home</a>
+    <a href="listings.html" data-i18n="nav.listings">Listings</a>
+    <a href="clearance.html" data-i18n="footer.clearance">Customs Clearance</a>
+    <a href="index.html#how-it-works" data-i18n="nav.how">How It Works</a>
     <div class="mobile-menu-divider"></div>
     <button class="mm-currency" type="button">Currency: <strong class="js-cur-label">NGN</strong> · tap to switch</button>
-    <a href="profile.html" id="mm-dashboard" class="hidden">My Dashboard</a>
-    <button id="mm-login" type="button">Sign In</button>
-    <a href="#" id="mm-signup">List Your Car</a>
-    <button id="mm-logout" type="button" class="hidden mm-danger">Sign Out</button>`;
+    <a href="profile.html" id="mm-dashboard" class="hidden" data-i18n="nav.dashboard">My Dashboard</a>
+    <button id="mm-login" type="button" data-i18n="nav.signin">Sign In</button>
+    <a href="#" id="mm-signup" data-i18n="nav.sell">List Your Car</a>
+    <button id="mm-logout" type="button" class="hidden mm-danger" data-i18n="nav.signout">Sign Out</button>`;
   document.body.appendChild(drawer);
 
   function setMenu(open) {
@@ -945,7 +945,7 @@ document.addEventListener('keydown', e => {
       <div class="footer-grid">
         <div class="footer-brand">
           <a href="index.html" class="nav-logo" style="display:inline-flex;margin-bottom:.6rem"></a>
-          <p>A global preowned-car marketplace — buy verified vehicles from international sellers, with customs clearance and delivery handled across Nigeria.</p>
+          <p data-i18n="footer.tagline">A global preowned-car marketplace — buy verified vehicles from international sellers, with customs clearance and delivery handled across Nigeria.</p>
           <div class="footer-social">
             <a href="#" aria-label="WhatsApp">${SOC.wa}</a>
             <a href="#" aria-label="Instagram">${SOC.ig}</a>
@@ -958,39 +958,39 @@ document.addEventListener('keydown', e => {
           </div>
         </div>
         <div class="footer-col">
-          <h5>Buy</h5>
-          <a href="listings.html">Browse Listings</a>
-          <a href="listings.html?condition=excellent">Premium Cars</a>
-          <a href="clearance.html">Customs Clearance</a>
-          <a href="index.html#how-it-works">How It Works</a>
+          <h5 data-i18n="footer.buy">Buy</h5>
+          <a href="listings.html" data-i18n="footer.browse">Browse Listings</a>
+          <a href="listings.html?condition=excellent" data-i18n="footer.premium">Premium Cars</a>
+          <a href="clearance.html" data-i18n="footer.clearance">Customs Clearance</a>
+          <a href="index.html#how-it-works" data-i18n="nav.how">How It Works</a>
         </div>
         <div class="footer-col">
-          <h5>Sell</h5>
-          <a href="#" onclick="openAuth('signup',{role:'seller'});return false">List Your Car</a>
-          <a href="profile.html">Seller Dashboard</a>
-          <a href="profile.html">Photo Guide</a>
-          <a href="clearance.html">Shipping &amp; Clearance</a>
+          <h5 data-i18n="footer.sell">Sell</h5>
+          <a href="#" onclick="openAuth('signup',{role:'seller'});return false" data-i18n="nav.sell">List Your Car</a>
+          <a href="profile.html" data-i18n="footer.dashboard">Seller Dashboard</a>
+          <a href="profile.html" data-i18n="footer.photoguide">Photo Guide</a>
+          <a href="clearance.html" data-i18n="footer.shipping">Shipping &amp; Clearance</a>
         </div>
         <div class="footer-col">
-          <h5>Company</h5>
-          <a href="about.html">About Us</a>
-          <a href="community.html">Community</a>
-          <a href="#">Careers</a>
-          <a href="#">The 4K Blog</a>
+          <h5 data-i18n="footer.company">Company</h5>
+          <a href="about.html" data-i18n="footer.about">About Us</a>
+          <a href="community.html" data-i18n="footer.community">Community</a>
+          <a href="#" data-i18n="footer.careers">Careers</a>
+          <a href="#" data-i18n="footer.blog">The 4K Blog</a>
         </div>
         <div class="footer-col">
-          <h5>Support</h5>
-          <a href="#" onclick="openContact();return false">Help Center</a>
-          <a href="#">FAQs</a>
-          <a href="#" onclick="openContact();return false">Contact Us</a>
-          <a href="#">Terms of Service</a>
-          <a href="#">Privacy Policy</a>
+          <h5 data-i18n="footer.support">Support</h5>
+          <a href="#" onclick="openContact();return false" data-i18n="footer.help">Help Center</a>
+          <a href="#" data-i18n="footer.faqs">FAQs</a>
+          <a href="#" onclick="openContact();return false" data-i18n="footer.contact">Contact Us</a>
+          <a href="#" data-i18n="footer.tos">Terms of Service</a>
+          <a href="#" data-i18n="footer.privacy">Privacy Policy</a>
         </div>
       </div>
 
       <div class="footer-bottom">
-        <span>© <span class="js-year">${year}</span> 4Kautos. All rights reserved.</span>
-        <span class="footer-legal"><a href="#">Terms</a> · <a href="#">Privacy</a> · <a href="#">Do Not Sell My Info</a></span>
+        <span>© <span class="js-year">${year}</span> <span data-i18n="footer.rights">4Kautos. All rights reserved.</span></span>
+        <span class="footer-legal"><a href="#" data-i18n="footer.terms_s">Terms</a> · <a href="#" data-i18n="footer.privacy_s">Privacy</a> · <a href="#" data-i18n="footer.donotsell">Do Not Sell My Info</a></span>
       </div>
     </div>`;
   // Newsletter band — its own section just above the footer (was buried inside it).
@@ -1292,6 +1292,14 @@ window.RT = (function () {
       'newsletter.title': 'Get the weekly drop',
       'newsletter.sub': 'New arrivals & price moves, straight to your inbox.',
       'newsletter.btn': 'Subscribe', 'newsletter.email_ph': 'you@example.com',
+      'nav.dashboard': 'My Dashboard', 'nav.signout': 'Sign Out',
+      'footer.tagline': 'A global preowned-car marketplace — buy verified vehicles from international sellers, with customs clearance and delivery handled across Nigeria.',
+      'footer.buy': 'Buy', 'footer.sell': 'Sell', 'footer.company': 'Company', 'footer.support': 'Support',
+      'footer.browse': 'Browse Listings', 'footer.premium': 'Premium Cars', 'footer.clearance': 'Customs Clearance',
+      'footer.dashboard': 'Seller Dashboard', 'footer.photoguide': 'Photo Guide', 'footer.shipping': 'Shipping & Clearance',
+      'footer.about': 'About Us', 'footer.community': 'Community', 'footer.careers': 'Careers', 'footer.blog': 'The 4K Blog',
+      'footer.help': 'Help Center', 'footer.faqs': 'FAQs', 'footer.contact': 'Contact Us', 'footer.tos': 'Terms of Service', 'footer.privacy': 'Privacy Policy',
+      'footer.rights': '4Kautos. All rights reserved.', 'footer.terms_s': 'Terms', 'footer.privacy_s': 'Privacy', 'footer.donotsell': 'Do Not Sell My Info',
     },
     fr: {
       'nav.home': 'Accueil', 'nav.listings': 'Annonces', 'nav.clearance': 'Dédouanement',
@@ -1308,6 +1316,14 @@ window.RT = (function () {
       'newsletter.title': "L'actu hebdo",
       'newsletter.sub': 'Nouveautés et baisses de prix, directement dans votre boîte mail.',
       'newsletter.btn': "S'abonner", 'newsletter.email_ph': 'vous@exemple.com',
+      'nav.dashboard': 'Mon tableau de bord', 'nav.signout': 'Déconnexion',
+      'footer.tagline': "Une place de marché mondiale de voitures d'occasion — achetez des véhicules vérifiés auprès de vendeurs internationaux, dédouanement et livraison gérés partout au Nigeria.",
+      'footer.buy': 'Acheter', 'footer.sell': 'Vendre', 'footer.company': 'Entreprise', 'footer.support': 'Aide',
+      'footer.browse': 'Voir les annonces', 'footer.premium': 'Voitures premium', 'footer.clearance': 'Dédouanement',
+      'footer.dashboard': 'Espace vendeur', 'footer.photoguide': 'Guide photo', 'footer.shipping': 'Expédition & dédouanement',
+      'footer.about': 'À propos', 'footer.community': 'Communauté', 'footer.careers': 'Carrières', 'footer.blog': 'Le blog 4K',
+      'footer.help': "Centre d'aide", 'footer.faqs': 'FAQ', 'footer.contact': 'Nous contacter', 'footer.tos': "Conditions d'utilisation", 'footer.privacy': 'Politique de confidentialité',
+      'footer.rights': '4Kautos. Tous droits réservés.', 'footer.terms_s': 'Conditions', 'footer.privacy_s': 'Confidentialité', 'footer.donotsell': 'Ne pas vendre mes infos',
     },
   };
 
@@ -1338,7 +1354,22 @@ window.RT = (function () {
     actions.insertBefore(sel, actions.firstChild);
   }
 
-  function init() { injectSwitcher(); window.applyI18n(document); }
+  // Tag the shared nav by stable selectors so every page is covered without
+  // editing each file's markup. Idempotent (re-tagging sets the same keys).
+  function tagNav() {
+    document.querySelectorAll('.nav-links a').forEach(a => {
+      const h = a.getAttribute('href') || '';
+      if (/how-it-works/.test(h))   a.setAttribute('data-i18n', 'nav.how');
+      else if (/listings/.test(h))  a.setAttribute('data-i18n', 'nav.listings');
+      else if (/clearance/.test(h)) a.setAttribute('data-i18n', 'nav.clearance');
+      else if (/index\.html|^\/?$/.test(h)) a.setAttribute('data-i18n', 'nav.home');
+    });
+    document.getElementById('nav-login-btn')?.setAttribute('data-i18n', 'nav.signin');
+    document.getElementById('nav-signup-btn')?.setAttribute('data-i18n', 'nav.sell');
+    document.getElementById('nav-q')?.setAttribute('data-i18n-ph', 'nav.search_ph');
+  }
+
+  function init() { tagNav(); injectSwitcher(); window.applyI18n(document); }
   if (document.readyState !== 'loading') init();
   else document.addEventListener('DOMContentLoaded', init);
 })();
