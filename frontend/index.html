@@ -106,6 +106,13 @@
 <!-- ── HOT TICKER ──────────────────────────── -->
 <div class="ticker" id="ticker" aria-hidden="true"><div class="ticker-track" id="ticker-track"></div></div>
 
+<!-- ── FEATURED SPOTLIGHT ──────────────────── -->
+<section id="spotlight-section" hidden>
+  <div class="section-inner">
+    <div class="spotlight" id="spotlight"></div>
+  </div>
+</section>
+
 <!-- ── FEATURED LISTINGS ───────────────────── -->
 <section id="hotsales-section" hidden>
   <div class="section-inner">
@@ -338,24 +345,49 @@
     } catch { /* non-critical */ }
   }
 
-  // Hot ticker — latest listings + value props as a scrolling marquee.
-  async function loadTicker() {
-    const track = document.getElementById('ticker-track');
-    if (!track) return;
-    let items = [];
+  // 🏁 Featured spotlight — one standout car shown large above the grids.
+  // Prefers an admin-featured car, falls back to the latest listing.
+  function spotlightCard(c) {
+    const native = c.currency || 'NGN';
+    const img = c.photos?.[0] || `https://placehold.co/1200x800/12121f/8b7cff?text=${encodeURIComponent(c.make || 'Car')}`;
+    const srcset = window.imgSrcset?.(img);
+    const title = c.title || `${c.year || ''} ${c.make || ''} ${c.model || ''}`.trim();
+    const specs = [
+      c.mileage ? `${Number(c.mileage).toLocaleString()} km` : '',
+      c.transmission, c.body_type, c.year,
+    ].filter(Boolean);
+    const priceHtml = (c.price != null && c.price !== '')
+      ? `<div class="spotlight-price js-price" data-amount="${esc(c.price)}" data-native="${esc(native)}">${Money.fmt(c.price, native)}</div>`
+      : `<div class="spotlight-price">Price on request</div>`;
+    return `
+      <a class="spotlight-card reveal" href="detail.html?id=${esc(c.id)}">
+        <div class="spotlight-media">
+          <img src="${esc(img)}"${srcset ? ` srcset="${srcset}" sizes="(max-width:900px) 100vw, 58vw"` : ''} alt="${esc(title)}" loading="lazy" onerror="this.onerror=null;this.removeAttribute('srcset');this.src='https://placehold.co/1200x800/12121f/8b7cff?text=No+Photo'">
+          <span class="spotlight-tag">★ Featured</span>
+        </div>
+        <div class="spotlight-info">
+          <div class="spotlight-eyebrow">Spotlight of the week</div>
+          <h3 class="spotlight-title">${esc(title)}</h3>
+          ${c.seller?.verified ? `<div class="spotlight-verified">✓ Verified seller</div>` : ''}
+          ${c.location ? `<div class="spotlight-loc">📍 ${esc(c.location)}</div>` : ''}
+          <div class="spotlight-specs">${specs.map(s => `<span>${esc(s)}</span>`).join('')}</div>
+          ${priceHtml}
+          <span class="spotlight-cta">View Details →</span>
+        </div>
+      </a>`;
+  }
+  async function loadSpotlight() {
+    const el = document.getElementById('spotlight');
+    if (!el) return;
     try {
-      const cars = await API.getCars({ limit: 6 });
-      items = cars.map(c => {
-        const price = (c.price != null && c.price !== '') ? Money.fmt(c.price, c.currency || 'NGN') : 'Enquire';
-        const km = c.mileage ? ` · ${Number(c.mileage).toLocaleString()} km` : '';
-        return `${c.year || ''} ${c.make || ''} ${c.model || ''} — ${price}${km}`.replace(/\s+/g, ' ').trim();
-      });
-    } catch {}
-    const promos = ['Escrow-protected payments', 'Customs clearance handled', 'Free inspection reports', '150-point checks on every car'];
-    const all = [...items, ...promos];
-    if (!all.length) return;
-    const row = all.map(t => `<span class="ticker-item">${esc(t)}</span>`).join('');
-    track.innerHTML = row + row; // duplicated for a seamless loop
+      let cars = await API.getCars({ featured: 1, limit: 1 });
+      if (!cars.length) cars = await API.getCars({ limit: 1 }); // newest as fallback
+      if (!cars.length) return;
+      el.innerHTML = spotlightCard(cars[0]);
+      document.getElementById('spotlight-section').hidden = false;
+      window.observeReveals?.();
+      Money.repriceAll?.();
+    } catch { /* non-critical */ }
   }
 
   // Hot ticker — latest listings + value props as a scrolling marquee.
@@ -425,6 +457,7 @@
 
   renderBrandStrip('#brand-strip');
   loadFeatured();
+  loadSpotlight();
   loadHotSales();
   loadTicker();
   loadTicker();

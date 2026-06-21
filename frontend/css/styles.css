@@ -404,6 +404,27 @@ section{padding:5rem 2rem}
 }
 .card-cta:hover{background:var(--accent);color:#fff}
 
+/* ── Featured spotlight (one standout car, dramatic split band) ── */
+.spotlight-card{display:grid;grid-template-columns:1.45fr 1fr;border:1.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;background:var(--surface);transition:border-color var(--speed),box-shadow var(--speed),transform var(--speed)}
+.spotlight-card:hover{border-color:var(--border-hi);box-shadow:0 26px 64px rgba(0,0,0,.5),var(--glow-soft);transform:translateY(-3px)}
+.spotlight-media{position:relative;min-height:360px;background:var(--surface2);overflow:hidden}
+.spotlight-media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .6s ease}
+.spotlight-card:hover .spotlight-media img{transform:scale(1.05)}
+.spotlight-media::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 52%,rgba(8,8,16,.55));pointer-events:none}
+.spotlight-tag{position:absolute;top:16px;left:16px;z-index:2;background:var(--hot);color:#fff;font-size:.72rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:6px 14px;border-radius:6px;box-shadow:0 4px 16px rgba(220,18,18,.45)}
+.spotlight-info{padding:2rem 2.2rem;display:flex;flex-direction:column;justify-content:center;gap:.65rem}
+.spotlight-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:.72rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--accent)}
+.spotlight-eyebrow::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--hot);animation:pulse 2s infinite}
+.spotlight-title{font-family:var(--font-display);font-size:clamp(1.6rem,3vw,2.4rem);font-weight:700;line-height:1.12}
+.spotlight-verified{display:inline-flex;align-items:center;gap:4px;font-size:.78rem;font-weight:700;color:var(--green);letter-spacing:.3px}
+.spotlight-loc{color:var(--text2);font-size:.9rem}
+.spotlight-specs{display:flex;flex-wrap:wrap;gap:.5rem;margin:.25rem 0}
+.spotlight-specs span{background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:.72rem;font-weight:600;padding:5px 11px;border-radius:6px;text-transform:uppercase;letter-spacing:.4px}
+.spotlight-price{font-family:var(--font-display);font-size:clamp(1.6rem,3vw,2.2rem);font-weight:800;color:var(--accent);margin-top:.15rem}
+.spotlight-cta{align-self:flex-start;margin-top:.5rem;background:var(--accent);color:#fff;font-size:.78rem;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:11px 22px;border-radius:8px;transition:background var(--speed),transform var(--speed)}
+.spotlight-card:hover .spotlight-cta{background:var(--accent-lt)}
+@media(max-width:900px){.spotlight-card{grid-template-columns:1fr}.spotlight-media{min-height:230px}.spotlight-info{padding:1.5rem}}
+
 /* ══════════════════════════════════════════
    LISTINGS PAGE — LAYOUT
 ═══════════════════════════════════════════ */
