@@ -20,9 +20,11 @@ export async function runBackfill({ apply = false, onItem } = {}) {
   const ASSET_BASE = (process.env.ASSET_BASE_URL || '').replace(/\/+$/, '');
   if (useS3 && !ASSET_BASE) throw new Error('S3_BUCKET is set but ASSET_BASE_URL is missing — new URLs would be broken.');
 
-  // A URL we own and can rewrite — scoped to whichever store this run is wired to.
+  // A URL we own and can rewrite — strictly under our own asset domain (or the
+  // local /uploads path). Scoping to ASSET_BASE only (not any *.r2.dev host)
+  // prevents a seller-pasted URL from steering this server-side fetch (SSRF).
   const isOurStoreUrl = u => useS3
-    ? (isAbsolute(u) && ((ASSET_BASE && u.startsWith(ASSET_BASE)) || /\.r2\.dev\//i.test(u)))
+    ? (isAbsolute(u) && !!ASSET_BASE && u.startsWith(ASSET_BASE))
     : (!isAbsolute(u) && /\/uploads\//.test(u));
 
   async function readBytes(url) {

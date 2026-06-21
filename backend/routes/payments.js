@@ -6,6 +6,7 @@ import { findById as findTx, setPaymentInit, findByPaymentRef, markEscrowPaid, m
 import { findById as findCar } from '../models/Car.js';
 import { getPayout, setPayout } from '../models/User.js';
 import { payOutToSeller } from '../utils/payout.js';
+import { baseUrl } from '../utils/url.js';
 import * as FLW from '../utils/flutterwave.js';
 
 const router = express.Router();
@@ -36,10 +37,8 @@ router.post('/initiate', authenticate, authorize('buyer'), async (req, res) => {
     const paymentRef = `4kautos-${tx.id}-${crypto.randomBytes(6).toString('hex')}`;
     await setPaymentInit(tx.id, { amount, currency, paymentRef });
 
-    // Use only the ORIGIN for the redirect — so a misconfigured APP_BASE_URL that
-    // includes a path (e.g. the webhook URL) can't break the return link.
-    let base = process.env.APP_BASE_URL || `${req.protocol}://${req.get('host')}`;
-    try { base = new URL(base).origin; } catch { base = `${req.protocol}://${req.get('host')}`; }
+    // Use only the ORIGIN for the redirect (baseUrl collapses any stray path).
+    const base = baseUrl(req);
     const link = await FLW.initiatePayment({
       tx_ref: paymentRef,
       amount,
@@ -204,8 +203,10 @@ router.post('/mark-payout-paid', authenticate, authorize('admin'), async (req, r
 // POST /payments/webhook — Flutterwave calls this on payment events.
 // Auth = the shared "secret hash" you set in the FLW dashboard (the verif-hash header).
 router.post('/webhook', async (req, res) => {
-  const sig = req.headers['verif-hash'];
-  if (!process.env.FLW_WEBHOOK_HASH || sig !== process.env.FLW_WEBHOOK_HASH)
+  // Constant-time compare of the shared "verif-hash" secret (avoids a timing oracle).
+  const sig = Buffer.from(String(req.headers['verif-hash'] || ''));
+  const secret = Buffer.from(process.env.FLW_WEBHOOK_HASH || '');
+  if (!secret.length || sig.length !== secret.length || !crypto.timingSafeEqual(sig, secret))
     return res.status(401).end();
 
   // Acknowledge immediately so Flutterwave doesn't retry on our processing latency,

@@ -8,6 +8,17 @@ const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages';
 
 const chatLimiter = rateLimit({ windowMs: 60_000, max: 20, standardHeaders: true, legacyHeaders: false });
 
+// Global daily ceiling on PAID Anthropic calls — the public endpoint stays open
+// (offline answers for everyone), but even distributed abuse across many IPs
+// can't run the bill past this budget; excess gracefully degrades to localAnswer.
+const DAILY_MAX = Number(process.env.CHAT_DAILY_MAX || 1000);
+let apiDay = '', apiCount = 0;
+function budgetOk() {
+  const d = new Date().toISOString().slice(0, 10);
+  if (d !== apiDay) { apiDay = d; apiCount = 0; }
+  return apiCount < DAILY_MAX;
+}
+
 const SYSTEM_PROMPT = `You are AutoBot, the helpful AI assistant for 4Kautos — a premium preowned car marketplace.
 
 You help users with:
@@ -175,6 +186,7 @@ function localAnswer(message, car = null, block = '', mc = null) {
 router.post('/', chatLimiter, async (req, res) => {
   const { message, history = [], carId } = req.body;
   if (!message?.trim()) return res.status(400).json({ error: 'Message is required' });
+  if (message.length > 2000) return res.status(400).json({ error: 'Message is too long (max 2000 characters)' });
 
   // Load the authoritative listing (if any) so AutoBot talks about THIS car,
   // plus comparable inventory so it can ground a price comparison in real data.
@@ -195,8 +207,8 @@ router.post('/', chatLimiter, async (req, res) => {
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY || '';
-  // No key → serve the offline answer set instead of erroring.
-  if (!apiKey) return res.json({ reply: localAnswer(message, car, block, market), source: 'local' });
+  // No key (or daily budget spent) → serve the offline answer set instead.
+  if (!apiKey || !budgetOk()) return res.json({ reply: localAnswer(message, car, block, market), source: 'local' });
 
   // Only forward valid, well-shaped history turns to the API.
   const messages = [
@@ -208,6 +220,7 @@ router.post('/', chatLimiter, async (req, res) => {
   ];
 
   try {
+    apiCount++; // count the paid attempt against today's budget
     const apiRes = await fetch(ANTHROPIC_API, {
       method: 'POST',
       headers: {

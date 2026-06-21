@@ -88,9 +88,12 @@ export function validateCarInput(body = {}) {
   if (bodyType && !BODY_TYPES.includes(bodyType)) errors.push(`Body type must be one of: ${BODY_TYPES.join(', ')}`);
   value.bodyType = bodyType || null;
 
-  // Photos: array of non-empty URL/path strings, at least MIN_PHOTOS.
+  // Photos: array of non-empty URL/path strings, at least MIN_PHOTOS. Reject
+  // dangerous URL schemes (defence-in-depth; rendering already escapes) and cap
+  // the count so a payload can't store thousands of entries.
+  const BAD_SCHEME = /^\s*(?:javascript|data|vbscript|file):/i;
   const photos = Array.isArray(body.photos)
-    ? body.photos.filter(p => typeof p === 'string' && p.trim()).map(p => p.trim())
+    ? body.photos.filter(p => typeof p === 'string' && p.trim() && !BAD_SCHEME.test(p)).map(p => p.trim()).slice(0, 20)
     : [];
   if (photos.length < MIN_PHOTOS)
     errors.push(`At least ${MIN_PHOTOS} photos are required (front, rear, interior, odometer, engine bay)`);

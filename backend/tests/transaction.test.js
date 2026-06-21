@@ -73,6 +73,12 @@ describe('PATCH /transactions/:id/status', () => {
     const res = await request(app).patch(`/transactions/${txId}/status`).set('Authorization', `Bearer ${buyerToken}`).send({ status: 'pending_inspection' });
     expect(res.status).toBe(200);
   });
+  it('forbids manually setting an escrow/money state (S4 payout-fraud guard)', async () => {
+    for (const status of ['payment_in_escrow', 'completed']) {
+      const res = await request(app).patch(`/transactions/${txId}/status`).set('Authorization', `Bearer ${buyerToken}`).send({ status });
+      expect(res.status).toBe(400); // only the verified payment flow may reach these
+    }
+  });
 });
 
 describe('DELETE /transactions/:id (cancelled cleanup)', () => {

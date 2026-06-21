@@ -8,15 +8,10 @@ import { isValidEmail } from '../utils/validation.js';
 import { authLimiter } from '../middleware/security.js';
 import { authenticate } from '../middleware/auth.js';
 import { sendPasswordReset, sendVerifyEmail, isEmailConfigured } from '../utils/email.js';
+import { baseUrl } from '../utils/url.js';
 
 const hashToken = t => crypto.createHash('sha256').update(String(t)).digest('hex');
 
-// Origin for links we email out (verify / reset). Honours APP_BASE_URL, else the
-// request's own host.
-function baseUrl(req) {
-  const raw = process.env.APP_BASE_URL || `${req.protocol}://${req.get('host')}`;
-  try { return new URL(raw).origin; } catch { return `${req.protocol}://${req.get('host')}`; }
-}
 async function issueVerify(req, user) {
   const token = crypto.randomBytes(32).toString('hex');
   await setVerifyToken(user.id, hashToken(token), new Date(Date.now() + 24 * 60 * 60 * 1000));

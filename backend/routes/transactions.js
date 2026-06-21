@@ -1,5 +1,5 @@
 import express from 'express';
-import { create, findByUser, findById, updateStatus, findExisting, deleteById, VALID_STATUSES } from '../models/Transaction.js';
+import { create, findByUser, findById, updateStatus, findExisting, deleteById } from '../models/Transaction.js';
 import { findById as findCarById } from '../models/Car.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { toId } from '../utils/validation.js';
@@ -61,20 +61,29 @@ router.get('/:id', authenticate, async (req, res) => {
   }
 });
 
-// PATCH /transactions/:id/status — buyer or seller updates status
+// PATCH /transactions/:id/status — participant-driven status changes.
+// SECURITY: limited to the pre-payment coordination states. The money states
+// (payment_in_escrow, completed) are reachable ONLY through the verified payment
+// flow — the webhook funds escrow, release completes it. Allowing a participant
+// to set those here would fake an escrow-funded deal and let /payments/release
+// pay the seller for funds that were never collected. 'disputed' is admin-only.
+const MANUAL_STATUSES = ['pending_inspection', 'cancelled'];
+const MANUAL_CHANGEABLE_FROM = ['initiated', 'pending_inspection'];
+
 router.patch('/:id/status', authenticate, async (req, res) => {
   try {
-    const { status } = req.body;
-
-    // Validate status before touching the DB
-    if (!VALID_STATUSES.includes(status))
-      return res.status(400).json({ message: `Invalid status. Must be one of: ${VALID_STATUSES.join(', ')}` });
-
+    // Authorize against the resource before validating input (don't reveal
+    // validation behaviour to non-participants).
     const t = await findById(req.params.id);
     if (!t) return res.status(404).json({ message: 'Transaction not found' });
-
     if (![t.buyer_id, t.seller_id].includes(req.user.id))
       return res.status(403).json({ message: 'Not authorized' });
+
+    const { status } = req.body;
+    if (!MANUAL_STATUSES.includes(status))
+      return res.status(400).json({ message: `Status must be one of: ${MANUAL_STATUSES.join(', ')}. Escrow states are set by the payment flow.` });
+    if (!MANUAL_CHANGEABLE_FROM.includes(t.status))
+      return res.status(409).json({ message: `A ${t.status} transaction can't be changed here` });
 
     const updated = await updateStatus(req.params.id, status);
     res.json({ message: 'Transaction updated', transaction: updated });
