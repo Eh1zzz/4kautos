@@ -149,6 +149,10 @@
         <div class="stat-tile"><span class="stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span><div><div class="stat-num" id="stat-messages">—</div><div class="stat-lbl">Messages</div></div></div>
       </div>
       <div class="panel">
+        <div class="panel-head"><h3>Transactions</h3><span style="font-size:.75rem;color:var(--text3)" id="admin-tx-count"></span></div>
+        <div id="admin-tx"><div class="spinner-wrap"><div class="spinner"></div></div></div>
+      </div>
+      <div class="panel">
         <div class="panel-head"><h3>Pending international payouts</h3><span style="font-size:.75rem;color:var(--text3)">pay via Wise, then mark settled</span></div>
         <div id="admin-payouts"><div class="spinner-wrap"><div class="spinner"></div></div></div>
       </div>
@@ -727,6 +731,7 @@
 
   async function loadAdmin() {
     loadPendingPayouts();
+    loadAdminTransactions();
     loadContactMessages();
     wireBackfill();
     // Dashboard stat tiles
@@ -787,6 +792,29 @@
     try { await API.adminSetFeatured(id, !!featured); toast(featured ? 'Added to Hot Sales 🔥' : 'Removed from Hot Sales', 'success'); loadAdmin(); }
     catch (e) { btn.disabled = false; toast(e.message, 'error'); }
   }
+  async function loadAdminTransactions() {
+    const el = document.getElementById('admin-tx');
+    if (!el) return;
+    el.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div></div>';
+    try {
+      const txs = await API.adminTransactions();
+      const pending = txs.filter(t => ['initiated', 'pending_inspection', 'payment_in_escrow'].includes(t.status)).length;
+      const cnt = document.getElementById('admin-tx-count');
+      if (cnt) cnt.textContent = `${txs.length} total · ${pending} pending`;
+      el.innerHTML = txs.length ? txs.map(t => {
+        const amt = (t.amount != null && t.amount !== '') ? `${esc(t.currency || 'NGN')} ${Number(t.amount).toLocaleString()}` : '—';
+        const payout = t.payout_status ? ` · payout ${esc(t.payout_status)}` : '';
+        return `<div class="tx-row admin-row">
+          <div>
+            <div class="tx-car">${esc(t.car?.title || 'Listing')} <span class="tx-status">${esc((t.status || '').replace(/_/g, ' '))}</span></div>
+            <div class="tx-meta">${esc(t.buyer?.name || '?')} → ${esc(t.seller?.name || '?')} · #${esc(t.id)} · ${t.created_at ? new Date(t.created_at).toLocaleDateString() : ''}${payout}</div>
+          </div>
+          <div class="admin-actions"><span style="font-weight:700">${amt}</span></div>
+        </div>`;
+      }).join('') : '<div class="empty-state" style="padding:2rem"><p>No transactions yet.</p></div>';
+    } catch (e) { el.innerHTML = `<p class="empty-state">Failed: ${esc(e.message)}</p>`; }
+  }
+
   async function loadContactMessages() {
     const el = document.getElementById('admin-contact');
     if (!el) return;
