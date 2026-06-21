@@ -97,6 +97,17 @@
               <div style="font-size:.75rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:2px">Transactions</div>
             </div>
           </div>
+          <div id="buyer-loc-card" style="margin-top:1.5rem;display:none">
+            <label class="form-label" for="buyer-location">Your location</label>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
+              <input class="form-input" id="buyer-location" list="city-list" placeholder="e.g. Port Harcourt, Nigeria" autocomplete="off" style="flex:1;min-width:220px">
+              <button class="pay-btn" id="buyer-location-save" type="button">Save</button>
+            </div>
+            <datalist id="city-list">
+              <option>Lagos, Nigeria</option><option>Abuja, Nigeria</option><option>Port Harcourt, Nigeria</option><option>Kano, Nigeria</option><option>Ibadan, Nigeria</option><option>Benin City, Nigeria</option><option>Enugu, Nigeria</option><option>Accra, Ghana</option><option>Kumasi, Ghana</option><option>Lomé, Togo</option><option>Cotonou, Benin</option><option>Abidjan, Côte d'Ivoire</option><option>Douala, Cameroon</option><option>Dakar, Senegal</option>
+            </datalist>
+            <div class="field-hint" id="buyer-location-hint">We use this to estimate shipping &amp; duties to your door.</div>
+          </div>
         </div>
       </div>
     </div>
@@ -411,6 +422,7 @@
       hideTab('saved');                 // saved searches is a buyer feature
     } else { // buyer
       hideTab('listings');              // "My Listings" is seller inventory
+      setupBuyerLocation();             // saved location card in the overview
     }
 
     // Load overview counts (skip for admin — overview is hidden). The first card
@@ -433,6 +445,26 @@
     // Deep-link from a listing's detail page: ?edit=<id> opens that car in the edit form.
     const editId = new URLSearchParams(location.search).get('edit');
     if (editId && user.role === 'seller') editListing(editId);
+  }
+
+  // Buyer's saved location (overview card) — loads current value + wires Save.
+  async function setupBuyerLocation() {
+    const card = document.getElementById('buyer-loc-card');
+    if (!card) return;
+    card.style.display = '';
+    const input = document.getElementById('buyer-location');
+    const hint  = document.getElementById('buyer-location-hint');
+    try { const { user } = await API.getMe(); input.value = user?.location || ''; } catch {}
+    document.getElementById('buyer-location-save').onclick = async () => {
+      const loc = input.value.trim();
+      hint.className = 'field-hint'; hint.textContent = 'Saving…';
+      try {
+        const { user } = await API.updateLocation(loc);
+        try { const u = API.getUser() || {}; u.location = user?.location ?? loc; localStorage.setItem('4k_user', JSON.stringify(u)); } catch {}
+        hint.className = 'field-hint ok'; hint.textContent = loc ? '✓ Saved' : '✓ Cleared';
+        toast('Location saved', 'success');
+      } catch (e) { hint.className = 'field-hint bad'; hint.textContent = e.message || 'Could not save'; }
+    };
   }
 
   async function loadMyListings() {

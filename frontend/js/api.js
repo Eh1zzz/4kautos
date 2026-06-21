@@ -60,6 +60,8 @@ const API = {
   },
   forgotPassword(email)          { return req('POST', '/auth/forgot', { email }); },
   resetPassword(token, password) { return req('POST', '/auth/reset', { token, password }); },
+  getMe()                        { return req('GET', '/auth/me'); },
+  updateLocation(location)       { return req('PATCH', '/auth/me', { location }); },
   logout() { clearToken(); window.location.href = '/'; },
   getUser,
   isLoggedIn() { return !!getToken(); },

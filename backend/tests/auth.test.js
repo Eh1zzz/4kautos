@@ -71,3 +71,23 @@ describe('POST /auth/login', () => {
     expect(res.status).toBe(401);
   });
 });
+
+describe('GET/PATCH /auth/me', () => {
+  it('requires authentication (401)', async () => {
+    const res = await request(app).get('/auth/me');
+    expect(res.status).toBe(401);
+  });
+
+  it('saves and returns the buyer location', async () => {
+    const s = await request(app).post('/auth/signup')
+      .send({ name:'Loc User', email:'loc@test.com', password:'password123', role:'buyer' });
+    const tok = s.body.token;
+    const upd = await request(app).patch('/auth/me').set('Authorization', `Bearer ${tok}`).send({ location:'Accra, Ghana' });
+    expect(upd.status).toBe(200);
+    expect(upd.body.user.location).toBe('Accra, Ghana');
+    const me = await request(app).get('/auth/me').set('Authorization', `Bearer ${tok}`);
+    expect(me.status).toBe(200);
+    expect(me.body.user.location).toBe('Accra, Ghana');
+    expect(me.body.user.password).toBeUndefined();   // never leaks the hash
+  });
+});

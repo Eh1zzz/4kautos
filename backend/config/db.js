@@ -180,6 +180,10 @@ export async function connectDB() {
   // turning on email later never walls out users who signed up before this.
   if (addedEmailVerified) await pool.query('UPDATE users SET email_verified = 1');
 
+  // Buyer's saved location/locale (e.g. "Accra, Ghana") — personalises landed-cost
+  // estimates and feeds the localized shipping resolver.
+  await ensureColumn('users', 'location', 'VARCHAR(160)');
+
   console.log('✅ MySQL connected and tables ready');
 }
 

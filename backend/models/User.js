@@ -1,7 +1,7 @@
 import { pool } from '../config/db.js';
 import { toId } from '../utils/validation.js';
 
-const SAFE_COLS = 'id, name, email, role, verified, email_verified, created_at';
+const SAFE_COLS = 'id, name, email, role, verified, email_verified, location, created_at';
 
 export async function findByEmail(email) {
   const [rows] = await pool.query(
@@ -65,6 +65,13 @@ export async function findById(id) {
     [numId]
   );
   return rows[0] || null;
+}
+
+export async function setLocation(id, location) {
+  const numId = parseInt(id, 10);
+  if (isNaN(numId)) return null;
+  await pool.query('UPDATE users SET location = ? WHERE id = ?', [location, numId]);
+  return findById(numId);
 }
 
 export async function create(name, email, hashedPassword, role) {

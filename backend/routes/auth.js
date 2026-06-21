@@ -3,9 +3,10 @@ import crypto from 'crypto';
 import jwt    from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import { findByEmail, create, setResetToken, findByResetToken, updatePassword,
-         setVerifyToken, findByVerifyToken, markEmailVerified } from '../models/User.js';
+         setVerifyToken, findByVerifyToken, markEmailVerified, findById as findUserById, setLocation } from '../models/User.js';
 import { isValidEmail } from '../utils/validation.js';
 import { authLimiter } from '../middleware/security.js';
+import { authenticate } from '../middleware/auth.js';
 import { sendPasswordReset, sendVerifyEmail, isEmailConfigured } from '../utils/email.js';
 
 const hashToken = t => crypto.createHash('sha256').update(String(t)).digest('hex');
@@ -187,6 +188,31 @@ router.post('/resend', authLimiter, async (req, res) => {
   } catch (err) {
     console.error('resend:', err.message);
     res.json(ok);
+  }
+});
+
+// GET /auth/me — the signed-in user's own safe profile (incl. saved location).
+router.get('/me', authenticate, async (req, res) => {
+  try {
+    const user = await findUserById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json({ user });
+  } catch (err) {
+    console.error('auth/me:', err.message);
+    res.status(500).json({ message: 'Could not load profile' });
+  }
+});
+
+// PATCH /auth/me { location } — update the user's saved location/locale.
+router.patch('/me', authenticate, async (req, res) => {
+  try {
+    const location = typeof req.body.location === 'string' ? req.body.location.trim().slice(0, 160) : '';
+    const user = await setLocation(req.user.id, location || null);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json({ message: 'Saved', user });
+  } catch (err) {
+    console.error('auth/me update:', err.message);
+    res.status(500).json({ message: 'Could not save your location' });
   }
 });
 
