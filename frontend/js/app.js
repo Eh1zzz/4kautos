@@ -562,11 +562,15 @@ window.carCard = function (c) {
     <div class="car-card reveal" data-id="${esc(c.id)}">
       <div class="card-img-wrap">
         <img class="card-img" src="${esc(img)}"${window.imgSrcset(img) ? ` srcset="${window.imgSrcset(img)}" sizes="(max-width:640px) 100vw, 340px"` : ''} alt="${esc(title)}" loading="lazy" onerror="this.onerror=null;this.removeAttribute('srcset');this.src='https://placehold.co/600x400/12121f/8b7cff?text=No+Photo'">
-        ${badge}
+        <div class="card-badges">
+          ${c.body_type ? `<span class="card-type">${window.bodyIcon(c.body_type)}${esc(c.body_type)}</span>` : ''}
+          ${badge}
+        </div>
         <button class="card-saves ${saved ? 'saved' : ''}" title="Save" data-save="${esc(c.id)}">${saved ? '♥' : '♡'}</button>
       </div>
       <div class="card-body">
         <div class="card-title">${esc(title)}</div>
+        ${c.seller?.verified ? `<div class="card-verified" title="Identity-verified seller"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V5z"/><path d="m9 12 2 2 4-4"/></svg>Verified seller</div>` : ''}
         ${locHtml}
         <div class="card-specs">
           ${c.mileage ? `<span class="spec-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${Number(c.mileage).toLocaleString()} km</span>` : ''}
