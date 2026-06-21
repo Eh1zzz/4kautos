@@ -137,6 +137,12 @@ export function validateCarInput(body = {}) {
   if (drivetrain && !DRIVETRAINS.includes(drivetrain)) errors.push(`Drivetrain must be one of: ${DRIVETRAINS.join(', ')}`);
   value.drivetrain = drivetrain || null;
 
+  // Mechanical disclosures (seller-entered; backend condition criteria, not public).
+  const accident = pick(body.accidentHistory, body.accident_history).toLowerCase();
+  if (accident && !['yes', 'no'].includes(accident)) errors.push("Accident history must be 'yes' or 'no'");
+  value.accidentHistory = ['yes', 'no'].includes(accident) ? accident : null;
+  value.inspectionReport = pick(body.inspectionReport, body.inspection_report).slice(0, 512) || null;
+
   value.mpg = pick(body.mpg).slice(0, 30) || null;
 
   const hp = body.horsepower != null && body.horsepower !== '' ? Number.parseInt(body.horsepower, 10) : null;

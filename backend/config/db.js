@@ -70,6 +70,9 @@ export async function connectDB() {
   await ensureColumn('cars', 'comfort_features', 'JSON');
   await ensureColumn('cars', 'safety_features',  'JSON');
   await ensureColumn('cars', 'modifications',    'JSON');
+  // Mechanical disclosures (seller-entered condition criteria; not shown publicly).
+  await ensureColumn('cars', 'accident_history', 'VARCHAR(8)');     // 'yes' | 'no'
+  await ensureColumn('cars', 'inspection_report', 'VARCHAR(512)');  // file URL (future upload)
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS transactions (

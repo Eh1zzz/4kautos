@@ -283,6 +283,12 @@
             <div class="form-group"><label class="form-label req">Horsepower</label><input class="form-input" type="number" id="car-hp" min="0" max="5000" placeholder="e.g. 200"></div>
             <div class="form-group"><label class="form-label req">Seats</label><input class="form-input" type="number" id="car-seats" min="1" max="50" placeholder="e.g. 5"></div>
           </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label req">Accident history</label>
+              <select class="form-select" id="car-accident"><option value="">Select…</option><option value="no">No reported accidents</option><option value="yes">Has accident history</option></select>
+              <div class="field-hint">Helps us assess the vehicle's condition — not shown publicly on your listing.</div>
+            </div>
+          </div>
           <div class="form-group" id="towing-group" style="display:none">
             <label class="form-label req">Max towing capacity</label>
             <input class="form-input" id="car-towing" placeholder="e.g. 3,500 kg">
@@ -928,6 +934,7 @@
         ['Fuel economy', !!val('car-mpg')],
         ['Horsepower', val('car-hp') !== '' && Number(val('car-hp')) >= 0],
         ['Seats', val('car-seats') !== '' && Number(val('car-seats')) >= 1],
+        ['Accident history', !!document.getElementById('car-accident').value],
       );
       if (document.getElementById('car-bodytype').value === 'Pickup')
         checks.push(['Max towing (pickup)', !!val('car-towing')]);
@@ -996,6 +1003,7 @@
     document.getElementById('car-bodytype').value  = '';
     document.getElementById('car-transmission').value = '';
     document.getElementById('car-drivetrain').value   = '';
+    document.getElementById('car-accident').value     = '';
     updateTowingVisibility();
     REQUIRED_SHOTS.forEach(s => {
       const el = document.getElementById('shot-' + s.key); if (el) el.value = '';
@@ -1026,6 +1034,7 @@
     set('car-hp', car.horsepower);      set('car-seats', car.seats); set('car-towing', car.towing_capacity);
     document.getElementById('car-transmission').value = car.transmission || '';
     document.getElementById('car-drivetrain').value   = car.drivetrain || '';
+    document.getElementById('car-accident').value     = car.accident_history || '';
     set('car-comfort', (car.comfort_features || []).join(', '));
     set('car-safety',  (car.safety_features || []).join(', '));
     set('car-mods',    (car.modifications || []).join(', '));
@@ -1101,6 +1110,7 @@
       engine:      val('car-engine') || undefined,
       transmission: document.getElementById('car-transmission').value || undefined,
       drivetrain:  document.getElementById('car-drivetrain').value || undefined,
+      accidentHistory: document.getElementById('car-accident').value || undefined,
       mpg:         val('car-mpg') || undefined,
       horsepower:  val('car-hp') || undefined,
       seats:       val('car-seats') || undefined,

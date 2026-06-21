@@ -252,4 +252,18 @@ describe('Extended vehicle specs', () => {
     expect(res.status).toBe(201);
     expect(res.body.car.towing_capacity).toBeNull();      // not a Pickup → ignored
   });
+
+  it('round-trips accident history + inspection report on create', async () => {
+    const res = await request(app).post('/cars').set('Authorization', `Bearer ${sellerToken}`)
+      .send(validCar({ vin: '1FTFW1ET5DFC10004', accidentHistory: 'yes', inspectionReport: 'https://cdn.example.com/report.pdf' }));
+    expect(res.status).toBe(201);
+    expect(res.body.car.accident_history).toBe('yes');
+    expect(res.body.car.inspection_report).toBe('https://cdn.example.com/report.pdf');
+  });
+
+  it('rejects an invalid accident-history value', async () => {
+    const res = await request(app).post('/cars').set('Authorization', `Bearer ${sellerToken}`)
+      .send(validCar({ vin: '1FTFW1ET5DFC10005', accidentHistory: 'maybe' }));
+    expect(res.status).toBe(400);
+  });
 });
