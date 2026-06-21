@@ -615,6 +615,47 @@ const BRANDS = [
   { name: 'Mini', slug: 'mini' }, { name: 'Acura', slug: 'acura' },
   { name: 'Infiniti', slug: 'infiniti' }, { name: 'Fiat', slug: 'fiat' },
 ];
+
+// Make → popular models, powering the cascading Model dropdown in search/intake.
+// Not exhaustive — every field also accepts a free-typed "Other" value.
+window.MAKE_MODELS = {
+  'Toyota': ['Corolla','Camry','RAV4','Highlander','Hilux','Land Cruiser','Prado','Avalon','Yaris','Sienna','Tacoma','4Runner','Venza'],
+  'Honda': ['Civic','Accord','CR-V','Pilot','HR-V','Odyssey','City','Fit','Ridgeline'],
+  'Ford': ['Focus','Fiesta','Fusion','Escape','Explorer','Edge','F-150','Mustang','Ranger','Expedition'],
+  'BMW': ['1 Series','3 Series','5 Series','7 Series','X1','X3','X5','X6','M3','M5'],
+  'Mercedes-Benz': ['A-Class','C-Class','E-Class','S-Class','CLA','GLA','GLC','GLE','GLS','G-Class'],
+  'Hyundai': ['i10','Accent','Elantra','Sonata','Creta','Tucson','Santa Fe','Palisade','Veloster'],
+  'Kia': ['Picanto','Rio','Cerato','Optima','Soul','Seltos','Sportage','Sorento','Telluride'],
+  'Lexus': ['IS','ES','GS','LS','UX','NX','RX','GX','LX'],
+  'Nissan': ['Versa','Sentra','Altima','Maxima','Rogue','X-Trail','Murano','Pathfinder','Patrol','Frontier'],
+  'Volkswagen': ['Polo','Golf','Jetta','Passat','Beetle','Tiguan','Touareg','Atlas'],
+  'Audi': ['A3','A4','A6','A8','Q3','Q5','Q7','Q8','TT','R8'],
+  'Mazda': ['Mazda3','Mazda6','CX-3','CX-30','CX-5','CX-9','MX-5 Miata'],
+  'Tesla': ['Model 3','Model S','Model X','Model Y','Cybertruck'],
+  'Porsche': ['911','718 Cayman','718 Boxster','Panamera','Macan','Cayenne','Taycan'],
+  'Subaru': ['Impreza','Legacy','Outback','Forester','Crosstrek','WRX','Ascent'],
+  'Jeep': ['Renegade','Compass','Cherokee','Grand Cherokee','Wrangler','Gladiator'],
+  'Chevrolet': ['Spark','Cruze','Malibu','Impala','Camaro','Corvette','Equinox','Traverse','Tahoe','Suburban','Silverado'],
+  'Volvo': ['S60','S90','V60','V90','XC40','XC60','XC90'],
+  'Peugeot': ['208','308','408','508','2008','3008','5008'],
+  'Mitsubishi': ['Mirage','Lancer','ASX','Eclipse Cross','Outlander','Pajero','L200'],
+  'Suzuki': ['Alto','Swift','Baleno','Ciaz','Jimny','Vitara','S-Cross'],
+  'Renault': ['Clio','Megane','Logan','Captur','Duster','Kadjar','Koleos'],
+  'Mini': ['Cooper','Clubman','Countryman','Paceman'],
+  'Acura': ['ILX','TLX','RLX','RDX','MDX','NSX'],
+  'Infiniti': ['Q50','Q60','Q70','QX50','QX60','QX80'],
+  'Fiat': ['500','Panda','Punto','Tipo','500L','500X'],
+  'GMC': ['Terrain','Acadia','Yukon','Canyon','Sierra'],
+  'Jaguar': ['XE','XF','XJ','E-Pace','F-Pace','F-Type'],
+  'Land Rover': ['Defender','Discovery','Range Rover Evoque','Range Rover Velar','Range Rover Sport','Range Rover'],
+  'Ferrari': ['Portofino','Roma','488','F8 Tributo','812','SF90'],
+};
+// Build/refresh a <datalist> of models for the given make (free text still allowed).
+window.fillModelList = function (make, datalistEl) {
+  if (!datalistEl) return;
+  const models = window.MAKE_MODELS[(make || '').trim()] || [];
+  datalistEl.innerHTML = models.map(m => `<option value="${m.replace(/"/g, '&quot;')}"></option>`).join('');
+};
 // Three-dot "Other" glyph → routes to the full listings page (any make, incl.
 // unlisted ones via the search box there).
 const OTHER_TILE = `<a class="brand-tile brand-tile-other" href="listings.html" title="Browse every make">

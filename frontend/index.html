@@ -56,17 +56,15 @@
       <div class="search-fields" id="search-fields">
         <div class="sf-group">
           <label class="sf-label">Make</label>
-          <select class="sf-select" id="sf-make">
-            <option value="">Any Make</option>
-            <option>Toyota</option><option>Honda</option><option>Ford</option>
-            <option>BMW</option><option>Mercedes-Benz</option><option>Hyundai</option>
-            <option>Kia</option><option>Lexus</option><option>Nissan</option>
-            <option>Volkswagen</option>
-          </select>
+          <input class="sf-input" type="text" id="sf-make" list="sf-makes-list" placeholder="Any make — or type your own" autocomplete="off">
+          <datalist id="sf-makes-list">
+            <option>Toyota</option><option>Honda</option><option>Ford</option><option>BMW</option><option>Mercedes-Benz</option><option>Hyundai</option><option>Kia</option><option>Lexus</option><option>Nissan</option><option>Volkswagen</option><option>Audi</option><option>Mazda</option><option>Tesla</option><option>Porsche</option><option>Subaru</option><option>Jeep</option><option>Chevrolet</option><option>Volvo</option><option>Peugeot</option><option>Mitsubishi</option><option>Suzuki</option><option>Renault</option><option>Mini</option><option>Acura</option><option>Infiniti</option><option>Fiat</option><option>GMC</option><option>Jaguar</option><option>Land Rover</option><option>Ferrari</option>
+          </datalist>
         </div>
         <div class="sf-group">
           <label class="sf-label">Model</label>
-          <input class="sf-input" type="text" id="sf-model" placeholder="Any Model">
+          <input class="sf-input" type="text" id="sf-model" list="sf-models-list" placeholder="Pick a make first, or type any model" autocomplete="off">
+          <datalist id="sf-models-list"></datalist>
         </div>
         <div class="sf-group">
           <label class="sf-label">Max Price (₦)</label>
@@ -277,6 +275,15 @@
       }
     });
   });
+
+  // Cascading model list — repopulate the Model suggestions from the chosen Make.
+  // Free-typed custom makes (the "Other" path) just yield no suggestions.
+  const sfMake = document.getElementById('sf-make');
+  const sfModelList = document.getElementById('sf-models-list');
+  const refreshModels = () => window.fillModelList?.(sfMake.value, sfModelList);
+  sfMake.addEventListener('input', refreshModels);
+  sfMake.addEventListener('change', refreshModels);
+  refreshModels();
 
   // Hero search
   document.getElementById('hero-search-btn').addEventListener('click', () => {
