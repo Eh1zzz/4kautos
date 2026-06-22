@@ -153,6 +153,21 @@
 
     <!-- Admin Tab (admin role only) -->
     <div class="profile-tab hidden" id="tab-admin">
+      <div class="panel">
+        <div class="panel-head"><h3>Operations</h3><span style="font-size:.72rem;color:var(--text3)" id="ops-fx"></span></div>
+        <div class="panel-body">
+          <div class="ops-tiles" id="ops-tiles"><div class="spinner-wrap"><div class="spinner"></div></div></div>
+          <div class="ops-section">
+            <div class="ops-section-title">Escrow liquidity <span style="color:var(--text3);font-weight:400">(USD)</span></div>
+            <div class="ops-bar" id="ops-liquidity"></div>
+            <div class="ops-legend" id="ops-liquidity-legend"></div>
+          </div>
+          <div class="ops-section">
+            <div class="ops-section-title">Conversion funnel</div>
+            <div class="ops-funnel" id="ops-funnel"></div>
+          </div>
+        </div>
+      </div>
       <div class="admin-stats">
         <div class="stat-tile"><span class="stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></span><div><div class="stat-num" id="stat-users">—</div><div class="stat-lbl">Users</div></div></div>
         <div class="stat-tile"><span class="stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 17H3v-4l2-5h14l2 5v4h-2"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg></span><div><div class="stat-num" id="stat-listings-admin">—</div><div class="stat-lbl">Listings</div></div></div>
@@ -775,6 +790,7 @@
   }
 
   async function loadAdmin() {
+    loadAdminStats();
     loadPendingPayouts();
     loadAdminTransactions();
     loadContactMessages();
@@ -838,6 +854,41 @@
     try { await API.adminSetFeatured(id, !!featured); toast(featured ? 'Added to Hot Sales 🔥' : 'Removed from Hot Sales', 'success'); loadAdmin(); }
     catch (e) { btn.disabled = false; toast(e.message, 'error'); }
   }
+  async function loadAdminStats() {
+    const tiles = document.getElementById('ops-tiles');
+    if (!tiles) return;
+    const usd = n => '$' + Math.round(n || 0).toLocaleString('en-US');
+    try {
+      const s = await API.adminStats();
+      document.getElementById('ops-fx').textContent = `FX $1 = ₦${Math.round(s.fx.usdToNgn).toLocaleString('en-US')}`;
+      const tile = (label, value, sub) => `<div class="ops-tile"><div class="ops-tile-v">${esc(String(value))}</div><div class="ops-tile-l">${esc(label)}</div>${sub ? `<div class="ops-tile-s">${esc(sub)}</div>` : ''}</div>`;
+      tiles.innerHTML =
+        tile('In escrow', usd(s.escrow.inEscrowUsd), `${s.funnel.inEscrow} live`) +
+        tile('Completed', usd(s.escrow.completedUsd), `${s.funnel.completed} deals`) +
+        tile('Pending payouts', usd(s.escrow.pendingPayoutUsd), `${s.escrow.pendingPayoutCount} queued`) +
+        tile('Today', s.transactions.today, 'new transactions') +
+        tile('Listings', s.counts.listings, `${s.counts.featured} featured`) +
+        tile('Users', s.counts.users, `${s.counts.buyers} buyers · ${s.counts.sellers} sellers`);
+
+      // Escrow liquidity — proportional segmented bar.
+      const liq = [
+        { k: 'In escrow', v: s.escrow.inEscrowUsd, c: 'var(--accent)' },
+        { k: 'Completed', v: s.escrow.completedUsd, c: 'var(--green)' },
+        { k: 'Pending payout', v: s.escrow.pendingPayoutUsd, c: 'var(--hot)' },
+      ];
+      const liqTotal = liq.reduce((a, x) => a + x.v, 0);
+      document.getElementById('ops-liquidity').innerHTML = liqTotal > 0
+        ? liq.filter(x => x.v > 0).map(x => `<span class="ops-seg" style="width:${(x.v / liqTotal * 100).toFixed(1)}%;background:${x.c}" title="${x.k}: ${usd(x.v)}"></span>`).join('')
+        : '<span class="ops-seg" style="width:100%;background:var(--surface2)"></span>';
+      document.getElementById('ops-liquidity-legend').innerHTML = liq.map(x => `<span class="ops-leg"><i style="background:${x.c}"></i>${esc(x.k)} ${usd(x.v)}</span>`).join('');
+
+      // Conversion funnel.
+      const f = s.funnel; const fmax = Math.max(f.initiated, f.inEscrow, f.completed, 1);
+      const frow = (label, n) => `<div class="ops-frow"><span class="ops-flabel">${esc(label)}</span><span class="ops-ftrack"><span class="ops-fbar" style="width:${(n / fmax * 100).toFixed(0)}%"></span></span><span class="ops-fn">${n}</span></div>`;
+      document.getElementById('ops-funnel').innerHTML = frow('Initiated', f.initiated) + frow('In escrow', f.inEscrow) + frow('Completed', f.completed);
+    } catch (e) { tiles.innerHTML = `<p class="empty-state">Failed: ${esc(e.message)}</p>`; }
+  }
+
   async function loadAdminTransactions() {
     const el = document.getElementById('admin-tx');
     if (!el) return;

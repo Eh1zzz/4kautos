@@ -107,3 +107,19 @@ describe('Admin image backfill', () => {
     expect(r.body).toHaveProperty('skipped');
   });
 });
+
+describe('Admin operations stats', () => {
+  it('blocks non-admins (403)', async () => {
+    const r = await request(app).get('/admin/stats').set('Authorization', `Bearer ${buyerToken}`);
+    expect(r.status).toBe(403);
+  });
+
+  it('returns telemetry for an admin', async () => {
+    const r = await request(app).get('/admin/stats').set('Authorization', `Bearer ${adminToken}`);
+    expect(r.status).toBe(200);
+    expect(typeof r.body.transactions.total).toBe('number');
+    expect(r.body.escrow).toHaveProperty('inEscrowUsd');
+    expect(r.body.funnel).toHaveProperty('completed');
+    expect(r.body.counts).toHaveProperty('listings');
+  });
+});

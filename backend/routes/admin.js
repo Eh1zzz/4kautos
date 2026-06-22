@@ -6,9 +6,49 @@ import { findAll as findContactMessages, deleteById as deleteContactMessage } fr
 import { authenticate, authorize } from '../middleware/auth.js';
 import { toId } from '../utils/validation.js';
 import { runBackfill } from '../utils/backfillImages.js';
+import { pool } from '../config/db.js';
+import { getRate } from './fx.js';
 
 const router = express.Router();
 router.use(authenticate, authorize('admin'));
+
+// GET /admin/stats — operational telemetry for the dashboard. All money figures
+// are USD-normalised (amounts are snapshotted per-currency) via the live FX rate.
+router.get('/stats', async (_req, res) => {
+  try {
+    const { usdToNgn } = await getRate();
+    const usd = "SUM(CASE WHEN currency = 'USD' THEN amount ELSE amount / ? END)"; // NULL amounts ignored by SUM
+    const [byStatus] = await pool.query(`SELECT status, COUNT(*) AS n, ${usd} AS usd FROM transactions GROUP BY status`, [usdToNgn]);
+    const [[today]]  = await pool.query('SELECT COUNT(*) AS n FROM transactions WHERE created_at >= CURDATE()');
+    const [[pend]]   = await pool.query(`SELECT COUNT(*) AS n, ${usd} AS usd FROM transactions WHERE payout_status = 'pending'`, [usdToNgn]);
+    const [roles]    = await pool.query('SELECT role, COUNT(*) AS n FROM users GROUP BY role');
+    const [[cars]]   = await pool.query('SELECT COUNT(*) AS n, SUM(featured) AS featured FROM cars');
+
+    const S = Object.fromEntries(byStatus.map(r => [r.status, { count: Number(r.n), usd: Math.round(Number(r.usd) || 0) }]));
+    const role = Object.fromEntries(roles.map(r => [r.role, Number(r.n)]));
+    const at = k => S[k] || { count: 0, usd: 0 };
+
+    res.json({
+      fx: { usdToNgn },
+      transactions: { total: byStatus.reduce((a, r) => a + Number(r.n), 0), today: Number(today.n), byStatus: S },
+      escrow: {
+        inEscrowUsd: at('payment_in_escrow').usd,
+        completedUsd: at('completed').usd,
+        pendingPayoutUsd: Math.round(Number(pend.usd) || 0),
+        pendingPayoutCount: Number(pend.n),
+      },
+      funnel: { initiated: at('initiated').count, inEscrow: at('payment_in_escrow').count, completed: at('completed').count },
+      counts: {
+        users: Object.values(role).reduce((a, b) => a + b, 0),
+        buyers: role.buyer || 0, sellers: role.seller || 0, admins: role.admin || 0,
+        listings: Number(cars.n) || 0, featured: Number(cars.featured) || 0,
+      },
+    });
+  } catch (err) {
+    console.error('admin stats:', err.message);
+    res.status(500).json({ message: 'Failed to load stats' });
+  }
+});
 
 router.get('/users', async (_req, res) => {
   try { res.json(await findAllUsers()); }

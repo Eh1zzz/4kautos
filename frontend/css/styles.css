@@ -1031,6 +1031,26 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:3rem 2re
 .stat-num{font-family:var(--font-display);font-size:1.7rem;font-weight:700;color:var(--text);line-height:1}
 .stat-lbl{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);margin-top:4px}
 
+/* ── Admin Operations telemetry ── */
+.ops-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.75rem}
+.ops-tile{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:.9rem 1rem}
+.ops-tile-v{font-family:var(--font-display);font-size:1.45rem;font-weight:800;color:var(--accent);line-height:1.05}
+.ops-tile-l{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-top:5px}
+.ops-tile-s{font-size:.72rem;color:var(--text2);margin-top:2px}
+.ops-section{margin-top:1.5rem}
+.ops-section-title{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:.6rem}
+.ops-bar{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--surface2);border:1px solid var(--border)}
+.ops-seg{height:100%;transition:width var(--speed-slow) var(--ease)}
+.ops-legend{display:flex;flex-wrap:wrap;gap:.5rem 1.1rem;margin-top:.6rem}
+.ops-leg{display:inline-flex;align-items:center;gap:.4rem;font-size:.76rem;color:var(--text2)}
+.ops-leg i{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.ops-funnel{display:flex;flex-direction:column;gap:.5rem}
+.ops-frow{display:flex;align-items:center;gap:.75rem}
+.ops-flabel{width:84px;font-size:.78rem;color:var(--text2);flex-shrink:0}
+.ops-ftrack{flex:1;height:10px;border-radius:5px;background:var(--surface2);overflow:hidden}
+.ops-fbar{display:block;height:100%;background:var(--grad);transition:width var(--speed-slow) var(--ease)}
+.ops-fn{width:40px;text-align:right;font-weight:700;font-size:.82rem;color:var(--text)}
+
 /* Hot ticker (redesign — racing-style marquee with the red "hot" accent) */
 .ticker{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);overflow:hidden;white-space:nowrap}
 .ticker-track{display:inline-flex;align-items:center;will-change:transform;animation:tickerScroll 45s linear infinite}
