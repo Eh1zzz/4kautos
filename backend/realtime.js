@@ -2,6 +2,7 @@ import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { toId } from './utils/validation.js';
 import { findById as findCarById } from './models/Car.js';
+import { getRedis } from './config/redis.js';
 
 /* Real-time layer (Socket.IO) for buyer↔seller chat.
    - Every socket authenticates with the same JWT used for REST.
@@ -11,11 +12,26 @@ import { findById as findCarById } from './models/Car.js';
    The messages REST route pushes a lightweight "reload this thread" nudge to the
    room on every new message — the client then re-fetches via REST, so the socket
    is purely a low-latency signal and everything still works if it's unavailable. */
-export function initRealtime(httpServer, isAllowedOrigin) {
+export async function initRealtime(httpServer, isAllowedOrigin) {
   const io = new Server(httpServer, {
     serveClient: false,
     cors: { origin: (origin, cb) => cb(null, isAllowedOrigin(origin)), credentials: false },
   });
+
+  // Multi-instance: with the Redis adapter, a message emitted on one replica
+  // reaches sockets connected to ANY replica. Without it (single node), the
+  // default in-memory adapter is correct. Sticky sessions are an alternative,
+  // but the adapter avoids requiring LB affinity.
+  const redis = getRedis();
+  if (redis) {
+    try {
+      const { createAdapter } = await import('@socket.io/redis-adapter');
+      io.adapter(createAdapter(redis, redis.duplicate()));
+      console.log('🔌 Socket.IO using Redis adapter (cross-replica broadcast)');
+    } catch (err) {
+      console.warn('Socket.IO Redis adapter unavailable — single-node broadcast:', err.message);
+    }
+  }
 
   io.use((socket, next) => {
     const token = socket.handshake.auth?.token;

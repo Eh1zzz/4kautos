@@ -1,4 +1,18 @@
 import rateLimit from 'express-rate-limit';
+import { RedisStore } from 'rate-limit-redis';
+import { getRedis } from '../config/redis.js';
+
+/**
+ * Shared rate-limit store. Returns a Redis-backed store when REDIS_URL is set
+ * (so limits are GLOBAL across replicas — a per-instance MemoryStore would let
+ * N replicas each grant the full quota, multiplying the real limit by N).
+ * Returns undefined otherwise, so express-rate-limit uses its in-memory default.
+ */
+export function rateLimitStore(prefix) {
+  const client = getRedis();
+  if (!client) return undefined;
+  return new RedisStore({ prefix, sendCommand: (...args) => client.call(...args) });
+}
 
 /**
  * Minimal security headers — equivalent to the most important bits of Helmet,
@@ -46,6 +60,7 @@ export const authLimiter = rateLimit({
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
+  store: rateLimitStore('rl:auth:'),
   skip: () => process.env.NODE_ENV === 'test',
   message: { message: 'Too many attempts. Please try again in a few minutes.' },
 });
@@ -57,6 +72,7 @@ export const writeLimiter = rateLimit({
   max: 40,
   standardHeaders: true,
   legacyHeaders: false,
+  store: rateLimitStore('rl:write:'),
   skip: () => process.env.NODE_ENV === 'test',
   message: { message: 'Too many requests — please slow down and try again shortly.' },
 });

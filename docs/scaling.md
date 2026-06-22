@@ -33,15 +33,20 @@ stateless and push work outward** (to the CDN, to queues, to the DB's strengths)
 - `/health` endpoint + graceful SIGTERM/SIGINT shutdown → safe rolling deploys /
   load-balancer health checks.
 
+**Done — multi-instance is now a config flip**
+- Set **`REDIS_URL`** and the app is ready for **N replicas behind a load
+  balancer** — both shared-state concerns activate automatically:
+  1. **Rate limiter** → `rate-limit-redis` store (global + auth + write + chat +
+     contact limiters), so limits are global across replicas instead of each
+     node granting the full quota. Unset = in-memory (single node).
+  2. **Socket.IO** → `@socket.io/redis-adapter`, so a chat message emitted on one
+     replica reaches sockets on any replica (no sticky-session requirement).
+  Importing the Redis libs opens no connection until `REDIS_URL` is set, so this
+  is free in single-node / $0 mode.
+
 **Next**
-- Run **N replicas behind a load balancer** (Railway replicas / any LB). Three
-  things must change before scaling past one instance:
-  1. **Rate limiter** uses an in-memory store (`express-rate-limit`) → per-
-     instance. Move to a **shared store (Redis)** so limits are global.
-  2. **Socket.IO** (realtime chat) holds stateful connections → enable **sticky
-     sessions** *or* the **Redis adapter** so messages broadcast across replicas.
-  3. In-memory caches (FX rate) are per-instance — harmless, each instance just
-     refreshes its own; move to Redis only if you want a single source.
+- In-memory caches (FX rate, price benchmarks) are per-instance — harmless (each
+  refreshes its own); move to Redis only if you want a single source of truth.
 - **Task queues (BullMQ + Redis)** for anything slow or spiky, so request
   latency stays bounded:
   - **Image optimization** (`sharp` in `POST /uploads`) is currently synchronous

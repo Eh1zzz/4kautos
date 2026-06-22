@@ -3,6 +3,7 @@ import rateLimit from 'express-rate-limit';
 import { create } from '../models/ContactMessage.js';
 import { notifyContactMessage } from '../utils/email.js';
 import { isValidEmail } from '../utils/validation.js';
+import { rateLimitStore } from '../middleware/security.js';
 
 const router = express.Router();
 
@@ -10,6 +11,7 @@ const router = express.Router();
 const contactLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, max: 5,
   standardHeaders: true, legacyHeaders: false,
+  store: rateLimitStore('rl:contact:'),
   skip: () => process.env.NODE_ENV === 'test',
   message: { message: 'Too many messages — please try again later.' },
 });

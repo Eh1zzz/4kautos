@@ -2,11 +2,12 @@ import express    from 'express';
 import rateLimit  from 'express-rate-limit';
 import { findById, findSimilar } from '../models/Car.js';
 import { getRate }  from './fx.js';
+import { rateLimitStore } from '../middleware/security.js';
 
 const router = express.Router();
 const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages';
 
-const chatLimiter = rateLimit({ windowMs: 60_000, max: 20, standardHeaders: true, legacyHeaders: false });
+const chatLimiter = rateLimit({ windowMs: 60_000, max: 20, standardHeaders: true, legacyHeaders: false, store: rateLimitStore('rl:chat:') });
 
 // Global daily ceiling on PAID Anthropic calls — the public endpoint stays open
 // (offline answers for everyone), but even distributed abuse across many IPs

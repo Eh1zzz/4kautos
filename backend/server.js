@@ -7,7 +7,7 @@ import fs            from 'fs';
 import http          from 'http';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { connectDB, pool } from './config/db.js';
-import { securityHeaders } from './middleware/security.js';
+import { securityHeaders, rateLimitStore } from './middleware/security.js';
 import { initRealtime } from './realtime.js';
 import authRoutes        from './routes/auth.js';
 import carRoutes         from './routes/cars.js';
@@ -95,6 +95,7 @@ app.use(rateLimit({
   max: 200,
   standardHeaders: true,
   legacyHeaders: false,
+  store: rateLimitStore('rl:global:'), // shared across replicas when REDIS_URL is set
   message: { message: 'Too many requests, please try again later.' },
 }));
 
@@ -153,10 +154,10 @@ export default app;
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const PORT = process.env.PORT || 3000;
   connectDB()
-    .then(() => {
+    .then(async () => {
       // Wrap Express in an HTTP server so Socket.IO (real-time chat) can share it.
       const httpServer = http.createServer(app);
-      const io = initRealtime(httpServer, isAllowedOrigin);
+      const io = await initRealtime(httpServer, isAllowedOrigin); // async: may attach the Redis adapter
       app.set('io', io); // the messages route pushes new-message nudges through this
       httpServer.listen(PORT, () =>
         console.log(`🚗  4Kautos server → http://localhost:${PORT}`));
