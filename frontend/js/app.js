@@ -35,62 +35,62 @@ document.addEventListener('click', e => {
     <div class="modal-overlay" id="auth-modal">
       <div class="modal">
         <div class="modal-head">
-          <h2 id="auth-modal-title">Sign In</h2>
+          <h2 id="auth-modal-title" data-i18n="nav.signin">Sign In</h2>
           <button class="modal-close" id="auth-modal-close">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </button>
         </div>
         <div class="modal-body">
           <div class="modal-tabs">
-            <div class="modal-tab active" data-tab="login">Login</div>
-            <div class="modal-tab" data-tab="signup">Sign Up</div>
+            <div class="modal-tab active" data-tab="login" data-i18n="auth.login">Login</div>
+            <div class="modal-tab" data-tab="signup" data-i18n="auth.signup">Sign Up</div>
           </div>
           <!-- Login -->
           <div id="tab-login">
             <div class="form-group">
-              <label class="form-label">Email</label>
+              <label class="form-label" data-i18n="auth.email">Email</label>
               <input class="form-input" type="email" id="login-email" placeholder="you@example.com" autocomplete="email">
             </div>
             <div class="form-group">
-              <label class="form-label">Password</label>
+              <label class="form-label" data-i18n="auth.password">Password</label>
               <div class="pw-wrap">
-                <input class="form-input" type="password" id="login-password" placeholder="Your password" autocomplete="current-password">
+                <input class="form-input" type="password" id="login-password" placeholder="Your password" data-i18n-ph="auth.passwordPh" autocomplete="current-password">
                 <button type="button" class="pw-toggle" data-pw="login-password" aria-label="Show password">${EYE_SVG}</button>
               </div>
             </div>
             <div class="form-error hidden" id="login-error"></div>
-            <button class="form-submit" id="login-btn">Sign In</button>
-            <p class="form-alt" style="margin-top:.6rem"><a id="go-forgot" style="cursor:pointer">Forgot password?</a></p>
-            <p class="form-alt">No account? <a id="go-signup">Create one</a></p>
+            <button class="form-submit" id="login-btn" data-i18n="nav.signin">Sign In</button>
+            <p class="form-alt" style="margin-top:.6rem"><a id="go-forgot" style="cursor:pointer" data-i18n="auth.forgot">Forgot password?</a></p>
+            <p class="form-alt"><span data-i18n="auth.noAccountQ">No account?</span> <a id="go-signup" data-i18n="auth.createOne">Create one</a></p>
           </div>
           <!-- Signup -->
           <div id="tab-signup" class="hidden">
             <div class="form-group">
-              <label class="form-label">Full Name</label>
-              <input class="form-input" type="text" id="signup-name" placeholder="John Doe" autocomplete="name">
+              <label class="form-label" data-i18n="auth.fullName">Full Name</label>
+              <input class="form-input" type="text" id="signup-name" placeholder="John Doe" data-i18n-ph="auth.namePh" autocomplete="name">
             </div>
             <div class="form-group">
-              <label class="form-label">Email</label>
+              <label class="form-label" data-i18n="auth.email">Email</label>
               <input class="form-input" type="email" id="signup-email" placeholder="you@example.com" autocomplete="email">
             </div>
             <div class="form-group">
-              <label class="form-label">Password</label>
+              <label class="form-label" data-i18n="auth.password">Password</label>
               <div class="pw-wrap">
-                <input class="form-input" type="password" id="signup-password" placeholder="Min. 6 characters" autocomplete="new-password">
+                <input class="form-input" type="password" id="signup-password" placeholder="Min. 6 characters" data-i18n-ph="auth.pwMin" autocomplete="new-password">
                 <button type="button" class="pw-toggle" data-pw="signup-password" aria-label="Show password">${EYE_SVG}</button>
               </div>
             </div>
             <div class="form-group" id="signup-role-group">
-              <label class="form-label">I am a</label>
+              <label class="form-label" data-i18n="auth.iam">I am a</label>
               <select class="form-select" id="signup-role">
-                <option value="buyer">Buyer</option>
-                <option value="seller">Seller</option>
+                <option value="buyer" data-i18n="auth.buyer">Buyer</option>
+                <option value="seller" data-i18n="auth.seller">Seller</option>
               </select>
             </div>
-            <p class="form-alt" id="signup-role-note" style="display:none;margin:-.2rem 0 .6rem;color:var(--text2)">You're creating a <strong>seller</strong> account to list your car. <a id="go-buyer" style="cursor:pointer">Sign up to buy instead</a></p>
+            <p class="form-alt" id="signup-role-note" style="display:none;margin:-.2rem 0 .6rem;color:var(--text2)"><span data-i18n-html="auth.roleNote">You're creating a <strong>seller</strong> account to list your car.</span> <a id="go-buyer" style="cursor:pointer" data-i18n="auth.buyInstead">Sign up to buy instead</a></p>
             <div class="form-error hidden" id="signup-error"></div>
-            <button class="form-submit" id="signup-btn">Create Account</button>
-            <p class="form-alt">Already have an account? <a id="go-login">Sign in</a></p>
+            <button class="form-submit" id="signup-btn" data-i18n="auth.createBtn">Create Account</button>
+            <p class="form-alt"><span data-i18n="auth.haveAccountQ">Already have an account?</span> <a id="go-login" data-i18n="auth.signinLink">Sign in</a></p>
           </div>
         </div>
       </div>
@@ -134,7 +134,7 @@ document.addEventListener('click', e => {
     errEl.classList.add('hidden');
     try {
       await API.login(email, pass);
-      closeAuth(); toast('Welcome back! 🚗', 'success');
+      closeAuth(); toast(window.t('toast.welcomeBack', 'Welcome back! 🚗'), 'success');
       updateNavAuth(); setTimeout(() => location.reload(), 600);
     } catch(e) {
       errEl.textContent = e.message; errEl.classList.remove('hidden');
@@ -154,9 +154,9 @@ document.addEventListener('click', e => {
       if (data.verifyRequired) {
         // Email driver is on → no session until they confirm via the emailed link.
         closeAuth();
-        toast('Account created! Check your email to verify your address before signing in.', 'success');
+        toast(window.t('toast.verifyEmail', 'Account created! Check your email to verify your address before signing in.'), 'success');
       } else {
-        closeAuth(); toast('Account created! Welcome to 4Kautos 🚗', 'success');
+        closeAuth(); toast(window.t('toast.accountCreated', 'Account created! Welcome to 4Kautos 🚗'), 'success');
         updateNavAuth(); setTimeout(() => location.href = '/profile.html', 800);
       }
     } catch(e) {
@@ -858,19 +858,19 @@ document.addEventListener('keydown', e => {
     <div class="modal-overlay" id="contact-modal">
       <div class="modal">
         <div class="modal-head">
-          <h2>Send us a message</h2>
+          <h2 data-i18n="contact.title">Send us a message</h2>
           <button class="modal-close" id="contact-modal-close" aria-label="Close">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </button>
         </div>
         <div class="modal-body">
-          <p style="color:var(--text2);font-size:.88rem;margin:0 0 1rem">Questions, feedback, or help with a listing — we'll get back to you by email.</p>
-          <div class="form-group"><label class="form-label">Your name</label><input class="form-input" id="ct-name" autocomplete="name"></div>
-          <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" id="ct-email" placeholder="you@example.com" autocomplete="email"></div>
-          <div class="form-group"><label class="form-label">Message</label><textarea class="form-input" id="ct-msg" rows="4" placeholder="How can we help?" style="resize:vertical"></textarea></div>
+          <p style="color:var(--text2);font-size:.88rem;margin:0 0 1rem" data-i18n="contact.intro">Questions, feedback, or help with a listing — we'll get back to you by email.</p>
+          <div class="form-group"><label class="form-label" data-i18n="contact.name">Your name</label><input class="form-input" id="ct-name" autocomplete="name"></div>
+          <div class="form-group"><label class="form-label" data-i18n="auth.email">Email</label><input class="form-input" type="email" id="ct-email" placeholder="you@example.com" autocomplete="email"></div>
+          <div class="form-group"><label class="form-label" data-i18n="contact.message">Message</label><textarea class="form-input" id="ct-msg" rows="4" placeholder="How can we help?" data-i18n-ph="contact.msgPh" style="resize:vertical"></textarea></div>
           <input type="text" id="ct-hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
           <div class="form-error hidden" id="ct-error"></div>
-          <button class="form-submit" id="ct-submit">Send message</button>
+          <button class="form-submit" id="ct-submit" data-i18n="contact.send">Send message</button>
         </div>
       </div>
     </div>`;
@@ -891,11 +891,11 @@ document.addEventListener('keydown', e => {
     const website = document.getElementById('ct-hp').value;
     const err = document.getElementById('ct-error');
     err.classList.add('hidden');
-    if (!name || !email || !message) { err.textContent = 'Please fill in your name, email and message.'; err.classList.remove('hidden'); return; }
-    const btn = document.getElementById('ct-submit'); btn.disabled = true; const o = btn.textContent; btn.textContent = 'Sending…';
+    if (!name || !email || !message) { err.textContent = window.t('contact.fillAll', 'Please fill in your name, email and message.'); err.classList.remove('hidden'); return; }
+    const btn = document.getElementById('ct-submit'); btn.disabled = true; const o = btn.textContent; btn.textContent = window.t('contact.sending', 'Sending…');
     try {
       await API.sendContact({ name, email, message, website });
-      toast("Message sent — we'll be in touch ✉️", 'success');
+      toast(window.t('toast.contactSent', "Message sent — we'll be in touch ✉️"), 'success');
       ['ct-name', 'ct-email', 'ct-msg'].forEach(id => document.getElementById(id).value = '');
       close();
     } catch (e) { err.textContent = e.message || 'Could not send your message'; err.classList.remove('hidden'); }
@@ -910,17 +910,17 @@ document.addEventListener('keydown', e => {
     <div class="modal-overlay" id="forgot-modal">
       <div class="modal">
         <div class="modal-head">
-          <h2>Reset your password</h2>
+          <h2 data-i18n="forgot.title">Reset your password</h2>
           <button class="modal-close" id="forgot-close" aria-label="Close">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </button>
         </div>
         <div class="modal-body">
-          <p style="color:var(--text2);font-size:.88rem;margin:0 0 1rem">Enter your account email and we'll send a reset link.</p>
-          <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" id="fp-email" placeholder="you@example.com" autocomplete="email"></div>
+          <p style="color:var(--text2);font-size:.88rem;margin:0 0 1rem" data-i18n="forgot.intro">Enter your account email and we'll send a reset link.</p>
+          <div class="form-group"><label class="form-label" data-i18n="auth.email">Email</label><input class="form-input" type="email" id="fp-email" placeholder="you@example.com" autocomplete="email"></div>
           <div class="form-error hidden" id="fp-error"></div>
           <div class="hidden" id="fp-ok" style="color:var(--accent);font-size:.85rem;margin-bottom:.6rem"></div>
-          <button class="form-submit" id="fp-submit">Send reset link</button>
+          <button class="form-submit" id="fp-submit" data-i18n="forgot.send">Send reset link</button>
         </div>
       </div>
     </div>`;
@@ -1423,6 +1423,21 @@ window.RT = (function () {
       'home.review2': `"As a seller in Houston, listing was painless and I got paid through escrow the moment the buyer confirmed. Easily the smoothest export I've done."`, 'home.review2meta': 'Houston · Verified seller',
       'home.review3': `"The dual ₦/$ pricing and the clearance estimator helped me budget properly before committing. Delivered to Abuja in good time."`, 'home.review3meta': 'Abuja · Verified buyer',
       'home.promoTitle': 'Selling from abroad? List free this month.', 'home.promoText': 'Reach thousands of Nigerian buyers. We handle clearance, escrow and delivery — you just hand over the keys.', 'home.promoCta': 'Start Selling →',
+      // Auth modal
+      'auth.login': 'Login', 'auth.signup': 'Sign Up', 'auth.email': 'Email', 'auth.password': 'Password', 'auth.passwordPh': 'Your password',
+      'auth.fullName': 'Full Name', 'auth.namePh': 'John Doe', 'auth.pwMin': 'Min. 6 characters', 'auth.forgot': 'Forgot password?',
+      'auth.noAccountQ': 'No account?', 'auth.createOne': 'Create one', 'auth.iam': 'I am a', 'auth.buyer': 'Buyer', 'auth.seller': 'Seller',
+      'auth.roleNote': `You're creating a <strong>seller</strong> account to list your car.`, 'auth.buyInstead': 'Sign up to buy instead',
+      'auth.createBtn': 'Create Account', 'auth.haveAccountQ': 'Already have an account?', 'auth.signinLink': 'Sign in',
+      // Contact + forgot modals
+      'contact.title': 'Send us a message', 'contact.intro': "Questions, feedback, or help with a listing — we'll get back to you by email.",
+      'contact.name': 'Your name', 'contact.message': 'Message', 'contact.msgPh': 'How can we help?', 'contact.send': 'Send message',
+      'contact.sending': 'Sending…', 'contact.fillAll': 'Please fill in your name, email and message.',
+      'forgot.title': 'Reset your password', 'forgot.intro': "Enter your account email and we'll send a reset link.", 'forgot.send': 'Send reset link',
+      // Toasts
+      'toast.welcomeBack': 'Welcome back! 🚗', 'toast.accountCreated': 'Account created! Welcome to 4Kautos 🚗',
+      'toast.verifyEmail': 'Account created! Check your email to verify your address before signing in.',
+      'toast.contactSent': "Message sent — we'll be in touch ✉️",
     },
     fr: {
       'nav.home': 'Accueil', 'nav.listings': 'Annonces', 'nav.clearance': 'Dédouanement',
@@ -1547,6 +1562,21 @@ window.RT = (function () {
       'home.review2': `« En tant que vendeur à Houston, publier a été un jeu d'enfant et j'ai été payé via le séquestre dès la confirmation de l'acheteur. De loin l'export le plus fluide que j'aie réalisé. »`, 'home.review2meta': 'Houston · Vendeur vérifié',
       'home.review3': `« La double tarification ₦/$ et l'estimateur de dédouanement m'ont aidé à bien budgétiser avant de m'engager. Livrée à Abuja dans les temps. »`, 'home.review3meta': 'Abuja · Acheteur vérifié',
       'home.promoTitle': "Vous vendez depuis l'étranger ? Publiez gratuitement ce mois-ci.", 'home.promoText': "Touchez des milliers d'acheteurs nigérians. Nous gérons dédouanement, séquestre et livraison — vous remettez simplement les clés.", 'home.promoCta': 'Commencer à vendre →',
+      // Fenêtre de connexion
+      'auth.login': 'Connexion', 'auth.signup': "S'inscrire", 'auth.email': 'E-mail', 'auth.password': 'Mot de passe', 'auth.passwordPh': 'Votre mot de passe',
+      'auth.fullName': 'Nom complet', 'auth.namePh': 'Jean Dupont', 'auth.pwMin': 'Min. 6 caractères', 'auth.forgot': 'Mot de passe oublié ?',
+      'auth.noAccountQ': 'Pas de compte ?', 'auth.createOne': 'Créez-en un', 'auth.iam': 'Je suis', 'auth.buyer': 'Acheteur', 'auth.seller': 'Vendeur',
+      'auth.roleNote': `Vous créez un compte <strong>vendeur</strong> pour publier votre voiture.`, 'auth.buyInstead': 'Inscrivez-vous plutôt pour acheter',
+      'auth.createBtn': 'Créer un compte', 'auth.haveAccountQ': 'Vous avez déjà un compte ?', 'auth.signinLink': 'Connectez-vous',
+      // Fenêtres contact + mot de passe oublié
+      'contact.title': 'Envoyez-nous un message', 'contact.intro': 'Questions, retours ou aide sur une annonce — nous vous répondrons par e-mail.',
+      'contact.name': 'Votre nom', 'contact.message': 'Message', 'contact.msgPh': 'Comment pouvons-nous aider ?', 'contact.send': 'Envoyer le message',
+      'contact.sending': 'Envoi…', 'contact.fillAll': 'Veuillez renseigner votre nom, votre e-mail et votre message.',
+      'forgot.title': 'Réinitialiser le mot de passe', 'forgot.intro': "Saisissez l'e-mail de votre compte et nous vous enverrons un lien de réinitialisation.", 'forgot.send': 'Envoyer le lien',
+      // Notifications
+      'toast.welcomeBack': 'Bon retour ! 🚗', 'toast.accountCreated': 'Compte créé ! Bienvenue chez 4Kautos 🚗',
+      'toast.verifyEmail': 'Compte créé ! Vérifiez votre e-mail pour confirmer votre adresse avant de vous connecter.',
+      'toast.contactSent': 'Message envoyé — nous vous recontacterons ✉️',
     },
   };
 
