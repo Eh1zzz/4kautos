@@ -28,9 +28,9 @@
 </nav>
 
 <div id="auth-gate" style="display:flex;align-items:center;justify-content:center;min-height:60vh;flex-direction:column;gap:1rem">
-  <h2 style="font-family:var(--font-display);font-size:1.5rem">Sign in to access your dashboard</h2>
-  <p style="color:var(--text2)">Manage your listings, track purchases, and update your profile.</p>
-  <button class="nav-btn nav-btn-accent" onclick="openAuth('login')">Sign In</button>
+  <h2 style="font-family:var(--font-display);font-size:1.5rem" data-i18n="dash.gateTitle">Sign in to access your dashboard</h2>
+  <p style="color:var(--text2)" data-i18n="dash.gateSub">Manage your listings, track purchases, and update your profile.</p>
+  <button class="nav-btn nav-btn-accent" onclick="openAuth('login')" data-i18n="nav.signin">Sign In</button>
 </div>
 
 <div class="profile-layout hidden" id="profile-layout">
@@ -45,35 +45,35 @@
     <nav class="profile-nav">
       <div class="profile-nav-link active" data-tab="overview">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-        Overview
+        <span data-i18n="dash.overview">Overview</span>
       </div>
       <div class="profile-nav-link" data-tab="listings">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 17H3v-4l2-5h14l2 5v4h-2"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg>
-        My Listings
+        <span data-i18n="dash.listings">My Listings</span>
       </div>
       <div class="profile-nav-link" data-tab="transactions">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-        Transactions
+        <span data-i18n="dash.transactions">Transactions</span>
       </div>
       <div class="profile-nav-link" data-tab="messages">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-        Messages
+        <span data-i18n="dash.messages">Messages</span>
       </div>
       <div class="profile-nav-link" data-tab="saved">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-        Saved searches
+        <span data-i18n="dash.saved">Saved searches</span>
       </div>
       <div class="profile-nav-link" data-tab="add-car" id="add-car-nav" style="display:none">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-        Add Listing
+        <span data-i18n="dash.addListing">Add Listing</span>
       </div>
       <div class="profile-nav-link" data-tab="admin" id="admin-nav" style="display:none">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        Admin
+        <span data-i18n="dash.admin">Admin</span>
       </div>
       <div class="profile-nav-link" style="color:var(--red)" onclick="API.logout()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        Sign Out
+        <span data-i18n="nav.signout">Sign Out</span>
       </div>
     </nav>
   </aside>
@@ -84,9 +84,9 @@
     <!-- Overview Tab -->
     <div class="profile-tab active" id="tab-overview">
       <div class="panel">
-        <div class="panel-head"><h3>Welcome Back 👋</h3></div>
+        <div class="panel-head"><h3 data-i18n="dash.welcome">Welcome Back 👋</h3></div>
         <div class="panel-body">
-          <p style="color:var(--text2);font-size:.9rem">Your 4Kautos dashboard. Manage your listings, track transactions, and keep your profile up to date.</p>
+          <p style="color:var(--text2);font-size:.9rem" data-i18n="dash.welcomeSub">Your 4Kautos dashboard. Manage your listings, track transactions, and keep your profile up to date.</p>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1.25rem">
             <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1.25rem">
               <div style="font-family:var(--font-display);font-size:2rem;color:var(--accent)" id="stat-listings">—</div>
@@ -94,19 +94,19 @@
             </div>
             <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1.25rem">
               <div style="font-family:var(--font-display);font-size:2rem;color:var(--accent)" id="stat-tx">—</div>
-              <div style="font-size:.75rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:2px">Transactions</div>
+              <div style="font-size:.75rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:2px" data-i18n="dash.transactions">Transactions</div>
             </div>
           </div>
           <div id="buyer-loc-card" style="margin-top:1.5rem;display:none">
-            <label class="form-label" for="buyer-location">Your location</label>
+            <label class="form-label" for="buyer-location" data-i18n="dash.yourLocation">Your location</label>
             <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
-              <input class="form-input" id="buyer-location" list="city-list" placeholder="e.g. Port Harcourt, Nigeria" autocomplete="off" style="flex:1;min-width:220px">
-              <button class="pay-btn" id="buyer-location-save" type="button">Save</button>
+              <input class="form-input" id="buyer-location" list="city-list" placeholder="e.g. Port Harcourt, Nigeria" data-i18n-ph="dash.locationPh" autocomplete="off" style="flex:1;min-width:220px">
+              <button class="pay-btn" id="buyer-location-save" type="button" data-i18n="dash.save">Save</button>
             </div>
             <datalist id="city-list">
               <option>Lagos, Nigeria</option><option>Abuja, Nigeria</option><option>Port Harcourt, Nigeria</option><option>Kano, Nigeria</option><option>Ibadan, Nigeria</option><option>Benin City, Nigeria</option><option>Enugu, Nigeria</option><option>Accra, Ghana</option><option>Kumasi, Ghana</option><option>Lomé, Togo</option><option>Cotonou, Benin</option><option>Abidjan, Côte d'Ivoire</option><option>Douala, Cameroon</option><option>Dakar, Senegal</option>
             </datalist>
-            <div class="field-hint" id="buyer-location-hint">We use this to estimate shipping &amp; duties to your door.</div>
+            <div class="field-hint" id="buyer-location-hint" data-i18n="dash.locationHint">We use this to estimate shipping &amp; duties to your door.</div>
           </div>
         </div>
       </div>
@@ -115,7 +115,7 @@
     <!-- Saved Searches Tab -->
     <div class="profile-tab hidden" id="tab-saved">
       <div class="panel">
-        <div class="panel-head"><h3>Saved searches</h3><span style="font-size:.75rem;color:var(--text3)">re-run a search anytime</span></div>
+        <div class="panel-head"><h3 data-i18n="dash.saved">Saved searches</h3><span style="font-size:.75rem;color:var(--text3)" data-i18n="dash.savedSub">re-run a search anytime</span></div>
         <div id="saved-content"><div class="spinner-wrap"><div class="spinner"></div></div></div>
       </div>
     </div>
@@ -124,8 +124,8 @@
     <div class="profile-tab hidden" id="tab-listings">
       <div class="panel">
         <div class="panel-head">
-          <h3>My Listings</h3>
-          <button class="nav-btn nav-btn-accent" onclick="newListing()" id="new-listing-btn" style="display:none;padding:6px 14px;font-size:.78rem">+ New Listing</button>
+          <h3 data-i18n="dash.listings">My Listings</h3>
+          <button class="nav-btn nav-btn-accent" onclick="newListing()" id="new-listing-btn" style="display:none;padding:6px 14px;font-size:.78rem" data-i18n="dash.newListing">+ New Listing</button>
         </div>
         <div id="my-listings-content"><div class="spinner-wrap"><div class="spinner"></div></div></div>
       </div>
@@ -134,11 +134,11 @@
     <!-- Transactions Tab -->
     <div class="profile-tab hidden" id="tab-transactions">
       <div class="panel hidden" id="payout-panel">
-        <div class="panel-head"><h3>Payout details</h3><span style="font-size:.75rem;color:var(--text3)">where your sales are paid</span></div>
+        <div class="panel-head"><h3 data-i18n="dash.payout">Payout details</h3><span style="font-size:.75rem;color:var(--text3)" data-i18n="dash.payoutSub">where your sales are paid</span></div>
         <div id="payout-content"><div class="spinner-wrap"><div class="spinner"></div></div></div>
       </div>
       <div class="panel">
-        <div class="panel-head"><h3>Transaction History</h3></div>
+        <div class="panel-head"><h3 data-i18n="dash.txHistory">Transaction History</h3></div>
         <div id="tx-content"><div class="spinner-wrap"><div class="spinner"></div></div></div>
       </div>
     </div>
@@ -146,7 +146,7 @@
     <!-- Messages Tab -->
     <div class="profile-tab hidden" id="tab-messages">
       <div class="panel">
-        <div class="panel-head"><h3>Messages</h3></div>
+        <div class="panel-head"><h3 data-i18n="dash.messages">Messages</h3></div>
         <div id="threads-content"><div class="spinner-wrap"><div class="spinner"></div></div></div>
       </div>
     </div>
@@ -154,69 +154,69 @@
     <!-- Admin Tab (admin role only) -->
     <div class="profile-tab hidden" id="tab-admin">
       <div class="panel">
-        <div class="panel-head"><h3>Operations</h3><span style="font-size:.72rem;color:var(--text3)" id="ops-fx"></span></div>
+        <div class="panel-head"><h3 data-i18n="admin.operations">Operations</h3><span style="font-size:.72rem;color:var(--text3)" id="ops-fx"></span></div>
         <div class="panel-body">
           <div class="ops-tiles" id="ops-tiles"><div class="spinner-wrap"><div class="spinner"></div></div></div>
           <div class="ops-section">
-            <div class="ops-section-title">Escrow liquidity <span style="color:var(--text3);font-weight:400">(USD)</span></div>
+            <div class="ops-section-title"><span data-i18n="admin.escrowLiq">Escrow liquidity</span> <span style="color:var(--text3);font-weight:400" data-i18n="admin.usd">(USD)</span></div>
             <div class="ops-bar" id="ops-liquidity"></div>
             <div class="ops-legend" id="ops-liquidity-legend"></div>
           </div>
           <div class="ops-section">
-            <div class="ops-section-title">Conversion funnel</div>
+            <div class="ops-section-title" data-i18n="admin.funnel">Conversion funnel</div>
             <div class="ops-funnel" id="ops-funnel"></div>
           </div>
         </div>
       </div>
       <div class="panel">
-        <div class="panel-head"><h3>Risk &amp; moderation</h3><span style="font-size:.72rem;color:var(--text3)" id="flags-count"></span></div>
+        <div class="panel-head"><h3 data-i18n="admin.risk">Risk &amp; moderation</h3><span style="font-size:.72rem;color:var(--text3)" id="flags-count"></span></div>
         <div id="admin-flags"><div class="spinner-wrap"><div class="spinner"></div></div></div>
       </div>
       <div class="panel">
-        <div class="panel-head"><h3>Recent activity</h3></div>
+        <div class="panel-head"><h3 data-i18n="admin.activity">Recent activity</h3></div>
         <div id="admin-activity"><div class="spinner-wrap"><div class="spinner"></div></div></div>
       </div>
       <div class="panel">
-        <div class="panel-head"><h3>Inventory map</h3><span style="font-size:.72rem;color:var(--text3)">listing origins</span></div>
+        <div class="panel-head"><h3 data-i18n="admin.invMap">Inventory map</h3><span style="font-size:.72rem;color:var(--text3)" data-i18n="admin.invMapSub">listing origins</span></div>
         <div class="panel-body">
           <div id="admin-map" class="admin-map-box"></div>
-          <div class="ops-section-title" style="margin-top:1rem">Top buyer locations</div>
+          <div class="ops-section-title" style="margin-top:1rem" data-i18n="admin.topBuyers">Top buyer locations</div>
           <div id="map-buyers" class="map-buyers"></div>
         </div>
       </div>
       <div class="admin-stats">
-        <div class="stat-tile"><span class="stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></span><div><div class="stat-num" id="stat-users">—</div><div class="stat-lbl">Users</div></div></div>
-        <div class="stat-tile"><span class="stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 17H3v-4l2-5h14l2 5v4h-2"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg></span><div><div class="stat-num" id="stat-listings-admin">—</div><div class="stat-lbl">Listings</div></div></div>
-        <div class="stat-tile"><span class="stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg></span><div><div class="stat-num" id="stat-payouts">—</div><div class="stat-lbl">Pending payouts</div></div></div>
-        <div class="stat-tile"><span class="stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span><div><div class="stat-num" id="stat-messages">—</div><div class="stat-lbl">Messages</div></div></div>
+        <div class="stat-tile"><span class="stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></span><div><div class="stat-num" id="stat-users">—</div><div class="stat-lbl" data-i18n="admin.users">Users</div></div></div>
+        <div class="stat-tile"><span class="stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 17H3v-4l2-5h14l2 5v4h-2"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg></span><div><div class="stat-num" id="stat-listings-admin">—</div><div class="stat-lbl" data-i18n="admin.listings">Listings</div></div></div>
+        <div class="stat-tile"><span class="stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg></span><div><div class="stat-num" id="stat-payouts">—</div><div class="stat-lbl" data-i18n="admin.pendingPayouts">Pending payouts</div></div></div>
+        <div class="stat-tile"><span class="stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span><div><div class="stat-num" id="stat-messages">—</div><div class="stat-lbl" data-i18n="dash.messages">Messages</div></div></div>
       </div>
       <div class="panel">
-        <div class="panel-head"><h3>Transactions</h3><span style="font-size:.75rem;color:var(--text3)" id="admin-tx-count"></span></div>
+        <div class="panel-head"><h3 data-i18n="dash.transactions">Transactions</h3><span style="font-size:.75rem;color:var(--text3)" id="admin-tx-count"></span></div>
         <div id="admin-tx"><div class="spinner-wrap"><div class="spinner"></div></div></div>
       </div>
       <div class="panel">
-        <div class="panel-head"><h3>Pending international payouts</h3><span style="font-size:.75rem;color:var(--text3)">pay via Wise, then mark settled</span></div>
+        <div class="panel-head"><h3 data-i18n="admin.intlPayouts">Pending international payouts</h3><span style="font-size:.75rem;color:var(--text3)" data-i18n="admin.intlPayoutsSub">pay via Wise, then mark settled</span></div>
         <div id="admin-payouts"><div class="spinner-wrap"><div class="spinner"></div></div></div>
       </div>
       <div class="panel">
-        <div class="panel-head"><h3>Users</h3><span style="font-size:.75rem;color:var(--text3)" id="admin-user-count"></span></div>
+        <div class="panel-head"><h3 data-i18n="admin.users">Users</h3><span style="font-size:.75rem;color:var(--text3)" id="admin-user-count"></span></div>
         <div id="admin-users"><div class="spinner-wrap"><div class="spinner"></div></div></div>
       </div>
       <div class="panel">
-        <div class="panel-head"><h3>All Listings</h3></div>
+        <div class="panel-head"><h3 data-i18n="admin.allListings">All Listings</h3></div>
         <div id="admin-cars"><div class="spinner-wrap"><div class="spinner"></div></div></div>
       </div>
       <div class="panel">
-        <div class="panel-head"><h3>Contact messages</h3></div>
+        <div class="panel-head"><h3 data-i18n="admin.contactMsgs">Contact messages</h3></div>
         <div id="admin-contact"><div class="spinner-wrap"><div class="spinner"></div></div></div>
       </div>
       <div class="panel">
-        <div class="panel-head"><h3>Maintenance</h3></div>
+        <div class="panel-head"><h3 data-i18n="admin.maintenance">Maintenance</h3></div>
         <div class="panel-body">
-          <p style="color:var(--text2);font-size:.88rem;margin-bottom:.75rem">Regenerate responsive image sizes for older uploads so they load fast on phones (creates <code>_400/_800/_1600</code> variants). Safe to run repeatedly — already-optimized photos are skipped.</p>
+          <p style="color:var(--text2);font-size:.88rem;margin-bottom:.75rem" data-i18n-html="admin.maintenanceP">Regenerate responsive image sizes for older uploads so they load fast on phones (creates <code>_400/_800/_1600</code> variants). Safe to run repeatedly — already-optimized photos are skipped.</p>
           <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-            <button class="adm-btn" id="backfill-dry">Preview changes</button>
-            <button class="pay-btn" id="backfill-apply">Regenerate now</button>
+            <button class="adm-btn" id="backfill-dry" data-i18n="admin.preview">Preview changes</button>
+            <button class="pay-btn" id="backfill-apply" data-i18n="admin.regen">Regenerate now</button>
           </div>
           <div id="backfill-out" style="margin-top:.85rem;font-size:.85rem;color:var(--text2);white-space:pre-line"></div>
         </div>
@@ -226,28 +226,28 @@
     <!-- Add Listing Tab (sellers only) -->
     <div class="profile-tab hidden" id="tab-add-car">
       <div class="panel">
-        <div class="panel-head"><h3 id="add-car-title">Add New Listing</h3></div>
+        <div class="panel-head"><h3 id="add-car-title" data-i18n="wiz.addTitle">Add New Listing</h3></div>
         <div class="panel-body">
-          <div class="upload-help">
+          <div class="upload-help" data-i18n-html="wiz.standards">
             <strong>Listing standards.</strong> Every car needs a valid 17-character VIN, accurate mileage, and clear photos of the required angles below (minimum 800×600). Listings that don't meet these standards can't be published.
           </div>
 
           <div class="wizard-steps" id="wizard-steps">
-            <button type="button" class="wstep active" data-go="1"><span class="wstep-n">1</span> Basics</button>
-            <button type="button" class="wstep" data-go="2"><span class="wstep-n">2</span> Specs</button>
-            <button type="button" class="wstep" data-go="3"><span class="wstep-n">3</span> Location</button>
-            <button type="button" class="wstep" data-go="4"><span class="wstep-n">4</span> Photos</button>
+            <button type="button" class="wstep active" data-go="1"><span class="wstep-n">1</span> <span data-i18n="wiz.basics">Basics</span></button>
+            <button type="button" class="wstep" data-go="2"><span class="wstep-n">2</span> <span data-i18n="wiz.specs">Specs</span></button>
+            <button type="button" class="wstep" data-go="3"><span class="wstep-n">3</span> <span data-i18n="wiz.location">Location</span></button>
+            <button type="button" class="wstep" data-go="4"><span class="wstep-n">4</span> <span data-i18n="wiz.photos">Photos</span></button>
           </div>
 
           <div class="wizard-step active" data-step="1">
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Title</label>
-              <input class="form-input" type="text" id="car-title" placeholder="e.g. 2019 Toyota Camry XSE (optional)">
+              <label class="form-label" data-i18n="wiz.title">Title</label>
+              <input class="form-input" type="text" id="car-title" placeholder="e.g. 2019 Toyota Camry XSE (optional)" data-i18n-ph="wiz.titlePh">
             </div>
             <div class="form-group">
-              <label class="form-label req">Make</label>
-              <input class="form-input" type="text" id="car-make" list="makes-list" placeholder="Pick one or type your own" autocomplete="off">
+              <label class="form-label req" data-i18n="spec.make">Make</label>
+              <input class="form-input" type="text" id="car-make" list="makes-list" placeholder="Pick one or type your own" data-i18n-ph="wiz.makePh" autocomplete="off">
               <datalist id="makes-list">
                 <option>Acura</option><option>Audi</option><option>BMW</option><option>Chevrolet</option><option>Ferrari</option><option>Fiat</option><option>Ford</option><option>GMC</option><option>Honda</option><option>Hyundai</option><option>Infiniti</option><option>Jaguar</option><option>Jeep</option><option>Kia</option><option>Land Rover</option><option>Lexus</option><option>Mazda</option><option>Mercedes-Benz</option><option>Mini</option><option>Mitsubishi</option><option>Nissan</option><option>Peugeot</option><option>Porsche</option><option>Renault</option><option>Subaru</option><option>Suzuki</option><option>Tesla</option><option>Toyota</option><option>Volkswagen</option><option>Volvo</option>
               </datalist>
@@ -255,17 +255,17 @@
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label req">Model</label>
+              <label class="form-label req" data-i18n="spec.model">Model</label>
               <input class="form-input" type="text" id="car-model" placeholder="Camry">
             </div>
             <div class="form-group">
-              <label class="form-label req">Year</label>
+              <label class="form-label req" data-i18n="spec.year">Year</label>
               <input class="form-input" type="number" id="car-year" placeholder="2019" min="1980" max="2027">
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label req">Price</label>
+              <label class="form-label req" data-i18n="wiz.price">Price</label>
               <div class="price-currency">
                 <input class="form-input" type="number" id="car-price" placeholder="5000000" min="1">
                 <select class="form-select" id="car-currency">
@@ -275,30 +275,30 @@
               </div>
             </div>
             <div class="form-group">
-              <label class="form-label req">Mileage (km)</label>
+              <label class="form-label req" data-i18n="wiz.mileage">Mileage (km)</label>
               <input class="form-input" type="number" id="car-mileage" placeholder="45000" min="0">
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label req">VIN</label>
-              <input class="form-input" type="text" id="car-vin" placeholder="17-character VIN" maxlength="17" autocomplete="off" style="text-transform:uppercase">
-              <div class="field-hint" id="vin-hint">17 characters · letters I, O, Q are not allowed</div>
+              <label class="form-label req" data-i18n="spec.vin">VIN</label>
+              <input class="form-input" type="text" id="car-vin" placeholder="17-character VIN" data-i18n-ph="wiz.vinPh" maxlength="17" autocomplete="off" style="text-transform:uppercase">
+              <div class="field-hint" id="vin-hint" data-i18n="wiz.vinHint">17 characters · letters I, O, Q are not allowed</div>
             </div>
             <div class="form-group">
-              <label class="form-label req">Condition</label>
+              <label class="form-label req" data-i18n="spec.condition">Condition</label>
               <select class="form-select" id="car-condition">
-                <option value="excellent">Excellent</option>
-                <option value="good" selected>Good</option>
-                <option value="fair">Fair</option>
-                <option value="poor">Poor</option>
+                <option value="excellent" data-i18n="cond.excellent">Excellent</option>
+                <option value="good" selected data-i18n="cond.good">Good</option>
+                <option value="fair" data-i18n="cond.fair">Fair</option>
+                <option value="poor" data-i18n="cond.poor">Poor</option>
               </select>
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">Body Type</label>
+            <label class="form-label" data-i18n="spec.bodyType">Body Type</label>
             <select class="form-select" id="car-bodytype">
-              <option value="">Select a body type…</option>
+              <option value="" data-i18n="wiz.bodyTypePh">Select a body type…</option>
               <option>SUV</option><option>Sedan</option><option>Hatchback</option><option>Coupe</option>
               <option>Pickup</option><option>Convertible</option><option>Wagon</option><option>Van</option>
               <option>Minivan</option><option>Crossover</option>
@@ -308,76 +308,76 @@
           </div><!-- /step 1 -->
 
           <div class="wizard-step" data-step="2">
-          <h4 class="form-subhead">Specifications</h4>
+          <h4 class="form-subhead" data-i18n="wiz.specsHead">Specifications</h4>
           <div class="form-row">
-            <div class="form-group"><label class="form-label req">Exterior colour</label><input class="form-input" id="car-extcolor" placeholder="e.g. Pearl White"></div>
-            <div class="form-group"><label class="form-label req">Interior colour</label><input class="form-input" id="car-intcolor" placeholder="e.g. Black leather"></div>
+            <div class="form-group"><label class="form-label req" data-i18n="wiz.extColor">Exterior colour</label><input class="form-input" id="car-extcolor" placeholder="e.g. Pearl White" data-i18n-ph="wiz.extColorPh"></div>
+            <div class="form-group"><label class="form-label req" data-i18n="wiz.intColor">Interior colour</label><input class="form-input" id="car-intcolor" placeholder="e.g. Black leather" data-i18n-ph="wiz.intColorPh"></div>
           </div>
           <div class="form-row">
-            <div class="form-group"><label class="form-label req">Engine</label><input class="form-input" id="car-engine" placeholder="e.g. 2.0L Turbo I4"></div>
-            <div class="form-group"><label class="form-label req">Fuel economy (MPG)</label><input class="form-input" id="car-mpg" placeholder="e.g. 28 combined"></div>
+            <div class="form-group"><label class="form-label req" data-i18n="spec.engine">Engine</label><input class="form-input" id="car-engine" placeholder="e.g. 2.0L Turbo I4" data-i18n-ph="wiz.enginePh"></div>
+            <div class="form-group"><label class="form-label req" data-i18n="wiz.mpg">Fuel economy (MPG)</label><input class="form-input" id="car-mpg" placeholder="e.g. 28 combined" data-i18n-ph="wiz.mpgPh"></div>
           </div>
           <div class="form-row">
-            <div class="form-group"><label class="form-label req">Transmission</label>
-              <select class="form-select" id="car-transmission"><option value="">Select…</option><option>Automatic</option><option>Manual</option><option>CVT</option><option>Semi-automatic</option><option>Dual-clutch</option></select>
+            <div class="form-group"><label class="form-label req" data-i18n="spec.transmission">Transmission</label>
+              <select class="form-select" id="car-transmission"><option value="" data-i18n="wiz.select">Select…</option><option data-i18n="wiz.trAuto">Automatic</option><option data-i18n="wiz.trManual">Manual</option><option>CVT</option><option data-i18n="wiz.trSemi">Semi-automatic</option><option data-i18n="wiz.trDct">Dual-clutch</option></select>
             </div>
-            <div class="form-group"><label class="form-label req">Drivetrain</label>
-              <select class="form-select" id="car-drivetrain"><option value="">Select…</option><option>FWD</option><option>RWD</option><option>AWD</option><option>4WD</option></select>
+            <div class="form-group"><label class="form-label req" data-i18n="spec.drivetrain">Drivetrain</label>
+              <select class="form-select" id="car-drivetrain"><option value="" data-i18n="wiz.select">Select…</option><option>FWD</option><option>RWD</option><option>AWD</option><option>4WD</option></select>
             </div>
           </div>
           <div class="form-row">
-            <div class="form-group"><label class="form-label req">Horsepower</label><input class="form-input" type="number" id="car-hp" min="0" max="5000" placeholder="e.g. 200"></div>
-            <div class="form-group"><label class="form-label req">Seats</label><input class="form-input" type="number" id="car-seats" min="1" max="50" placeholder="e.g. 5"></div>
+            <div class="form-group"><label class="form-label req" data-i18n="spec.horsepower">Horsepower</label><input class="form-input" type="number" id="car-hp" min="0" max="5000" placeholder="e.g. 200" data-i18n-ph="wiz.hpPh"></div>
+            <div class="form-group"><label class="form-label req" data-i18n="spec.seats">Seats</label><input class="form-input" type="number" id="car-seats" min="1" max="50" placeholder="e.g. 5" data-i18n-ph="wiz.seatsPh"></div>
           </div>
           <div class="form-row">
-            <div class="form-group"><label class="form-label req">Accident history</label>
-              <select class="form-select" id="car-accident"><option value="">Select…</option><option value="no">No reported accidents</option><option value="yes">Has accident history</option></select>
-              <div class="field-hint">Helps us assess the vehicle's condition — not shown publicly on your listing.</div>
+            <div class="form-group"><label class="form-label req" data-i18n="wiz.accident">Accident history</label>
+              <select class="form-select" id="car-accident"><option value="" data-i18n="wiz.select">Select…</option><option value="no" data-i18n="wiz.accidentNo">No reported accidents</option><option value="yes" data-i18n="wiz.accidentYes">Has accident history</option></select>
+              <div class="field-hint" data-i18n="wiz.accidentHint">Helps us assess the vehicle's condition — not shown publicly on your listing.</div>
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label req">Inspection report</label>
+            <label class="form-label req" data-i18n="wiz.inspection">Inspection report</label>
             <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap">
               <input type="hidden" id="car-inspection">
-              <label class="shot-file-btn" title="Upload the latest inspection report (PDF or image)">⬆ Upload report<input type="file" id="file-inspection" accept="application/pdf,image/*" hidden></label>
+              <label class="shot-file-btn" title="Upload the latest inspection report (PDF or image)"><span data-i18n="wiz.uploadReport">⬆ Upload report</span><input type="file" id="file-inspection" accept="application/pdf,image/*" hidden></label>
               <span class="shot-badge" id="badge-inspection"></span>
             </div>
-            <div class="field-hint">Latest inspection report (PDF or photo) — a backend condition criterion, not shown publicly.</div>
+            <div class="field-hint" data-i18n="wiz.inspectionHint">Latest inspection report (PDF or photo) — a backend condition criterion, not shown publicly.</div>
           </div>
           <div class="form-group" id="towing-group" style="display:none">
-            <label class="form-label req">Max towing capacity</label>
-            <input class="form-input" id="car-towing" placeholder="e.g. 3,500 kg">
-            <div class="field-hint">Required for pickups.</div>
+            <label class="form-label req" data-i18n="wiz.towing">Max towing capacity</label>
+            <input class="form-input" id="car-towing" placeholder="e.g. 3,500 kg" data-i18n-ph="wiz.towingPh">
+            <div class="field-hint" data-i18n="wiz.towingHint">Required for pickups.</div>
           </div>
 
-          <h4 class="form-subhead">Optional extras</h4>
-          <div class="form-group"><label class="form-label">Comfort &amp; convenience</label><input class="form-input" id="car-comfort" placeholder="Heated seats, Sunroof, Apple CarPlay (comma-separated)"></div>
-          <div class="form-group"><label class="form-label">Safety</label><input class="form-input" id="car-safety" placeholder="Blind-spot monitor, Lane assist, 360° camera (comma-separated)"></div>
-          <div class="form-group"><label class="form-label">Modifications</label><input class="form-input" id="car-mods" placeholder="Lift kit, Aftermarket exhaust (comma-separated)"></div>
+          <h4 class="form-subhead" data-i18n="wiz.extras">Optional extras</h4>
+          <div class="form-group"><label class="form-label" data-i18n="wiz.comfort">Comfort &amp; convenience</label><input class="form-input" id="car-comfort" placeholder="Heated seats, Sunroof, Apple CarPlay (comma-separated)" data-i18n-ph="wiz.comfortPh"></div>
+          <div class="form-group"><label class="form-label" data-i18n="wiz.safety">Safety</label><input class="form-input" id="car-safety" placeholder="Blind-spot monitor, Lane assist, 360° camera (comma-separated)" data-i18n-ph="wiz.safetyPh"></div>
+          <div class="form-group"><label class="form-label" data-i18n="wiz.mods">Modifications</label><input class="form-input" id="car-mods" placeholder="Lift kit, Aftermarket exhaust (comma-separated)" data-i18n-ph="wiz.modsPh"></div>
           </div><!-- /step 2 -->
 
           <div class="wizard-step" data-step="3">
           <div class="form-group">
-            <label class="form-label req">Location (where the car is)</label>
+            <label class="form-label req" data-i18n="wiz.locationLabel">Location (where the car is)</label>
             <div class="location-row">
-              <input class="form-input" type="text" id="car-location" placeholder="e.g. Atlanta, GA, USA" autocomplete="off">
-              <button class="nav-btn nav-btn-ghost" type="button" id="locate-btn">📍 Locate</button>
+              <input class="form-input" type="text" id="car-location" placeholder="e.g. Atlanta, GA, USA" data-i18n-ph="wiz.locationPh" autocomplete="off">
+              <button class="nav-btn nav-btn-ghost" type="button" id="locate-btn" data-i18n="wiz.locate">📍 Locate</button>
             </div>
-            <div class="field-hint" id="loc-hint">City and country — we'll pin it on the map for buyers.</div>
+            <div class="field-hint" id="loc-hint" data-i18n="wiz.locHint">City and country — we'll pin it on the map for buyers.</div>
             <div id="upload-map" class="car-map upload-map" style="display:none"></div>
           </div>
           <div class="form-group">
-            <label class="form-label">Description</label>
-            <textarea class="form-input" id="car-desc" rows="4" placeholder="Describe the vehicle's history, features, and any known issues…" style="resize:vertical;min-height:100px"></textarea>
+            <label class="form-label" data-i18n="detail.description">Description</label>
+            <textarea class="form-input" id="car-desc" rows="4" placeholder="Describe the vehicle's history, features, and any known issues…" data-i18n-ph="wiz.descPh" style="resize:vertical;min-height:100px"></textarea>
           </div>
 
           </div><!-- /step 3 -->
 
           <div class="wizard-step" data-step="4">
           <div class="form-group">
-            <label class="form-label req">Required photos</label>
+            <label class="form-label req" data-i18n="wiz.reqPhotos">Required photos</label>
             <div class="photo-checklist" id="photo-checklist"></div>
-            <label class="form-label" style="margin-top:1rem">Additional photos (optional, one URL per line)</label>
+            <label class="form-label" style="margin-top:1rem" data-i18n="wiz.addPhotos">Additional photos (optional, one URL per line)</label>
             <textarea class="form-input" id="car-photos-extra" rows="2" placeholder="https://example.com/extra1.jpg" style="resize:vertical"></textarea>
           </div>
 
@@ -386,9 +386,9 @@
           </div><!-- /step 4 -->
 
           <div class="wizard-nav">
-            <button class="nav-btn nav-btn-ghost" type="button" id="wiz-back" style="display:none">← Back</button>
-            <button class="nav-btn nav-btn-accent" type="button" id="wiz-next">Next →</button>
-            <button class="form-submit" id="submit-car-btn" disabled style="display:none">📋 Submit Listing</button>
+            <button class="nav-btn nav-btn-ghost" type="button" id="wiz-back" style="display:none" data-i18n="wiz.back">← Back</button>
+            <button class="nav-btn nav-btn-accent" type="button" id="wiz-next" data-i18n="wiz.next">Next →</button>
+            <button class="form-submit" id="submit-car-btn" disabled style="display:none" data-i18n="wiz.submit">📋 Submit Listing</button>
           </div>
         </div>
       </div>
