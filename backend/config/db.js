@@ -2,9 +2,44 @@ import mysql  from 'mysql2/promise';
 import dotenv from 'dotenv';
 dotenv.config();
 
-export const pool = mysql.createPool(
-  process.env.DATABASE_URL || 'mysql://root:password@localhost:3306/4kautos'
-);
+/* ── Connection pool ──────────────────────────────────────────────────────────
+   Parse DATABASE_URL into a config object so the pool is TUNABLE (mysql2's
+   string form can't take extra options). The key knob for horizontal scaling is
+   `connectionLimit`: keep  replicas × connectionLimit  under MySQL
+   `max_connections`, or a traffic spike across replicas exhausts the DB (a
+   classic outage). Defaults preserve today's behavior (limit 10); set
+   DB_POOL_SIZE to tune. Falls back to the raw connection string if the URL
+   can't be parsed, so this never breaks an exotic DSN. */
+const DSN = process.env.DATABASE_URL || 'mysql://root:password@localhost:3306/4kautos';
+
+function buildPoolConfig(dsn) {
+  const tuning = {
+    connectionLimit: Math.max(Number(process.env.DB_POOL_SIZE) || 10, 1),
+    queueLimit:      Math.max(Number(process.env.DB_QUEUE_LIMIT) || 0, 0),
+    enableKeepAlive: true,        // keep idle pooled sockets alive (PaaS proxies drop them)
+    keepAliveInitialDelay: 10_000,
+  };
+  try {
+    const u = new URL(dsn);
+    if (!/^mysql/i.test(u.protocol)) return dsn; // not a mysql URL → hand back as-is
+    const cfg = {
+      host:     u.hostname,
+      port:     u.port ? Number(u.port) : 3306,
+      user:     decodeURIComponent(u.username),
+      password: decodeURIComponent(u.password),
+      database: decodeURIComponent(u.pathname.replace(/^\//, '')) || undefined,
+      ...tuning,
+    };
+    // Managed MySQL (PlanetScale, some Railway public endpoints) requires TLS.
+    if (process.env.DB_SSL === 'true' || /^(REQUIRED|true)$/i.test(u.searchParams.get('ssl-mode') || u.searchParams.get('ssl') || ''))
+      cfg.ssl = { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' };
+    return cfg;
+  } catch {
+    return dsn; // unparseable DSN → preserve the original string-based behavior
+  }
+}
+
+export const pool = mysql.createPool(buildPoolConfig(DSN));
 
 export async function connectDB() {
   await pool.query('SELECT 1'); // verify connection
