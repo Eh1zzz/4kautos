@@ -183,7 +183,7 @@ button, input, select, textarea,
   transition:color var(--speed),background var(--speed),border-color var(--speed);
 }
 .nav-links a:hover{color:var(--text);background:rgba(255,255,255,.04)}
-.nav-links a.active{color:var(--accent);border-bottom-color:var(--accent)}
+.nav-links a.active{color:var(--hot);border-bottom-color:var(--hot)}
 
 /* Nav search */
 .nav-search{flex:1;max-width:380px;position:relative}
@@ -307,7 +307,7 @@ button, input, select, textarea,
   letter-spacing:.3px;text-transform:uppercase;color:var(--text3);
   transition:all var(--speed);
 }
-.search-tab.active{background:var(--accent);color:#fff}
+.search-tab.active{background:var(--hot);color:#fff}
 .search-tab:hover:not(.active){background:var(--surface2);color:var(--text)}
 
 .search-fields{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:.75rem;align-items:end}
@@ -694,7 +694,7 @@ section{padding:5rem 2rem}
 }
 .profile-nav-link svg{width:16px;height:16px;flex-shrink:0}
 .profile-nav-link:hover{background:var(--surface2);color:var(--text)}
-.profile-nav-link.active{color:var(--accent);background:rgba(139,124,255,.06);border-left-color:var(--accent)}
+.profile-nav-link.active{color:var(--hot);background:rgba(220,18,18,.07);border-left-color:var(--hot)}
 
 .profile-main{}
 .profile-tab{display:none}
@@ -759,7 +759,7 @@ section{padding:5rem 2rem}
   font-size:.8rem;font-weight:600;letter-spacing:.3px;text-transform:uppercase;
   color:var(--text3);transition:all var(--speed);cursor:pointer;
 }
-.modal-tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.modal-tab.active{background:var(--surface);color:var(--hot);box-shadow:0 1px 4px rgba(0,0,0,.3)}
 
 .form-group{margin-bottom:1rem}
 .form-label{display:block;font-size:.68rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:.4rem}
@@ -1422,7 +1422,7 @@ html.has-cursor-warn,html.has-cursor-warn *{cursor:none!important}
 .topbar-right{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
 .view-toggle{display:flex;gap:3px;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:3px}
 .view-btn{padding:5px 12px;border-radius:6px;font-size:.76rem;font-weight:600;color:var(--text3);background:none;transition:color var(--speed),background var(--speed)}
-.view-btn.active{background:var(--accent);color:#fff}
+.view-btn.active{background:var(--hot);color:#fff}
 .view-btn:hover:not(.active){color:var(--text)}
 .listings-map{height:620px;border-radius:var(--radius-lg);overflow:hidden;border:1.5px solid var(--border);position:relative;z-index:0;background:var(--surface2)}
 .map-pop{width:160px;text-align:center}
