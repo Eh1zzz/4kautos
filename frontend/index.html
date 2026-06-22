@@ -86,15 +86,15 @@
     <div class="hero-stats">
       <div>
         <div class="hero-stat-n" id="stat-cars">—</div>
-        <div class="hero-stat-l">Cars Listed</div>
+        <div class="hero-stat-l" data-i18n="home.statCarsL">Cars Listed</div>
       </div>
       <div>
         <div class="hero-stat-n">98%</div>
-        <div class="hero-stat-l">Buyer Satisfaction</div>
+        <div class="hero-stat-l" data-i18n="home.statSatL">Buyer Satisfaction</div>
       </div>
       <div>
         <div class="hero-stat-n">₦0</div>
-        <div class="hero-stat-l">Hidden Fees</div>
+        <div class="hero-stat-l" data-i18n="home.statFeesL">Hidden Fees</div>
       </div>
     </div>
   </div>
@@ -117,10 +117,10 @@
   <div class="section-inner">
     <div class="section-head">
       <div>
-        <div class="section-label" style="color:var(--accent)">🔥 Hot Sales</div>
-        <h2 class="section-title">Deals worth grabbing</h2>
+        <div class="section-label" style="color:var(--accent)" data-i18n="home.hotLabel">🔥 Hot Sales</div>
+        <h2 class="section-title" data-i18n="home.hotTitle">Deals worth grabbing</h2>
       </div>
-      <a href="listings.html" class="view-all">View All Cars →</a>
+      <a href="listings.html" class="view-all" data-i18n="home.viewAll">View All Cars →</a>
     </div>
     <div class="cars-grid" id="hotsales-grid"></div>
   </div>
@@ -130,10 +130,10 @@
   <div class="section-inner">
     <div class="section-head">
       <div>
-        <div class="section-label">Fresh Inventory</div>
-        <h2 class="section-title">Latest Arrivals</h2>
+        <div class="section-label" data-i18n="home.freshLabel">Fresh Inventory</div>
+        <h2 class="section-title" data-i18n="home.latestTitle">Latest Arrivals</h2>
       </div>
-      <a href="listings.html" class="view-all">View All Cars →</a>
+      <a href="listings.html" class="view-all" data-i18n="home.viewAll">View All Cars →</a>
     </div>
     <div id="featured-spinner" class="spinner-wrap"><div class="spinner"></div></div>
     <div class="cars-grid hidden" id="featured-grid"></div>
@@ -145,14 +145,14 @@
   <div class="section-inner">
     <div class="section-head">
       <div>
-        <div class="section-label">Find It Faster</div>
-        <h2 class="section-title">Browse By</h2>
+        <div class="section-label" data-i18n="home.findLabel">Find It Faster</div>
+        <h2 class="section-title" data-i18n="home.browseTitle">Browse By</h2>
       </div>
     </div>
     <div class="browse-tabs">
-      <button class="browse-tab active" data-browse="type">Body Type</button>
-      <button class="browse-tab" data-browse="budget">Budget</button>
-      <button class="browse-tab" data-browse="mileage">Mileage</button>
+      <button class="browse-tab active" data-browse="type" data-i18n="home.browseType">Body Type</button>
+      <button class="browse-tab" data-browse="budget" data-i18n="home.browseBudget">Budget</button>
+      <button class="browse-tab" data-browse="mileage" data-i18n="home.browseMileage">Mileage</button>
     </div>
     <div class="browse-grid" id="browse-grid"></div>
   </div>
@@ -163,10 +163,10 @@
   <div class="section-inner">
     <div class="section-head">
       <div>
-        <div class="section-label">Browse Makes</div>
-        <h2 class="section-title">Shop by Brand</h2>
+        <div class="section-label" data-i18n="home.brandLabel">Browse Makes</div>
+        <h2 class="section-title" data-i18n="home.brandTitle">Shop by Brand</h2>
       </div>
-      <a href="listings.html" class="view-all">All Brands →</a>
+      <a href="listings.html" class="view-all" data-i18n="home.allBrands">All Brands →</a>
     </div>
     <div class="brand-strip" id="brand-strip"></div>
   </div>
@@ -177,31 +177,31 @@
   <div class="section-inner">
     <div class="section-head">
       <div>
-        <div class="section-label">Process</div>
-        <h2 class="section-title">How 4Kautos Works</h2>
-        <p class="section-sub">Our secure process protects buyers and sellers from listing to handover.</p>
+        <div class="section-label" data-i18n="home.processLabel">Process</div>
+        <h2 class="section-title" data-i18n="home.howTitle">How 4Kautos Works</h2>
+        <p class="section-sub" data-i18n="home.howSub">Our secure process protects buyers and sellers from listing to handover.</p>
       </div>
     </div>
     <div class="steps-grid">
       <div class="step-card" data-step="1">
         <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
-        <div class="step-title">Browse & Search</div>
-        <p class="step-desc">Filter by make, model, year, price and condition to find your perfect match from our verified inventory.</p>
+        <div class="step-title" data-i18n="home.step1t">Browse & Search</div>
+        <p class="step-desc" data-i18n="home.step1d">Filter by make, model, year, price and condition to find your perfect match from our verified inventory.</p>
       </div>
       <div class="step-card" data-step="2">
         <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 5-4 9-9 9s-9-4-9-9 4-9 9-9c2.4 0 4.6.9 6.2 2.4"/></svg></div>
-        <div class="step-title">Request Inspection</div>
-        <p class="step-desc">Initiate a purchase and our certified inspectors verify the vehicle's condition before you commit.</p>
+        <div class="step-title" data-i18n="home.step2t">Request Inspection</div>
+        <p class="step-desc" data-i18n="home.step2d">Initiate a purchase and our certified inspectors verify the vehicle's condition before you commit.</p>
       </div>
       <div class="step-card" data-step="3">
         <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>
-        <div class="step-title">Pay Into Escrow</div>
-        <p class="step-desc">Your funds are held securely in our escrow system — released to the seller only when you're satisfied.</p>
+        <div class="step-title" data-i18n="home.step3t">Pay Into Escrow</div>
+        <p class="step-desc" data-i18n="home.step3d">Your funds are held securely in our escrow system — released to the seller only when you're satisfied.</p>
       </div>
       <div class="step-card" data-step="4">
         <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
-        <div class="step-title">Drive Away</div>
-        <p class="step-desc">Title is transferred, keys handed over. Your new car is ready. We handle all the paperwork.</p>
+        <div class="step-title" data-i18n="home.step4t">Drive Away</div>
+        <p class="step-desc" data-i18n="home.step4d">Title is transferred, keys handed over. Your new car is ready. We handle all the paperwork.</p>
       </div>
     </div>
   </div>
@@ -211,15 +211,15 @@
 <section class="why-section">
   <div class="section-inner">
     <div class="section-head"><div>
-      <div class="section-label">Why 4Kautos</div>
-      <h2 class="section-title">Built For <em>Confident</em> Buying</h2>
-      <p class="section-sub">Verified inventory, secure escrow, and door-to-door clearance — the parts that usually go wrong, handled for you.</p>
+      <div class="section-label" data-i18n="home.whyLabel">Why 4Kautos</div>
+      <h2 class="section-title" data-i18n-html="home.whyTitle">Built For <em>Confident</em> Buying</h2>
+      <p class="section-sub" data-i18n="home.whySub">Verified inventory, secure escrow, and door-to-door clearance — the parts that usually go wrong, handled for you.</p>
     </div></div>
     <div class="why-grid">
-      <div class="why-stat"><div class="why-stat-n">8,400+</div><div class="why-stat-l">Cars delivered &amp; cleared</div></div>
-      <div class="why-stat"><div class="why-stat-n">100%</div><div class="why-stat-l">Inspection-backed listings</div></div>
-      <div class="why-stat"><div class="why-stat-n">~7 days</div><div class="why-stat-l">Average port clearance</div></div>
-      <div class="why-stat"><div class="why-stat-n">₦0</div><div class="why-stat-l">Hidden fees, ever</div></div>
+      <div class="why-stat"><div class="why-stat-n">8,400+</div><div class="why-stat-l" data-i18n="home.why1">Cars delivered &amp; cleared</div></div>
+      <div class="why-stat"><div class="why-stat-n">100%</div><div class="why-stat-l" data-i18n="home.why2">Inspection-backed listings</div></div>
+      <div class="why-stat"><div class="why-stat-n">~7 days</div><div class="why-stat-l" data-i18n="home.why3">Average port clearance</div></div>
+      <div class="why-stat"><div class="why-stat-n">₦0</div><div class="why-stat-l" data-i18n="home.why4">Hidden fees, ever</div></div>
     </div>
   </div>
 </section>
@@ -228,24 +228,24 @@
 <section>
   <div class="section-inner">
     <div class="section-head"><div>
-      <div class="section-label">Loved By Drivers</div>
-      <h2 class="section-title">What Our Buyers Say</h2>
+      <div class="section-label" data-i18n="home.reviewsLabel">Loved By Drivers</div>
+      <h2 class="section-title" data-i18n="home.reviewsTitle">What Our Buyers Say</h2>
     </div></div>
     <div class="reviews-grid">
       <div class="review-card">
         <div class="review-stars">★★★★★</div>
-        <p class="review-text">"Bought a Lexus from a seller in Japan and 4Kautos handled the duty and shipping. The landed-cost figure was spot on — zero surprises at the port."</p>
-        <div class="review-author"><div class="review-ava">AO</div><div><div class="review-name">Amara O.</div><div class="review-meta">Lagos · Verified buyer</div></div></div>
+        <p class="review-text" data-i18n="home.review1">"Bought a Lexus from a seller in Japan and 4Kautos handled the duty and shipping. The landed-cost figure was spot on — zero surprises at the port."</p>
+        <div class="review-author"><div class="review-ava">AO</div><div><div class="review-name">Amara O.</div><div class="review-meta" data-i18n="home.review1meta">Lagos · Verified buyer</div></div></div>
       </div>
       <div class="review-card">
         <div class="review-stars">★★★★★</div>
-        <p class="review-text">"As a seller in Houston, listing was painless and I got paid through escrow the moment the buyer confirmed. Easily the smoothest export I've done."</p>
-        <div class="review-author"><div class="review-ava">DT</div><div><div class="review-name">Daniel T.</div><div class="review-meta">Houston · Verified seller</div></div></div>
+        <p class="review-text" data-i18n="home.review2">"As a seller in Houston, listing was painless and I got paid through escrow the moment the buyer confirmed. Easily the smoothest export I've done."</p>
+        <div class="review-author"><div class="review-ava">DT</div><div><div class="review-name">Daniel T.</div><div class="review-meta" data-i18n="home.review2meta">Houston · Verified seller</div></div></div>
       </div>
       <div class="review-card">
         <div class="review-stars">★★★★☆</div>
-        <p class="review-text">"The dual ₦/$ pricing and the clearance estimator helped me budget properly before committing. Delivered to Abuja in good time."</p>
-        <div class="review-author"><div class="review-ava">IB</div><div><div class="review-name">Ibrahim B.</div><div class="review-meta">Abuja · Verified buyer</div></div></div>
+        <p class="review-text" data-i18n="home.review3">"The dual ₦/$ pricing and the clearance estimator helped me budget properly before committing. Delivered to Abuja in good time."</p>
+        <div class="review-author"><div class="review-ava">IB</div><div><div class="review-name">Ibrahim B.</div><div class="review-meta" data-i18n="home.review3meta">Abuja · Verified buyer</div></div></div>
       </div>
     </div>
   </div>
@@ -256,10 +256,10 @@
   <div class="section-inner">
     <div class="promo-banner" style="cursor:pointer" onclick="location.href='listings.html'">
       <div class="promo-text">
-        <h3>Selling from abroad? List free this month.</h3>
-        <p>Reach thousands of Nigerian buyers. We handle clearance, escrow and delivery — you just hand over the keys.</p>
+        <h3 data-i18n="home.promoTitle">Selling from abroad? List free this month.</h3>
+        <p data-i18n="home.promoText">Reach thousands of Nigerian buyers. We handle clearance, escrow and delivery — you just hand over the keys.</p>
       </div>
-      <a href="#" class="promo-cta" onclick="event.stopPropagation();openAuth('signup',{role:'seller'});return false">Start Selling →</a>
+      <a href="#" class="promo-cta" onclick="event.stopPropagation();openAuth('signup',{role:'seller'});return false" data-i18n="home.promoCta">Start Selling →</a>
     </div>
   </div>
 </section>
