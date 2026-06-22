@@ -1060,6 +1060,14 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:3rem 2re
 .flag-pill.flag-warn{background:rgba(245,158,11,.16);color:#f59e0b}
 .flag-pill.flag-bad{background:rgba(220,18,18,.14);color:var(--hot)}
 
+/* ── Admin recent-activity feed ── */
+.feed{display:flex;flex-direction:column}
+.feed-row{display:flex;align-items:center;gap:.75rem;padding:.6rem 0;border-bottom:1px solid var(--border)}
+.feed-row:last-child{border-bottom:none}
+.feed-ico{width:30px;height:30px;border-radius:8px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0}
+.feed-text{flex:1;min-width:0;font-size:.85rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.feed-time{font-size:.72rem;color:var(--text3);flex-shrink:0}
+
 /* Hot ticker (redesign — racing-style marquee with the red "hot" accent) */
 .ticker{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);overflow:hidden;white-space:nowrap}
 .ticker-track{display:inline-flex;align-items:center;will-change:transform;animation:tickerScroll 45s linear infinite}

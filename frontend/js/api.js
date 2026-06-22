@@ -183,6 +183,7 @@ const API = {
   adminTransactions()    { return req('GET', '/admin/transactions'); },
   adminStats()           { return req('GET', '/admin/stats'); },
   adminFlags()           { return req('GET', '/admin/flags'); },
+  adminActivity()        { return req('GET', '/admin/activity'); },
 
   /* ── CUSTOMS CLEARANCE ── */
   getClearanceAgents()      { return req('GET', '/clearance/agents'); },

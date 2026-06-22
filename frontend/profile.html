@@ -172,6 +172,10 @@
         <div class="panel-head"><h3>Risk &amp; moderation</h3><span style="font-size:.72rem;color:var(--text3)" id="flags-count"></span></div>
         <div id="admin-flags"><div class="spinner-wrap"><div class="spinner"></div></div></div>
       </div>
+      <div class="panel">
+        <div class="panel-head"><h3>Recent activity</h3></div>
+        <div id="admin-activity"><div class="spinner-wrap"><div class="spinner"></div></div></div>
+      </div>
       <div class="admin-stats">
         <div class="stat-tile"><span class="stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></span><div><div class="stat-num" id="stat-users">—</div><div class="stat-lbl">Users</div></div></div>
         <div class="stat-tile"><span class="stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 17H3v-4l2-5h14l2 5v4h-2"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg></span><div><div class="stat-num" id="stat-listings-admin">—</div><div class="stat-lbl">Listings</div></div></div>
@@ -796,6 +800,7 @@
   async function loadAdmin() {
     loadAdminStats();
     loadAdminFlags();
+    loadAdminActivity();
     loadPendingPayouts();
     loadAdminTransactions();
     loadContactMessages();
@@ -892,6 +897,28 @@
       const frow = (label, n) => `<div class="ops-frow"><span class="ops-flabel">${esc(label)}</span><span class="ops-ftrack"><span class="ops-fbar" style="width:${(n / fmax * 100).toFixed(0)}%"></span></span><span class="ops-fn">${n}</span></div>`;
       document.getElementById('ops-funnel').innerHTML = frow('Initiated', f.initiated) + frow('In escrow', f.inEscrow) + frow('Completed', f.completed);
     } catch (e) { tiles.innerHTML = `<p class="empty-state">Failed: ${esc(e.message)}</p>`; }
+  }
+
+  async function loadAdminActivity() {
+    const el = document.getElementById('admin-activity');
+    if (!el) return;
+    el.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div></div>';
+    const ago = d => {
+      const s = Math.max(1, Math.floor((Date.now() - new Date(d)) / 1000));
+      if (s < 60) return s + 's ago';
+      const m = Math.floor(s / 60); if (m < 60) return m + 'm ago';
+      const h = Math.floor(m / 60); if (h < 24) return h + 'h ago';
+      return Math.floor(h / 24) + 'd ago';
+    };
+    const ICON = { listing: '🚗', transaction: '💳', contact: '✉️', user: '👤' };
+    try {
+      const { items } = await API.adminActivity();
+      if (!items.length) { el.innerHTML = '<div class="empty-state" style="padding:2rem"><p>No recent activity.</p></div>'; return; }
+      el.innerHTML = '<div class="feed">' + items.map(i => {
+        const text = i.link ? `<a href="${esc(i.link)}" target="_blank" rel="noopener" style="color:inherit">${esc(i.text)}</a>` : esc(i.text);
+        return `<div class="feed-row"><span class="feed-ico feed-${esc(i.type)}">${ICON[i.type] || '•'}</span><span class="feed-text">${text}</span><span class="feed-time">${esc(ago(i.at))}</span></div>`;
+      }).join('') + '</div>';
+    } catch (e) { el.innerHTML = `<p class="empty-state">Failed: ${esc(e.message)}</p>`; }
   }
 
   async function loadAdminFlags() {

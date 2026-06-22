@@ -140,3 +140,16 @@ describe('Admin risk flags', () => {
     expect(typeof r.body.total).toBe('number');
   });
 });
+
+describe('Admin activity feed', () => {
+  it('blocks non-admins (403)', async () => {
+    const r = await request(app).get('/admin/activity').set('Authorization', `Bearer ${buyerToken}`);
+    expect(r.status).toBe(403);
+  });
+
+  it('returns a merged activity list for an admin', async () => {
+    const r = await request(app).get('/admin/activity').set('Authorization', `Bearer ${adminToken}`);
+    expect(r.status).toBe(200);
+    expect(Array.isArray(r.body.items)).toBe(true);
+  });
+});

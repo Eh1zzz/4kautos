@@ -104,6 +104,30 @@ router.get('/flags', async (_req, res) => {
   }
 });
 
+// GET /admin/activity — a merged recent-activity feed across listings,
+// transactions, contact messages and signups (newest first). Polled on the
+// dashboard; a true live push is a future Socket.IO enhancement.
+router.get('/activity', async (_req, res) => {
+  try {
+    const [cars] = await pool.query("SELECT id, COALESCE(NULLIF(title,''), CONCAT(make,' ',model)) AS label, created_at FROM cars ORDER BY created_at DESC LIMIT 8");
+    const [txs]  = await pool.query("SELECT t.id, t.status, t.created_at, b.name AS buyer, COALESCE(c.title, CONCAT(c.make,' ',c.model)) AS car FROM transactions t JOIN users b ON b.id = t.buyer_id LEFT JOIN cars c ON c.id = t.car_id ORDER BY t.created_at DESC LIMIT 8");
+    const [msgs] = await pool.query("SELECT id, name, created_at FROM contact_messages ORDER BY created_at DESC LIMIT 5");
+    const [users]= await pool.query("SELECT id, name, role, created_at FROM users ORDER BY created_at DESC LIMIT 5");
+
+    const items = [
+      ...cars.map(c  => ({ type: 'listing',     text: `New listing — ${c.label}`,                       at: c.created_at, link: `detail.html?id=${c.id}` })),
+      ...txs.map(t   => ({ type: 'transaction', text: `${t.buyer} → ${t.car || 'listing'} (${String(t.status).replace(/_/g, ' ')})`, at: t.created_at })),
+      ...msgs.map(m  => ({ type: 'contact',     text: `Contact message from ${m.name}`,                 at: m.created_at })),
+      ...users.map(u => ({ type: 'user',        text: `New ${u.role} — ${u.name}`,                      at: u.created_at })),
+    ].filter(x => x.at).sort((a, b) => new Date(b.at) - new Date(a.at)).slice(0, 20);
+
+    res.json({ items });
+  } catch (err) {
+    console.error('admin activity:', err.message);
+    res.status(500).json({ message: 'Failed to load activity' });
+  }
+});
+
 router.get('/users', async (_req, res) => {
   try { res.json(await findAllUsers()); }
   catch { res.status(500).json({ message: 'Failed to fetch users' }); }
