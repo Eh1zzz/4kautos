@@ -215,7 +215,14 @@ const API = {
   sendContact(payload)       { return req('POST', '/contact', payload); },
   adminContactMessages()     { return req('GET', '/admin/contact-messages'); },
   adminDeleteContact(id)     { return req('DELETE', `/admin/contact-messages/${id}`); },
-  adminBackfillImages(apply) { return req('POST', `/admin/backfill-images${apply ? '?apply=1' : ''}`); },
+  adminBackfillImages(apply, async) {
+    const q = new URLSearchParams();
+    if (apply) q.set('apply', '1');
+    if (async) q.set('async', '1');
+    const qs = q.toString();
+    return req('POST', `/admin/backfill-images${qs ? '?' + qs : ''}`);
+  },
+  adminBackfillStatus()      { return req('GET', '/admin/backfill-images/status'); },
 };
 
 window.API = API;

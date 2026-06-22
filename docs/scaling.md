@@ -49,9 +49,13 @@ stateless and push work outward** (to the CDN, to queues, to the DB's strengths)
   refreshes its own); move to Redis only if you want a single source of truth.
 - **Task queues (BullMQ + Redis)** for anything slow or spiky, so request
   latency stays bounded:
-  - **Image optimization** (`sharp` in `POST /uploads`) is currently synchronous
-    in the request — the top candidate to move to a worker.
+  - **Image optimization** (`sharp` in `POST /uploads`) is still synchronous in
+    the request — the top candidate to move to a worker.
   - **Email sends** and **payout reconciliation** → queue + retry with backoff.
+  - *Already detached*: the **admin image backfill** (`POST
+    /admin/backfill-images?async=1`) runs as an in-process background job with a
+    `…/status` poll endpoint, so reprocessing a large library never ties up the
+    request. A Redis-backed queue is the multi-instance upgrade.
 - Autoscale on CPU/RAM or queue depth; pre-warm replicas ahead of a known launch.
 
 ## 3. Database layer — pooling, indexes, concurrency

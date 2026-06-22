@@ -106,6 +106,27 @@ describe('Admin image backfill', () => {
     expect(r.body).toHaveProperty('converted');
     expect(r.body).toHaveProperty('skipped');
   });
+
+  it('blocks non-admins from job status (403)', async () => {
+    const r = await request(app).get('/admin/backfill-images/status').set('Authorization', `Bearer ${buyerToken}`);
+    expect(r.status).toBe(403);
+  });
+
+  it('starts a detached dry-run (202) and exposes job status until done', async () => {
+    const start = await request(app).post('/admin/backfill-images?async=1').set('Authorization', `Bearer ${adminToken}`);
+    expect(start.status).toBe(202);
+    expect(['running', 'done']).toContain(start.body.job.state);
+
+    let s;
+    for (let i = 0; i < 40; i++) {
+      s = await request(app).get('/admin/backfill-images/status').set('Authorization', `Bearer ${adminToken}`);
+      if (s.body.state !== 'running') break;
+      await new Promise(r => setTimeout(r, 50));
+    }
+    expect(s.body.state).toBe('done');
+    expect(s.body.summary).toBeTruthy();
+    expect(s.body.summary.mode).toBe('dry-run');
+  });
 });
 
 describe('Admin operations stats', () => {

@@ -5,7 +5,7 @@ import { findAll as findAllTx, setDisputed } from '../models/Transaction.js';
 import { findAll as findContactMessages, deleteById as deleteContactMessage } from '../models/ContactMessage.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { toId } from '../utils/validation.js';
-import { runBackfill } from '../utils/backfillImages.js';
+import { runBackfill, startBackfill, getBackfillJob } from '../utils/backfillImages.js';
 import { pool } from '../config/db.js';
 import { getRate } from './fx.js';
 
@@ -224,6 +224,13 @@ router.delete('/contact-messages/:id', async (req, res) => {
 router.post('/backfill-images', async (req, res) => {
   try {
     const apply = req.query.apply === '1' || req.body?.apply === true;
+    // ?async=1 → run detached (won't tie up the request on a large library);
+    // poll GET /backfill-images/status for progress. Omit for the synchronous
+    // path (back-compat — returns the full summary inline).
+    if (req.query.async === '1') {
+      const j = startBackfill({ apply });
+      return res.status(202).json({ message: j.alreadyRunning ? 'A backfill is already running' : 'Backfill started', job: j });
+    }
     const summary = await runBackfill({ apply });
     res.json({ message: apply ? 'Image backfill complete' : 'Dry run complete', ...summary });
   } catch (err) {
@@ -231,5 +238,8 @@ router.post('/backfill-images', async (req, res) => {
     res.status(500).json({ message: err.message || 'Backfill failed' });
   }
 });
+
+// GET /admin/backfill-images/status — progress of the most recent detached run.
+router.get('/backfill-images/status', (_req, res) => res.json(getBackfillJob()));
 
 export default router;

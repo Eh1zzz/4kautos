@@ -786,20 +786,39 @@
     const ap  = document.getElementById('backfill-apply');
     const out = document.getElementById('backfill-out');
     if (!dry || !ap) return;
+    const renderSummary = (s, apply) =>
+      `${s.mode === 'apply' ? 'Image backfill complete' : 'Dry run complete'} (store: ${s.store})\n`
+      + `scanned ${s.scanned} · ${apply ? 'updated' : 'to update'} ${s.carsChanged} cars · `
+      + `${apply ? 'converted' : 'to convert'} ${s.converted} photos · already ok ${s.alreadyOk} · skipped ${s.skipped} · failed ${s.failed}`;
+
+    // Runs detached on the server (won't time out on a large library); poll status.
     const run = async (apply) => {
       if (apply && !confirm('Regenerate image sizes now? This updates listing photos in place. Safe to run repeatedly.')) return;
       dry.disabled = ap.disabled = true;
-      out.textContent = apply ? 'Regenerating… this can take a moment.' : 'Checking…';
+      out.textContent = apply ? 'Starting regeneration…' : 'Starting preview…';
       try {
-        const s = await API.adminBackfillImages(apply);
-        out.textContent = `${s.message} (store: ${s.store})\n`
-          + `scanned ${s.scanned} · ${apply ? 'updated' : 'to update'} ${s.carsChanged} cars · `
-          + `${apply ? 'converted' : 'to convert'} ${s.converted} photos · already ok ${s.alreadyOk} · skipped ${s.skipped} · failed ${s.failed}`;
-        toast(apply ? 'Image sizes regenerated' : 'Preview ready', 'success');
+        await API.adminBackfillImages(apply, true); // async=1
+        const poll = async () => {
+          let j;
+          try { j = await API.adminBackfillStatus(); }
+          catch (e) { out.textContent = '✖ ' + (e.message || 'Failed'); dry.disabled = ap.disabled = false; return; }
+          if (j.state === 'running') {
+            const p = j.progress || {};
+            out.textContent = `${j.mode === 'apply' ? 'Regenerating' : 'Checking'}… ${p.converted || 0} processed`
+              + (p.failed ? ` · ${p.failed} failed` : '') + ' …';
+            return void setTimeout(poll, 1500);
+          }
+          if (j.state === 'error') { out.textContent = '✖ ' + (j.error || 'Failed'); toast('Backfill failed', 'error'); }
+          else if (j.state === 'done' && j.summary) { out.textContent = renderSummary(j.summary, apply); toast(apply ? 'Image sizes regenerated' : 'Preview ready', 'success'); }
+          else { out.textContent = 'No backfill has run yet.'; }
+          dry.disabled = ap.disabled = false;
+        };
+        poll();
       } catch (e) {
         out.textContent = '✖ ' + (e.message || 'Failed');
         toast(e.message || 'Backfill failed', 'error');
-      } finally { dry.disabled = ap.disabled = false; }
+        dry.disabled = ap.disabled = false;
+      }
     };
     dry.onclick = () => run(false);
     ap.onclick  = () => run(true);

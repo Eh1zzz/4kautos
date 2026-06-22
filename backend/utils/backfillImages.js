@@ -88,3 +88,34 @@ export async function runBackfill({ apply = false, onItem } = {}) {
   }
   return summary;
 }
+
+/* ── Background job runner (single-flight) ──────────────────────────────────────
+   Converting/uploading every image is slow and spiky for a large library — too
+   long for a single HTTP request on most platforms (≈30–60s gateway timeouts).
+   This runs the backfill DETACHED and tracks live progress in memory, so the
+   admin endpoint can return immediately and the dashboard polls for status.
+   One job at a time (a second start attaches to the running one). The full
+   queue-worker version (BullMQ + Redis) is the next step for multi-instance. */
+let job = { state: 'idle' }; // 'idle' | 'running' | 'done' | 'error'
+
+export function getBackfillJob() { return job; }
+
+export function startBackfill({ apply = false } = {}) {
+  if (job.state === 'running') return { ...job, alreadyRunning: true };
+
+  job = {
+    state: 'running', mode: apply ? 'apply' : 'dry-run',
+    startedAt: Date.now(), finishedAt: null,
+    progress: { converted: 0, failed: 0 }, summary: null, error: null,
+  };
+
+  // Fire-and-forget: the HTTP response returns before this resolves.
+  runBackfill({
+    apply,
+    onItem: (it) => { it?.error ? job.progress.failed++ : job.progress.converted++; },
+  })
+    .then((summary) => { job = { ...job, state: 'done',  finishedAt: Date.now(), summary }; })
+    .catch((err)    => { job = { ...job, state: 'error', finishedAt: Date.now(), error: err.message }; });
+
+  return { ...job, alreadyRunning: false };
+}
