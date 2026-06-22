@@ -68,18 +68,40 @@ router.post('/signup', authLimiter, async (req, res) => {
   }
 });
 
+// Per-account login throttle — closes the cross-IP brute-force gap that the
+// per-IP authLimiter misses (one account hammered from many IPs). In-memory
+// (single instance), bounded in practice by the global IP limiter; skipped in test.
+const LOGIN_FAILS = new Map(); // emailLower -> { count, until }
+const MAX_FAILS = 8;
+const LOCK_MS = 15 * 60 * 1000;
+const lockEnabled = () => process.env.NODE_ENV !== 'test';
+const loginLocked = email => { const e = LOGIN_FAILS.get(email); return !!(e && e.until > Date.now()); };
+function noteLoginFail(email) {
+  if (LOGIN_FAILS.size > 5000) { const now = Date.now(); for (const [k, v] of LOGIN_FAILS) if (!v.until || v.until < now) LOGIN_FAILS.delete(k); }
+  const e = LOGIN_FAILS.get(email) || { count: 0, until: 0 };
+  e.count += 1;
+  if (e.count >= MAX_FAILS) { e.until = Date.now() + LOCK_MS; e.count = 0; }
+  LOGIN_FAILS.set(email, e);
+}
+
 // POST /auth/login
 router.post('/login', authLimiter, async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const email = String(req.body.email || '').toLowerCase().trim();
+    const { password } = req.body;
     if (!email || !password)
       return res.status(400).json({ message: 'Email and password are required' });
 
+    if (lockEnabled() && loginLocked(email))
+      return res.status(429).json({ message: 'Too many failed attempts. Please try again in a few minutes.' });
+
     const user = await findByEmail(email);
-    if (!user) return res.status(401).json({ message: 'Invalid email or password' });
+    if (!user) { if (lockEnabled()) noteLoginFail(email); return res.status(401).json({ message: 'Invalid email or password' }); }
 
     const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.status(401).json({ message: 'Invalid email or password' });
+    if (!match) { if (lockEnabled()) noteLoginFail(email); return res.status(401).json({ message: 'Invalid email or password' }); }
+
+    if (lockEnabled()) LOGIN_FAILS.delete(email); // successful auth clears the counter
 
     // Email-verification wall — enforced only when an email driver is configured
     // (otherwise we'd lock everyone out, since no verification link can be sent).
