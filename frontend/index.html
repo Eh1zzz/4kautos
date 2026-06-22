@@ -103,7 +103,10 @@
 </section>
 
 <!-- ── HOT TICKER ──────────────────────────── -->
-<div class="ticker" id="ticker" aria-hidden="true"><div class="ticker-track" id="ticker-track"></div></div>
+<div class="ticker" id="ticker" aria-hidden="true"><span class="ticker-label" data-i18n="home.tickerLabel">HOT DEALS</span><div class="ticker-viewport"><div class="ticker-track" id="ticker-track"></div></div></div>
+
+<!-- ── CATEGORY QUICK-NAV ──────────────────── -->
+<nav class="cat-nav" aria-label="Browse by category"><div class="cat-nav-inner" id="cat-nav-inner"></div></nav>
 
 <!-- ── FEATURED SPOTLIGHT ──────────────────── -->
 <section id="spotlight-section" hidden>
@@ -411,6 +414,16 @@
     track.innerHTML = row + row;   // duplicate for a seamless loop
   }
 
+  // Category quick-nav — body-type launcher with the Figma red top-indicator bar.
+  function renderCatNav() {
+    const host = document.getElementById('cat-nav-inner');
+    if (!host || !window.bodyIcon) return;
+    const cats = ['SUV', 'Sedan', 'Hatchback', 'Coupe', 'Pickup', 'Convertible', 'Van'];
+    host.innerHTML = cats.map(c =>
+      `<a class="cat-link" href="listings.html?type=${encodeURIComponent(c)}">${window.bodyIcon(c)}<span data-i18n="cat.${c}">${window.t ? window.t('cat.' + c, c) : c}</span></a>`
+    ).join('');
+  }
+
   // Rotating hero showcase — live inventory photos behind the headline, with
   // progress dots + a featured-car caption (Figma rotating-hero treatment).
   function initHeroSlideshow(cars){
@@ -480,7 +493,7 @@
   loadSpotlight();
   loadHotSales();
   loadTicker();
-  loadTicker();
+  renderCatNav();
 </script>
 </body>
 </html>

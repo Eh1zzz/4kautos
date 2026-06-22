@@ -1406,6 +1406,8 @@ window.RT = (function () {
       'community.involved': 'Get involved',
       'community.involvedP': `The community hub is rolling out soon. In the meantime, <a href="#" onclick="openAuth('signup');return false">create an account</a> to save cars, message sellers and be first in when it opens. Want updates? Subscribe in the footer below.`,
       // Home page sections
+      'home.tickerLabel': 'HOT DEALS',
+      'cat.SUV': 'SUV', 'cat.Sedan': 'Sedan', 'cat.Hatchback': 'Hatchback', 'cat.Coupe': 'Coupe', 'cat.Pickup': 'Pickup', 'cat.Convertible': 'Convertible', 'cat.Van': 'Van',
       'home.statCarsL': 'Cars Listed', 'home.statSatL': 'Buyer Satisfaction', 'home.statFeesL': 'Hidden Fees',
       'home.hotLabel': '🔥 Hot Sales', 'home.hotTitle': 'Deals worth grabbing', 'home.viewAll': 'View All Cars →',
       'home.freshLabel': 'Fresh Inventory', 'home.latestTitle': 'Latest Arrivals',
@@ -1545,6 +1547,8 @@ window.RT = (function () {
       'community.involved': 'Participez',
       'community.involvedP': `Le hub communautaire arrive bientôt. En attendant, <a href="#" onclick="openAuth('signup');return false">créez un compte</a> pour enregistrer des voitures, contacter les vendeurs et être prioritaire à l'ouverture. Envie de nouvelles ? Abonnez-vous dans le pied de page ci-dessous.`,
       // Sections page d'accueil
+      'home.tickerLabel': 'BONS PLANS',
+      'cat.SUV': 'SUV', 'cat.Sedan': 'Berline', 'cat.Hatchback': 'Compacte', 'cat.Coupe': 'Coupé', 'cat.Pickup': 'Pick-up', 'cat.Convertible': 'Cabriolet', 'cat.Van': 'Fourgon',
       'home.statCarsL': 'Voitures publiées', 'home.statSatL': 'Satisfaction acheteurs', 'home.statFeesL': 'Frais cachés',
       'home.hotLabel': '🔥 Ventes flash', 'home.hotTitle': 'Des offres à saisir', 'home.viewAll': 'Voir toutes les voitures →',
       'home.freshLabel': 'Stock frais', 'home.latestTitle': 'Dernières arrivées',

@@ -177,7 +177,7 @@ button, input, select, textarea,
 /* Nav links */
 .nav-links{display:flex;gap:.1rem;flex-shrink:0}
 .nav-links a{
-  font-size:.82rem;font-weight:500;letter-spacing:.5px;text-transform:uppercase;
+  font-size:.8rem;font-weight:600;letter-spacing:1.4px;text-transform:uppercase;
   color:var(--text2);padding:6px 12px;border-radius:7px;
   border-bottom:2px solid transparent;
   transition:color var(--speed),background var(--speed),border-color var(--speed);
@@ -1092,8 +1092,10 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:3rem 2re
 .map-loc-chip{font-size:.78rem;background:var(--surface2);border:1px solid var(--border);border-radius:999px;padding:3px 10px;color:var(--text2)}
 .map-loc-chip b{color:var(--accent)}
 
-/* Hot ticker (redesign — racing-style marquee with the red "hot" accent) */
-.ticker{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);overflow:hidden;white-space:nowrap}
+/* Hot ticker (redesign — red-framed racing marquee with a HOT DEALS chip, Figma) */
+.ticker{display:flex;align-items:stretch;width:calc(100% - 2.5rem);max-width:1232px;margin:1.1rem auto;background:var(--bg2);border:1px solid rgba(220,18,18,.28);border-radius:14px;overflow:hidden}
+.ticker-label{flex-shrink:0;display:flex;align-items:center;background:var(--hot);color:#fff;font-family:var(--font-display);font-size:.66rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:0 1rem;white-space:nowrap}
+.ticker-viewport{flex:1;min-width:0;overflow:hidden;display:flex;align-items:center}
 .ticker-track{display:inline-flex;align-items:center;will-change:transform;animation:tickerScroll 45s linear infinite}
 .ticker:hover .ticker-track{animation-play-state:paused}
 .ticker-item{display:inline-flex;align-items:center;gap:.6rem;padding:.7rem 1.5rem;font-size:.76rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text2);white-space:nowrap}
@@ -1101,14 +1103,16 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:3rem 2re
 @keyframes tickerScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 @media(prefers-reduced-motion:reduce){.ticker-track{animation:none}}
 
-/* Hot ticker (redesign — racing-style marquee with the red hot accent) */
-.ticker{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);overflow:hidden;white-space:nowrap}
-.ticker-track{display:inline-flex;align-items:center;will-change:transform;animation:tickerScroll 45s linear infinite}
-.ticker:hover .ticker-track{animation-play-state:paused}
-.ticker-item{display:inline-flex;align-items:center;gap:.6rem;padding:.7rem 1.5rem;font-size:.76rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text2)}
-.ticker-item::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--hot);box-shadow:0 0 8px var(--hot);flex-shrink:0}
-@keyframes tickerScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-@media(prefers-reduced-motion:reduce){.ticker-track{animation:none}}
+/* Category quick-nav — sticky strip under the navbar with a red top-indicator (Figma) */
+.cat-nav{position:sticky;top:var(--nav-h);z-index:390;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid rgba(220,18,18,.25)}
+.cat-nav-inner{max-width:1280px;margin:0 auto;display:flex;overflow-x:auto;scrollbar-width:none}
+.cat-nav-inner::-webkit-scrollbar{display:none}
+.cat-link{position:relative;flex:1 0 auto;display:flex;flex-direction:column;align-items:center;gap:5px;padding:.7rem 1.15rem;color:var(--text3);font-family:var(--font-ui);font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;transition:color var(--speed),background var(--speed)}
+.cat-link svg{width:22px;height:22px}
+.cat-link::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--hot);transform:scaleX(0);transition:transform var(--speed) var(--ease)}
+.cat-link:hover{color:var(--hot);background:rgba(220,18,18,.05)}
+.cat-link:hover::before,.cat-link.active::before{transform:scaleX(1)}
+.cat-link.active{color:var(--hot)}
 
 /* ── Dual-currency price ── */
 .card-price{display:flex;flex-direction:column;align-items:flex-start;line-height:1.1}
