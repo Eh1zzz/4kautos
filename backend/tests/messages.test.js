@@ -62,6 +62,15 @@ describe('Messages', () => {
     expect(reply.status).toBe(201);
   });
 
+  it('marks the thread read on open — unread clears for the seller', async () => {
+    // The previous test opened the thread (GET /messages → markRead).
+    const unread = await request(app).get('/messages/unread').set('Authorization', `Bearer ${sellerToken}`);
+    expect(Number(unread.body.count)).toBe(0);
+    const threads = await request(app).get('/messages/threads').set('Authorization', `Bearer ${sellerToken}`);
+    const thread = threads.body.find(t => Number(t.car_id) === Number(carId));
+    expect(Number(thread.unread)).toBe(0);
+  });
+
   it('requires authentication', async () => {
     const res = await request(app).get('/messages/threads');
     expect(res.status).toBe(401);

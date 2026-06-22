@@ -709,12 +709,17 @@
           ${t.unread > 0 ? `<span class="thread-unread">${t.unread}</span>` : ''}
         </div>`;
       }).join('') + '</div>';
-      el.querySelectorAll('.thread-row').forEach(row => row.addEventListener('click', () =>
-        openChatThread({ carId: +row.dataset.car, buyerId: +row.dataset.buyer, title: row.dataset.name, sub: row.dataset.cartitle })));
+      el.querySelectorAll('.thread-row').forEach(row => row.addEventListener('click', () => {
+        row.querySelector('.thread-unread')?.remove();   // optimistic: clear the unread badge on open
+        openChatThread({ carId: +row.dataset.car, buyerId: +row.dataset.buyer, title: row.dataset.name, sub: row.dataset.cartitle });
+      }));
     } catch (e) {
       el.innerHTML = `<p class="empty-state">Failed: ${e.message}</p>`;
     }
   }
+  // Let the chat panel re-sync this list (authoritative unread counts) after it
+  // opens a thread and marks it read server-side.
+  window.refreshThreads = loadThreads;
 
   /* ── Admin: users + listings management ── */
   // Admin: international payouts awaiting manual settlement.

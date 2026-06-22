@@ -1228,8 +1228,11 @@ window.RT = (function () {
     $('thread-sub').textContent = sub || '';
     panel.classList.add('open');
     document.body.classList.add('menu-open');
-    // Load history, then join the realtime room (load() resolves buyerId on the buyer side).
+    // Load history (which marks the thread read server-side), then re-sync the
+    // unread badge + thread list, and join the realtime room.
     load().then(() => {
+      updateUnreadBadge();           // nav badge — was previously only refreshed on close
+      window.refreshThreads?.();     // clear the opened row's unread in the list
       RT.connect().then(s => { if (s && state.carId && state.buyerId) RT.emit('thread:join', { carId: state.carId, buyerId: state.buyerId }); });
     });
     clearInterval(state.poll);
