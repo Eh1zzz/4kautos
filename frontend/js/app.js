@@ -547,6 +547,12 @@ window.imgSrcset = function (url) {
   return `${b}_400.webp 400w, ${b}_800.webp 800w, ${b}_1600.webp 1600w`;
 };
 
+// Shimmer placeholders shown in a .cars-grid while real cards load (perceived speed).
+window.skeletonCards = function (n = 8) {
+  const one = `<div class="skel-card"><div class="skeleton skel-img"></div><div class="skeleton skel-line lg"></div><div class="skeleton skel-line"></div><div class="skeleton skel-line sm"></div></div>`;
+  return one.repeat(n);
+};
+
 window.carCard = function (c) {
   const T = (k, f) => (window.t ? window.t(k, f) : f);   // current-lang label (re-switched via data-i18n)
   const native = c.currency || 'NGN';

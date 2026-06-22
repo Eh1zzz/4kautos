@@ -151,22 +151,22 @@
     const grid = document.getElementById('listings-grid');
     const empty = document.getElementById('listings-empty');
     const pag = document.getElementById('pagination');
-    spinner.classList.remove('hidden'); grid.classList.add('hidden'); empty.classList.add('hidden'); pag.classList.add('hidden');
+    spinner.classList.add('hidden'); empty.classList.add('hidden'); pag.classList.add('hidden');
+    grid.classList.remove('hidden');
+    grid.innerHTML = window.skeletonCards ? window.skeletonCards(8) : '';   // shimmer while loading
     document.getElementById('recs-wrap')?.remove();
 
     try {
       const { cars, total, pages } = await API.getCarsPage({ ...buildParams(), page, limit: PAGE_SIZE });
       totalPages = pages;
-      spinner.classList.add('hidden');
       const from = total ? (page - 1) * PAGE_SIZE + 1 : 0;
       const to = (page - 1) * PAGE_SIZE + cars.length;
       document.getElementById('results-count').textContent = total ? `${from}–${to} of ${total}` : '0';
-      if (!cars.length) { empty.classList.remove('hidden'); renderRecommendations(); return; }
-      grid.classList.remove('hidden');
+      if (!cars.length) { grid.classList.add('hidden'); empty.classList.remove('hidden'); renderRecommendations(); return; }
       grid.innerHTML = cars.map(c => carCard(c)).join('');   // carCard + clicks/saves are shared (app.js)
       renderPagination();
     } catch (e) {
-      spinner.innerHTML = `<p class="empty-state">Backend offline. Start the server with <code>npm start</code></p>`;
+      grid.innerHTML = `<p class="empty-state" style="grid-column:1/-1">Backend offline. Start the server with <code>npm start</code></p>`;
     }
   }
 

@@ -310,11 +310,12 @@
 
   // Load featured listings (carCard + card interactions are shared in app.js)
   async function loadFeatured() {
+    const grid = document.getElementById('featured-grid');
+    document.getElementById('featured-spinner').classList.add('hidden');
+    grid.classList.remove('hidden');
+    grid.innerHTML = window.skeletonCards ? window.skeletonCards(8) : '';   // shimmer while loading
     try {
       const cars = await API.getCars({ limit: 8 });
-      const grid = document.getElementById('featured-grid');
-      document.getElementById('featured-spinner').classList.add('hidden');
-      grid.classList.remove('hidden');
       document.getElementById('stat-cars').textContent = cars.length >= 8 ? '500+' : cars.length;
 
       if (!cars.length) {
@@ -328,7 +329,7 @@
       grid.innerHTML = cars.slice(0,8).map(c => carCard(c)).join('');
       initHeroSlideshow(cars);
     } catch {
-      document.getElementById('featured-spinner').innerHTML = '<p class="empty-state">Could not load listings. Start the backend server.</p>';
+      grid.innerHTML = '<p class="empty-state" style="grid-column:1/-1">Could not load listings. Start the backend server.</p>';
     }
   }
 
