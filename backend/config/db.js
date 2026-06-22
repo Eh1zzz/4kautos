@@ -184,6 +184,20 @@ export async function connectDB() {
   // estimates and feeds the localized shipping resolver.
   await ensureColumn('users', 'location', 'VARCHAR(160)');
 
+  // Idempotency keys for replay-safe money mutations. The PK is the atomic lock:
+  // a reserved-but-unfinished row (status_code NULL) means "in progress".
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS idempotency_keys (
+      id_key      VARCHAR(80)  PRIMARY KEY,
+      scope       VARCHAR(160),
+      status_code INT,
+      response    MEDIUMTEXT,
+      created_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  // Opportunistic TTL sweep at boot (keys are only useful for minutes).
+  await pool.query('DELETE FROM idempotency_keys WHERE created_at < (NOW() - INTERVAL 2 DAY)').catch(() => {});
+
   console.log('✅ MySQL connected and tables ready');
 }
 

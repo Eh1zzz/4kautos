@@ -1,6 +1,7 @@
 import express from 'express';
 import crypto from 'crypto';
 import { authenticate, authorize } from '../middleware/auth.js';
+import { idempotent } from '../middleware/idempotency.js';
 import { toId } from '../utils/validation.js';
 import { findById as findTx, setPaymentInit, findByPaymentRef, markEscrowPaid, markRefunded, markReleased, revertRelease, pendingPayouts, markPayoutPaid, claimRelease, unclaimRelease, unrefund } from '../models/Transaction.js';
 import { findById as findCar } from '../models/Car.js';
@@ -13,7 +14,7 @@ const router = express.Router();
 
 // POST /payments/initiate { transactionId } — buyer starts paying into escrow.
 // Returns a Flutterwave hosted-checkout link to redirect the buyer to.
-router.post('/initiate', authenticate, authorize('buyer'), async (req, res) => {
+router.post('/initiate', authenticate, authorize('buyer'), idempotent(), async (req, res) => {
   try {
     if (!FLW.isConfigured())
       return res.status(503).json({ message: 'Payments are not configured yet' });
@@ -56,7 +57,7 @@ router.post('/initiate', authenticate, authorize('buyer'), async (req, res) => {
 
 // POST /payments/refund { transactionId } — buyer (own) or admin reverses an
 // escrowed payment; the buyer is credited and the transaction is cancelled.
-router.post('/refund', authenticate, async (req, res) => {
+router.post('/refund', authenticate, idempotent(), async (req, res) => {
   try {
     if (!FLW.isConfigured())
       return res.status(503).json({ message: 'Payments are not configured yet' });
@@ -147,7 +148,7 @@ router.post('/payout', authenticate, authorize('seller'), async (req, res) => {
 // POST /payments/release { transactionId } — buyer (own) or admin confirms receipt;
 // pays the seller via their chosen rail (Flutterwave for NG, manual/Wise for
 // international) and completes the transaction.
-router.post('/release', authenticate, async (req, res) => {
+router.post('/release', authenticate, idempotent(), async (req, res) => {
   try {
     const txId = toId(req.body.transactionId);
     if (!txId) return res.status(400).json({ message: 'A valid transactionId is required' });

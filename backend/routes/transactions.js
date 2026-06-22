@@ -2,12 +2,13 @@ import express from 'express';
 import { create, findByUser, findById, updateStatus, findExisting, deleteById } from '../models/Transaction.js';
 import { findById as findCarById } from '../models/Car.js';
 import { authenticate, authorize } from '../middleware/auth.js';
+import { idempotent } from '../middleware/idempotency.js';
 import { toId } from '../utils/validation.js';
 
 const router = express.Router();
 
 // POST /transactions — buyer initiates
-router.post('/', authenticate, authorize('buyer'), async (req, res) => {
+router.post('/', authenticate, authorize('buyer'), idempotent(), async (req, res) => {
   try {
     const carId = toId(req.body.carId);
     if (!carId)

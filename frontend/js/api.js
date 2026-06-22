@@ -29,8 +29,11 @@ function getUser() {
   try { return JSON.parse(localStorage.getItem('4k_user')); } catch { return null; }
 }
 
-async function req(method, path, body = null, isForm = false) {
-  const headers = {};
+// Random idempotency key for replay-safe money mutations.
+const idemKey = () => (self.crypto?.randomUUID ? self.crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
+
+async function req(method, path, body = null, isForm = false, extraHeaders = {}) {
+  const headers = { ...extraHeaders };
   const token = getToken();
   if (token) headers['Authorization'] = `Bearer ${token}`;
   if (body && !isForm) headers['Content-Type'] = 'application/json';
@@ -128,15 +131,15 @@ const API = {
   },
 
   /* ── TRANSACTIONS ── */
-  initTx(carId, sellerId) { return req('POST', '/transactions', { carId, sellerId }); },
+  initTx(carId, sellerId) { return req('POST', '/transactions', { carId, sellerId }, false, { 'Idempotency-Key': idemKey() }); },
   getMyTx()               { return req('GET', '/transactions'); },
   getTx(id)               { return req('GET', `/transactions/${id}`); },
   updateTxStatus(id, status) { return req('PATCH', `/transactions/${id}/status`, { status }); },
   deleteTx(id)               { return req('DELETE', `/transactions/${id}`); },
   // Escrow: start paying for a transaction → returns { link } to the Flutterwave checkout.
-  initiatePayment(transactionId) { return req('POST', '/payments/initiate', { transactionId }); },
-  refundPayment(transactionId)   { return req('POST', '/payments/refund',   { transactionId }); },
-  releasePayment(transactionId)  { return req('POST', '/payments/release',  { transactionId }); },
+  initiatePayment(transactionId) { return req('POST', '/payments/initiate', { transactionId }, false, { 'Idempotency-Key': idemKey() }); },
+  refundPayment(transactionId)   { return req('POST', '/payments/refund',   { transactionId }, false, { 'Idempotency-Key': idemKey() }); },
+  releasePayment(transactionId)  { return req('POST', '/payments/release',  { transactionId }, false, { 'Idempotency-Key': idemKey() }); },
   getBanks()                     { return req('GET',  '/payments/banks'); },
   getPayout()                    { return req('GET',  '/payments/payout'); },
   savePayout(payload)            { return req('POST', '/payments/payout', payload); },
