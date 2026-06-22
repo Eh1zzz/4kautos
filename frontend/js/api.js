@@ -182,6 +182,7 @@ const API = {
   adminSetFeatured(id, featured) { return req('PATCH', `/admin/cars/${id}/feature`, { featured }); },
   adminTransactions()    { return req('GET', '/admin/transactions'); },
   adminStats()           { return req('GET', '/admin/stats'); },
+  adminFlags()           { return req('GET', '/admin/flags'); },
 
   /* ── CUSTOMS CLEARANCE ── */
   getClearanceAgents()      { return req('GET', '/clearance/agents'); },

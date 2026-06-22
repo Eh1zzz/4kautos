@@ -168,6 +168,10 @@
           </div>
         </div>
       </div>
+      <div class="panel">
+        <div class="panel-head"><h3>Risk &amp; moderation</h3><span style="font-size:.72rem;color:var(--text3)" id="flags-count"></span></div>
+        <div id="admin-flags"><div class="spinner-wrap"><div class="spinner"></div></div></div>
+      </div>
       <div class="admin-stats">
         <div class="stat-tile"><span class="stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></span><div><div class="stat-num" id="stat-users">—</div><div class="stat-lbl">Users</div></div></div>
         <div class="stat-tile"><span class="stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 17H3v-4l2-5h14l2 5v4h-2"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg></span><div><div class="stat-num" id="stat-listings-admin">—</div><div class="stat-lbl">Listings</div></div></div>
@@ -791,6 +795,7 @@
 
   async function loadAdmin() {
     loadAdminStats();
+    loadAdminFlags();
     loadPendingPayouts();
     loadAdminTransactions();
     loadContactMessages();
@@ -887,6 +892,39 @@
       const frow = (label, n) => `<div class="ops-frow"><span class="ops-flabel">${esc(label)}</span><span class="ops-ftrack"><span class="ops-fbar" style="width:${(n / fmax * 100).toFixed(0)}%"></span></span><span class="ops-fn">${n}</span></div>`;
       document.getElementById('ops-funnel').innerHTML = frow('Initiated', f.initiated) + frow('In escrow', f.inEscrow) + frow('Completed', f.completed);
     } catch (e) { tiles.innerHTML = `<p class="empty-state">Failed: ${esc(e.message)}</p>`; }
+  }
+
+  async function loadAdminFlags() {
+    const el = document.getElementById('admin-flags');
+    if (!el) return;
+    el.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div></div>';
+    try {
+      const f = await API.adminFlags();
+      const cnt = document.getElementById('flags-count'); if (cnt) cnt.textContent = f.total ? `${f.total} to review` : 'all clear ✓';
+      const group = (title, rows) => rows.length ? `<div class="flags-group"><div class="flags-group-title">${title} <span class="flags-badge">${rows.length}</span></div>${rows.join('')}</div>` : '';
+      const row = (main, meta, action) => `<div class="tx-row admin-row"><div><div class="tx-car">${main}</div><div class="tx-meta">${meta}</div></div><div class="admin-actions">${action || ''}</div></div>`;
+      const money = n => '$' + Number(n || 0).toLocaleString('en-US');
+
+      const under = f.underpriced.map(c => row(
+        `${esc(c.title || `${c.make} ${c.model}`)} <span class="flag-pill flag-warn">${esc(String(c.pct_below))}% below avg</span>`,
+        `${money(c.car_usd)} vs ${money(c.avg_usd)} avg · ${c.comparables} comps · ${esc(c.seller_name)}`,
+        `<a href="detail.html?id=${esc(c.id)}" target="_blank" rel="noopener" class="adm-btn" style="text-decoration:none">View</a>`));
+      const dups = f.duplicateVins.map(d => row(
+        `VIN ${esc(d.vin)} <span class="flag-pill flag-bad">${d.count}× listed</span>`,
+        `Listings: ${d.carIds.map(id => '#' + id).join(', ')}`,
+        d.carIds.map(id => `<a href="detail.html?id=${esc(id)}" target="_blank" rel="noopener" class="adm-btn" style="text-decoration:none">#${esc(id)}</a>`).join(' ')));
+      const unver = f.unverifiedSellers.map(s => row(
+        `${esc(s.name)} <span class="flag-pill">${s.listings} listings</span>`,
+        `${esc(s.email)} · unverified seller`,
+        `<button class="adm-btn" onclick="adminVerify('${esc(s.id)}')">Verify</button>`));
+      const stalled = f.stalledBuyers.map(b => row(
+        `${esc(b.name)} <span class="flag-pill flag-warn">${b.open_unpaid} unpaid</span>`,
+        `${esc(b.email)} · opened ${b.open_unpaid} transactions, never paid`, ''));
+
+      const html = group('Under-market listings', under) + group('Duplicate VINs', dups)
+                 + group('Unverified sellers', unver) + group('Buyers not completing', stalled);
+      el.innerHTML = html || '<div class="empty-state" style="padding:2rem"><p>✓ No risk signals — all clear.</p></div>';
+    } catch (e) { el.innerHTML = `<p class="empty-state">Failed: ${esc(e.message)}</p>`; }
   }
 
   async function loadAdminTransactions() {

@@ -50,6 +50,60 @@ router.get('/stats', async (_req, res) => {
   }
 });
 
+// GET /admin/flags — risk & moderation signals derived from existing data
+// (no ML): under-market listings, duplicate VINs, unverified sellers with live
+// inventory, and buyers who keep opening transactions but never pay.
+router.get('/flags', async (_req, res) => {
+  try {
+    const { usdToNgn } = await getRate();
+    const carUsd = "(CASE WHEN c.currency = 'USD' THEN c.price ELSE c.price / ? END)";
+
+    const [underpriced] = await pool.query(
+      `WITH bench AS (
+         SELECT make, model, AVG(CASE WHEN currency = 'USD' THEN price ELSE price / ? END) AS avg_usd, COUNT(*) AS n
+         FROM cars WHERE price IS NOT NULL AND make IS NOT NULL AND model IS NOT NULL GROUP BY make, model
+       )
+       SELECT c.id, c.title, c.make, c.model, c.price, c.currency, c.seller_id, s.name AS seller_name,
+              ROUND(${carUsd}) AS car_usd, ROUND(b.avg_usd) AS avg_usd, b.n AS comparables,
+              ROUND(100 * (1 - ${carUsd} / b.avg_usd)) AS pct_below
+       FROM cars c JOIN bench b ON b.make = c.make AND b.model = c.model JOIN users s ON s.id = c.seller_id
+       WHERE b.n >= 4 AND ${carUsd} < 0.6 * b.avg_usd
+       ORDER BY pct_below DESC LIMIT 50`,
+      [usdToNgn, usdToNgn, usdToNgn, usdToNgn]
+    );
+
+    const [dupVins] = await pool.query(
+      `SELECT vin, COUNT(*) AS n, GROUP_CONCAT(id ORDER BY id) AS car_ids
+       FROM cars WHERE vin IS NOT NULL AND vin <> '' GROUP BY vin HAVING n > 1 ORDER BY n DESC LIMIT 50`
+    );
+
+    const [unverifiedSellers] = await pool.query(
+      `SELECT s.id, s.name, s.email, COUNT(c.id) AS listings
+       FROM users s JOIN cars c ON c.seller_id = s.id
+       WHERE s.verified = 0 AND s.role = 'seller' GROUP BY s.id, s.name, s.email
+       ORDER BY listings DESC LIMIT 50`
+    );
+
+    const [stalledBuyers] = await pool.query(
+      `SELECT b.id, b.name, b.email, COUNT(*) AS open_unpaid
+       FROM transactions t JOIN users b ON b.id = t.buyer_id
+       WHERE t.status = 'initiated' GROUP BY b.id, b.name, b.email HAVING open_unpaid >= 3
+       ORDER BY open_unpaid DESC LIMIT 50`
+    );
+
+    res.json({
+      underpriced,
+      duplicateVins: dupVins.map(r => ({ vin: r.vin, count: Number(r.n), carIds: String(r.car_ids).split(',').map(Number) })),
+      unverifiedSellers,
+      stalledBuyers,
+      total: underpriced.length + dupVins.length + unverifiedSellers.length + stalledBuyers.length,
+    });
+  } catch (err) {
+    console.error('admin flags:', err.message);
+    res.status(500).json({ message: 'Failed to load risk flags' });
+  }
+});
+
 router.get('/users', async (_req, res) => {
   try { res.json(await findAllUsers()); }
   catch { res.status(500).json({ message: 'Failed to fetch users' }); }

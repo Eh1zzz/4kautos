@@ -123,3 +123,20 @@ describe('Admin operations stats', () => {
     expect(r.body.counts).toHaveProperty('listings');
   });
 });
+
+describe('Admin risk flags', () => {
+  it('blocks non-admins (403)', async () => {
+    const r = await request(app).get('/admin/flags').set('Authorization', `Bearer ${buyerToken}`);
+    expect(r.status).toBe(403);
+  });
+
+  it('returns the flag buckets for an admin', async () => {
+    const r = await request(app).get('/admin/flags').set('Authorization', `Bearer ${adminToken}`);
+    expect(r.status).toBe(200);
+    expect(Array.isArray(r.body.underpriced)).toBe(true);
+    expect(Array.isArray(r.body.duplicateVins)).toBe(true);
+    expect(Array.isArray(r.body.unverifiedSellers)).toBe(true);
+    expect(Array.isArray(r.body.stalledBuyers)).toBe(true);
+    expect(typeof r.body.total).toBe('number');
+  });
+});

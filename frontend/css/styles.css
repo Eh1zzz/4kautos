@@ -1051,6 +1051,15 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:3rem 2re
 .ops-fbar{display:block;height:100%;background:var(--grad);transition:width var(--speed-slow) var(--ease)}
 .ops-fn{width:40px;text-align:right;font-weight:700;font-size:.82rem;color:var(--text)}
 
+/* ── Admin risk & moderation queue ── */
+.flags-group{margin-bottom:1rem}
+.flags-group:last-child{margin-bottom:0}
+.flags-group-title{font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin:.4rem 0 .4rem;display:flex;align-items:center;gap:.5rem}
+.flags-badge{background:var(--surface2);border:1px solid var(--border);border-radius:999px;padding:1px 8px;font-size:.7rem;color:var(--text3)}
+.flag-pill{display:inline-block;font-size:.68rem;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--surface2);color:var(--text2);margin-left:.4rem}
+.flag-pill.flag-warn{background:rgba(245,158,11,.16);color:#f59e0b}
+.flag-pill.flag-bad{background:rgba(220,18,18,.14);color:var(--hot)}
+
 /* Hot ticker (redesign — racing-style marquee with the red "hot" accent) */
 .ticker{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);overflow:hidden;white-space:nowrap}
 .ticker-track{display:inline-flex;align-items:center;will-change:transform;animation:tickerScroll 45s linear infinite}
