@@ -60,13 +60,22 @@ stateless and push work outward** (to the CDN, to queues, to the DB's strengths)
   `UPDATE … WHERE status IN (…)`; webhooks re-verify + are idempotent; `users.email`
   is `UNIQUE`; duplicate transactions are de-duped (`findExisting`).
 
+**Done**
+- **Tunable pool**: `DATABASE_URL` is parsed into a config object so
+  `connectionLimit` is set via `DB_POOL_SIZE` (default 10) — keep
+  `replicas × connectionLimit` under MySQL `max_connections` (a common outage
+  cause under load). `enableKeepAlive` stops PaaS proxies handing back dead idle
+  sockets; opt-in TLS via `DB_SSL`.
+- **Indexed free-text search**: a `FULLTEXT` index on
+  `cars(make, model, title, description)` backs `MATCH..AGAINST` (BOOLEAN-mode,
+  prefix-expanded) instead of an un-indexable `LIKE '%q%'` scan. Auto-used when
+  every query word is ≥ 3 chars; falls back to `LIKE` for short model tokens
+  ("M3") and if the index can't be built. `SEARCH_MODE` forces `like`/`fulltext`.
+
 **Next**
-- **Tune the pool**: set `connectionLimit` so `replicas × connectionLimit` stays
-  under MySQL `max_connections` (a common outage cause under load).
-- **Search**: the keyword filter is `LIKE '%q%'` on title/make/model/description
-  — a leading wildcard **can't use a B-tree index**. For scale add a **FULLTEXT
-  index** (or an external search engine — Meilisearch/Elasticsearch) for the
-  free-text query; the structured filters already hit indexes.
+- For very large catalogues, move free-text to an external engine
+  (Meilisearch/Elasticsearch) for typo-tolerance + faceting; the structured
+  filters already hit B-tree indexes.
 - **Deep pagination**: `OFFSET` degrades on large offsets → switch to **keyset /
   seek pagination** (`WHERE created_at < ?`) for endless scroll.
 - **Read replicas** for the read-heavy listing/browse traffic; route writes to

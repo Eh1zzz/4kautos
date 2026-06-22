@@ -55,6 +55,36 @@ describe('GET /cars', () => {
   });
 });
 
+describe('GET /cars?q= (search)', () => {
+  // Assert search BEHAVIOUR (results), not the backend — so it passes whether
+  // the FULLTEXT index is active or it falls back to LIKE.
+  beforeEach(async () => {
+    await request(app).post('/cars').set('Authorization', `Bearer ${sellerToken}`)
+      .send(validCar({ make: 'Toyota', model: 'Camry', vin: '1HGCM82633A004352', title: '2020 Toyota Camry XSE' }));
+    await request(app).post('/cars').set('Authorization', `Bearer ${sellerToken}`)
+      .send(validCar({ make: 'Honda', model: 'Civic', vin: '1HGCM82633A004360', title: '2019 Honda Civic Sport' }));
+  });
+
+  it('finds a listing by a full-word query and excludes non-matches', async () => {
+    const res = await request(app).get('/cars?q=toyota');
+    expect(res.status).toBe(200);
+    expect(res.body.some(c => c.make === 'Toyota')).toBe(true);
+    expect(res.body.some(c => c.make === 'Honda')).toBe(false);
+  });
+
+  it('matches a word prefix', async () => {
+    const res = await request(app).get('/cars?q=hond');
+    expect(res.body.some(c => c.make === 'Honda')).toBe(true);
+  });
+
+  it('still matches short model tokens (e.g. "M3") via the LIKE fallback', async () => {
+    await request(app).post('/cars').set('Authorization', `Bearer ${sellerToken}`)
+      .send(validCar({ make: 'BMW', model: 'M3', vin: 'WBADT43403G023549', title: '2018 BMW M3' }));
+    const res = await request(app).get('/cars?q=M3');
+    expect(res.body.some(c => c.model === 'M3')).toBe(true);
+  });
+});
+
 describe('POST /cars', () => {
   it('lets a seller create a valid listing', async () => {
     const res = await request(app).post('/cars')

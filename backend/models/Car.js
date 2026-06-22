@@ -1,5 +1,22 @@
-import { pool } from '../config/db.js';
+import { pool, fulltextReady } from '../config/db.js';
 import { toId, CURRENCIES } from '../utils/validation.js';
+
+// Build a BOOLEAN-mode FULLTEXT query from a free-text string: every word is
+// required and prefix-expanded ("toyo cam" → "+toyo* +cam*"). Returns null when
+// any token is too short to be indexed (default innodb_ft_min_token_size = 3)
+// so the caller falls back to substring LIKE — preserving matches for short
+// model names like "M3"/"X5". SEARCH_MODE='fulltext' forces it (short tokens
+// dropped); SEARCH_MODE='like' disables it entirely (handled by the caller).
+function buildFulltextExpr(q) {
+  const force = process.env.SEARCH_MODE === 'fulltext';
+  const tokens = String(q).trim().toLowerCase().split(/\s+/)
+    .map(t => t.replace(/[+\-><()~*"@]/g, ''))   // strip boolean-mode operators
+    .filter(Boolean);
+  if (!tokens.length) return null;
+  if (!force && tokens.some(t => t.length < 3)) return null; // short token → LIKE
+  const usable = tokens.filter(t => t.length >= 3);
+  return usable.length ? usable.map(t => `+${t}*`).join(' ') : null;
+}
 
 // Public seller projection — deliberately omits email so listings/detail don't
 // leak seller PII to anonymous visitors. Contact happens through a transaction.
@@ -39,9 +56,17 @@ export async function findAll({ q, make, model, year, minPrice, maxPrice, condit
   const vals  = [];
 
   if (q) {
-    conds.push('(c.title LIKE ? OR c.make LIKE ? OR c.model LIKE ? OR c.description LIKE ?)');
-    const like = `%${q}%`;
-    vals.push(like, like, like, like);
+    const ft = (fulltextReady && process.env.SEARCH_MODE !== 'like') ? buildFulltextExpr(q) : null;
+    if (ft) {
+      // Indexed full-text search (scales; column list must match the FULLTEXT index).
+      conds.push('MATCH(c.make, c.model, c.title, c.description) AGAINST (? IN BOOLEAN MODE)');
+      vals.push(ft);
+    } else {
+      // Substring fallback — works for short tokens (e.g. "M3") but full-scans.
+      conds.push('(c.title LIKE ? OR c.make LIKE ? OR c.model LIKE ? OR c.description LIKE ?)');
+      const like = `%${q}%`;
+      vals.push(like, like, like, like);
+    }
   }
   if (make)     { conds.push('c.make LIKE ?');  vals.push(`%${make}%`); }
   if (model)    { conds.push('c.model LIKE ?'); vals.push(`%${model}%`); }

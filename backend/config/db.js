@@ -41,6 +41,11 @@ function buildPoolConfig(dsn) {
 
 export const pool = mysql.createPool(buildPoolConfig(DSN));
 
+/* Whether the cars FULLTEXT index exists. Car.findAll reads this (a live ESM
+   binding) to decide between an indexed MATCH..AGAINST search and the LIKE
+   fallback — so a DB where the index couldn't be created never errors. */
+export let fulltextReady = false;
+
 export async function connectDB() {
   await pool.query('SELECT 1'); // verify connection
 
@@ -178,6 +183,12 @@ export async function connectDB() {
   await ensureIndex('cars', 'idx_cars_condition', '`condition`');
   await ensureIndex('messages', 'idx_msg_thread', 'car_id, buyer_id');
 
+  // FULLTEXT index for the free-text catalogue search. A leading-wildcard
+  // `LIKE '%q%'` can't use a B-tree index (full scan); MATCH..AGAINST against
+  // this index scales. Best-effort — if it can't be created the app keeps
+  // working via the LIKE fallback (gated by the fulltextReady flag).
+  fulltextReady = await ensureFulltextIndex();
+
   // Escrow / payments (Flutterwave) — snapshot of what was charged + provider refs.
   await ensureColumn('transactions', 'amount',      'DECIMAL(15,2)');
   await ensureColumn('transactions', 'currency',    "VARCHAR(3) NOT NULL DEFAULT 'NGN'");
@@ -246,6 +257,24 @@ async function ensureIndex(table, indexName, columns) {
   if (rows.length === 0) {
     await pool.query(`CREATE INDEX \`${indexName}\` ON \`${table}\` (${columns})`);
     console.log(`🔧 Index added: ${table}.${indexName}`);
+  }
+}
+
+/** Create the cars FULLTEXT index if missing. Returns whether it's present
+ *  afterwards (false if creation failed — caller falls back to LIKE). */
+async function ensureFulltextIndex() {
+  try {
+    const [rows] = await pool.query(
+      `SELECT 1 FROM information_schema.statistics
+       WHERE table_schema = DATABASE() AND table_name = 'cars' AND index_name = 'ft_cars_search'`
+    );
+    if (rows.length) return true;
+    await pool.query('ALTER TABLE cars ADD FULLTEXT INDEX ft_cars_search (make, model, title, description)');
+    console.log('🔧 FULLTEXT index added: cars.ft_cars_search');
+    return true;
+  } catch (err) {
+    console.warn('FULLTEXT index unavailable — search uses LIKE fallback:', err.message);
+    return false;
   }
 }
 
