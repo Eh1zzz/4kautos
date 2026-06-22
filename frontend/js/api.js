@@ -187,6 +187,7 @@ const API = {
   adminStats()           { return req('GET', '/admin/stats'); },
   adminFlags()           { return req('GET', '/admin/flags'); },
   adminActivity()        { return req('GET', '/admin/activity'); },
+  adminMap()             { return req('GET', '/admin/map'); },
 
   /* ── CUSTOMS CLEARANCE ── */
   getClearanceAgents()      { return req('GET', '/clearance/agents'); },

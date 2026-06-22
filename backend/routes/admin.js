@@ -128,6 +128,24 @@ router.get('/activity', async (_req, res) => {
   }
 });
 
+// GET /admin/map — geocoded listing origins (plotted) + top buyer locations
+// (text locales — listed, not plotted, until we geocode buyer locations).
+router.get('/map', async (_req, res) => {
+  try {
+    const [points] = await pool.query(
+      "SELECT id, COALESCE(NULLIF(title,''), CONCAT(make,' ',model)) AS label, latitude AS lat, longitude AS lng, location FROM cars WHERE latitude IS NOT NULL AND longitude IS NOT NULL LIMIT 500");
+    const [buyerLocations] = await pool.query(
+      "SELECT location, COUNT(*) AS n FROM users WHERE role = 'buyer' AND location IS NOT NULL AND location <> '' GROUP BY location ORDER BY n DESC LIMIT 20");
+    res.json({
+      points: points.map(p => ({ id: p.id, label: p.label, lat: Number(p.lat), lng: Number(p.lng), location: p.location })),
+      buyerLocations: buyerLocations.map(b => ({ location: b.location, count: Number(b.n) })),
+    });
+  } catch (err) {
+    console.error('admin map:', err.message);
+    res.status(500).json({ message: 'Failed to load map data' });
+  }
+});
+
 router.get('/users', async (_req, res) => {
   try { res.json(await findAllUsers()); }
   catch { res.status(500).json({ message: 'Failed to fetch users' }); }

@@ -1068,6 +1068,12 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:3rem 2re
 .feed-text{flex:1;min-width:0;font-size:.85rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .feed-time{font-size:.72rem;color:var(--text3);flex-shrink:0}
 
+/* ── Admin inventory map ── */
+.admin-map-box{height:320px;border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);background:var(--surface2)}
+.map-buyers{display:flex;flex-wrap:wrap;gap:.5rem}
+.map-loc-chip{font-size:.78rem;background:var(--surface2);border:1px solid var(--border);border-radius:999px;padding:3px 10px;color:var(--text2)}
+.map-loc-chip b{color:var(--accent)}
+
 /* Hot ticker (redesign — racing-style marquee with the red "hot" accent) */
 .ticker{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);overflow:hidden;white-space:nowrap}
 .ticker-track{display:inline-flex;align-items:center;will-change:transform;animation:tickerScroll 45s linear infinite}

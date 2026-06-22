@@ -153,3 +153,17 @@ describe('Admin activity feed', () => {
     expect(Array.isArray(r.body.items)).toBe(true);
   });
 });
+
+describe('Admin inventory map', () => {
+  it('blocks non-admins (403)', async () => {
+    const r = await request(app).get('/admin/map').set('Authorization', `Bearer ${buyerToken}`);
+    expect(r.status).toBe(403);
+  });
+
+  it('returns map points + buyer locations for an admin', async () => {
+    const r = await request(app).get('/admin/map').set('Authorization', `Bearer ${adminToken}`);
+    expect(r.status).toBe(200);
+    expect(Array.isArray(r.body.points)).toBe(true);
+    expect(Array.isArray(r.body.buyerLocations)).toBe(true);
+  });
+});
