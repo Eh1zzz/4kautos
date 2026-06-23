@@ -7,6 +7,12 @@
       "runtimeArgs": ["backend/server.js"],
       "autoPort": true,
       "port": 3000
+    },
+    {
+      "name": "moviezdb",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "3001", "--directory", "C:/Users/LENOVO/Documents/GitHub/moviezDB/frontend"],
+      "port": 3001
     }
   ]
 }
