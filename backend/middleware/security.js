@@ -20,13 +20,14 @@ export function rateLimitStore(prefix) {
  * frontend served from the same origin.
  */
 // Content-Security-Policy — allowlists exactly the external origins the frontend
-// uses (Leaflet from unpkg, Google Fonts, OpenStreetMap tiles + nominatim geocode,
-// placeholder/brand-icon CDNs, R2 images). 'unsafe-inline' is required by the
+// uses (Leaflet from unpkg, the anime.js animation engine from esm.sh, Google
+// Fonts, OpenStreetMap tiles + nominatim geocode, placeholder/brand-icon CDNs,
+// R2 images). 'unsafe-inline' is required by the
 // current inline-handler/inline-style markup; migrating those to listeners is the
 // follow-up that lets script-src drop to 'self' for true inline-XSS protection.
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.socket.io",
+  "script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.socket.io https://esm.sh",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com",
   "font-src 'self' https://fonts.gstatic.com",
   "img-src 'self' data: https:",
