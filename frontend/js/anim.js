@@ -143,6 +143,69 @@ if (!reduce) {
     main.addEventListener('pointerleave', end);
   }
 
+  /* ── Bundle C — micro-interactions ─────────────────────────────────── */
+
+  // ❤️ pop + particle burst when a car is saved.
+  function heartBurst(btn) {
+    if (btn.matches('.card-saves')) animate(btn, { scale: { from: 0.55, to: 1 }, duration: 440, ease: 'out(3)' });
+    if (document.hidden) return;
+    const r = btn.getBoundingClientRect();
+    const layer = document.createElement('div');
+    layer.style.cssText = `position:fixed;left:${r.left + r.width / 2}px;top:${r.top + r.height / 2}px;z-index:9999;pointer-events:none`;
+    document.body.appendChild(layer);
+    const N = 8;
+    for (let i = 0; i < N; i++) {
+      const d = document.createElement('span');
+      d.textContent = '♥';
+      d.style.cssText = 'position:absolute;left:0;top:0;font-size:11px;line-height:1;color:var(--accent,#8b7cff)';
+      layer.appendChild(d);
+      const ang = (i / N) * Math.PI * 2, dist = 20 + Math.random() * 16;
+      animate(d, {
+        translateX: { from: 0, to: Math.cos(ang) * dist },
+        translateY: { from: 0, to: Math.sin(ang) * dist },
+        scale: { from: 1, to: 0 }, opacity: { from: 1, to: 0 },
+        duration: 600, ease: 'out(3)',
+      });
+    }
+    setTimeout(() => layer.remove(), 850);
+  }
+  document.addEventListener('click', e => {
+    const btn = e.target.closest?.('.card-saves, #save-btn');
+    if (!btn) return;
+    // app.js toggles .saved first; celebrate only when it's now ON.
+    setTimeout(() => { if (btn.classList.contains('saved')) heartBurst(btn); }, 0);
+  });
+
+  // ✓ draw a checkmark into success toasts.
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  function decorateToast(t) {
+    if (!t || t.__an || !t.classList?.contains('success')) return; t.__an = true;
+    if (document.hidden) return;
+    const svg = document.createElementNS(SVGNS, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('width', '15'); svg.setAttribute('height', '15');
+    svg.style.cssText = 'vertical-align:-2px;margin-right:7px;flex:0 0 auto';
+    const p = document.createElementNS(SVGNS, 'path');
+    p.setAttribute('d', 'M5 13l4 4L19 7'); p.setAttribute('fill', 'none');
+    p.setAttribute('stroke', 'currentColor'); p.setAttribute('stroke-width', '2.6');
+    p.setAttribute('stroke-linecap', 'round'); p.setAttribute('stroke-linejoin', 'round');
+    svg.appendChild(p); t.insertBefore(svg, t.firstChild);
+    let len; try { len = p.getTotalLength(); } catch { return; }
+    p.style.strokeDasharray = len; p.style.strokeDashoffset = len;
+    animate(p, { strokeDashoffset: { from: len, to: 0 }, duration: 480, ease: 'out(3)' });
+  }
+
+  // Chat: spring the newest bubble in when a message arrives (the list is
+  // re-rendered wholesale, so only animate when the bubble count grows).
+  function watchChat(box) {
+    if (!box || box.__an) return; box.__an = true;
+    let prev = box.querySelectorAll('.tmsg').length;
+    new MutationObserver(() => {
+      const items = box.querySelectorAll('.tmsg'), n = items.length;
+      if (n > prev && !document.hidden) animate(items[n - 1], { opacity: { from: 0, to: 1 }, translateY: { from: 10, to: 0 }, scale: { from: 0.96, to: 1 }, duration: 360, ease: 'out(3)' });
+      prev = n;
+    }).observe(box, { childList: true });
+  }
+
   // Route an added node to the right enhancement; returns any grids to schedule.
   function handleNode(n) {
     const grids = [];
@@ -155,6 +218,10 @@ if (!reduce) {
     else if (n.querySelector?.('.spec-row')) staggerSpecs(n.querySelector('#specs-dl') || n);
     if (n.matches?.('.gallery-main')) initGallery(n);
     else { const g = n.querySelector?.('.gallery-main'); if (g) initGallery(g); }
+    if (n.matches?.('.toast')) decorateToast(n);
+    n.querySelectorAll?.('.toast').forEach(decorateToast);
+    if (n.matches?.('#thread-msgs')) watchChat(n);
+    else { const tb = n.querySelector?.('#thread-msgs'); if (tb) watchChat(tb); }
     return grids;
   }
 
@@ -163,6 +230,7 @@ if (!reduce) {
   document.querySelectorAll('.price-eval').forEach(popBadge);
   { const dl = document.getElementById('specs-dl'); if (dl) staggerSpecs(dl); }
   { const g = document.querySelector('.gallery-main'); if (g) initGallery(g); }
+  { const tb = document.getElementById('thread-msgs'); if (tb) watchChat(tb); }
 
   // Watch for everything rendered later (async loads, pagination, filters…).
   new MutationObserver(muts => {
