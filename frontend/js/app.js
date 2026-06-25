@@ -1634,3 +1634,7 @@ window.RT = (function () {
 /* ── BOOT ─────────────────────────────────── */
 Money.load();                       // fetch live FX, then reprice
 document.addEventListener('DOMContentLoaded', () => Money.repriceAll());
+
+/* Progressive animation layer (anime.js v4). Optional & self-contained —
+   loaded as a module so it can import anime.js; fails silently if offline. */
+import('/js/anim.js').catch(() => {});
