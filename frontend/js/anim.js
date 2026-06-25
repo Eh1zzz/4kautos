@@ -57,7 +57,7 @@ if (!reduce) {
       duration: 640, ease: 'out(3)',
       onComplete: () => fresh.forEach(c => { c.classList.add('in'); c.style.opacity = ''; c.style.transform = ''; }),
     });
-    fresh.forEach((c, i) => setTimeout(() => countUp(c), 140 + i * 25));
+    fresh.forEach((c, i) => setTimeout(() => { countUp(c); drawIcon(c); }, 140 + i * 25));
     // Safety net — never leave a card invisible if anything misbehaves.
     fresh.forEach(c => setTimeout(() => {
       if (c.style.opacity === '0') { c.style.opacity = ''; c.style.transform = ''; c.classList.add('in'); }
@@ -81,19 +81,96 @@ if (!reduce) {
     else gridIO.observe(grid);
   }
 
-  // Cards present when we load (rendered before anim.js arrived).
-  document.querySelectorAll('.cars-grid').forEach(scheduleGrid);
+  /* ── Bundle B — detail page & card detail flourishes ───────────────── */
 
-  // Cards added later — pagination, filters, recommendations, home "featured", etc.
+  // Line-draw a card's body-type icon as it appears (subtle "drawn" detail).
+  function drawIcon(card) {
+    if (document.hidden) return;                  // don't hide icons we can't animate yet
+    card.querySelectorAll('.card-type svg path, .card-type svg circle').forEach(p => {
+      let len; try { len = p.getTotalLength(); } catch { return; }
+      if (!len) return;
+      const clear = () => { p.style.strokeDasharray = ''; p.style.strokeDashoffset = ''; };
+      p.style.strokeDasharray = len; p.style.strokeDashoffset = len;
+      animate(p, { strokeDashoffset: { from: len, to: 0 }, duration: 650, ease: 'out(3)', onComplete: clear });
+      setTimeout(clear, 1400);                     // safety net: never leave the icon hidden
+    });
+  }
+
+  // Spring-pop the "Great/Good price" verdict badge when it appears.
+  // (Only standalone badges — on cards it just rides in with the card.)
+  function popBadge(el) {
+    if (!el || el.__an || el.closest('.car-card')) return; el.__an = true;
+    if (document.hidden) return;   // leave it in its natural (visible) state
+    // Quick scale-in "pop". Uses only the proven out(3) ease + {from,to} form
+    // (verified in bundle A) so nothing here can throw on the live site.
+    animate(el, { scale: { from: 0, to: 1 }, opacity: { from: 0, to: 1 }, duration: 520, ease: 'out(3)' });
+  }
+
+  // Stagger the spec rows in on the detail page.
+  function staggerSpecs(dl) {
+    if (!dl) return;
+    const rows = [...dl.querySelectorAll('.spec-row')].filter(r => !r.__an);
+    if (!rows.length) return; rows.forEach(r => r.__an = true);
+    if (document.hidden) return;   // leave rows visible if we can't animate them
+    animate(rows, { opacity: { from: 0, to: 1 }, translateX: { from: -14, to: 0 }, delay: stagger(40), duration: 460, ease: 'out(3)' });
+  }
+
+  // Gallery: cross-fade on photo change + swipe/drag to navigate (snaps back).
+  function initGallery(main) {
+    if (!main || main.__an) return; main.__an = true;
+    const img = main.querySelector('img'); if (!img) return;
+    let lastSrc = img.getAttribute('src');
+    new MutationObserver(() => {
+      const s = img.getAttribute('src');
+      if (s === lastSrc) return; lastSrc = s;
+      if (document.hidden) return;
+      animate(img, { opacity: { from: 0.25, to: 1 }, scale: { from: 1.04, to: 1 }, duration: 380, ease: 'out(3)' });
+    }).observe(img, { attributes: true, attributeFilter: ['src'] });
+
+    const prev = document.getElementById('gal-prev'), next = document.getElementById('gal-next');
+    let startX = 0, dx = 0, dragging = false;
+    main.style.touchAction = 'pan-y';
+    main.addEventListener('pointerdown', e => { startX = e.clientX; dx = 0; dragging = true; });
+    main.addEventListener('pointermove', e => { if (dragging) { dx = e.clientX - startX; img.style.transform = `translateX(${dx * 0.4}px)`; } });
+    const end = () => {
+      if (!dragging) return; dragging = false;
+      animate(img, { translateX: { to: 0 }, duration: 360, ease: 'out(3)' });
+      if (dx <= -50 && next) next.click();
+      else if (dx >= 50 && prev) prev.click();
+    };
+    main.addEventListener('pointerup', end);
+    main.addEventListener('pointercancel', end);
+    main.addEventListener('pointerleave', end);
+  }
+
+  // Route an added node to the right enhancement; returns any grids to schedule.
+  function handleNode(n) {
+    const grids = [];
+    if (n.nodeType !== 1) return grids;
+    if (n.matches?.('.car-card')) grids.push(n.closest('.cars-grid') || n.parentElement);
+    n.querySelectorAll?.('.car-card').forEach(c => grids.push(c.closest('.cars-grid') || c.parentElement));
+    if (n.matches?.('.price-eval')) popBadge(n);
+    n.querySelectorAll?.('.price-eval').forEach(popBadge);
+    if (n.matches?.('.spec-row')) staggerSpecs(n.closest('#specs-dl') || n.parentElement);
+    else if (n.querySelector?.('.spec-row')) staggerSpecs(n.querySelector('#specs-dl') || n);
+    if (n.matches?.('.gallery-main')) initGallery(n);
+    else { const g = n.querySelector?.('.gallery-main'); if (g) initGallery(g); }
+    return grids;
+  }
+
+  // Initial scan — anything already in the DOM when anim.js loads.
+  document.querySelectorAll('.cars-grid').forEach(scheduleGrid);
+  document.querySelectorAll('.price-eval').forEach(popBadge);
+  { const dl = document.getElementById('specs-dl'); if (dl) staggerSpecs(dl); }
+  { const g = document.querySelector('.gallery-main'); if (g) initGallery(g); }
+
+  // Watch for everything rendered later (async loads, pagination, filters…).
   new MutationObserver(muts => {
     const grids = new Set();
-    muts.forEach(m => m.addedNodes.forEach(n => {
-      if (n.nodeType !== 1) return;
-      if (n.matches?.('.car-card')) grids.add(n.closest('.cars-grid') || n.parentElement);
-      else n.querySelectorAll?.('.car-card').forEach(c => grids.add(c.closest('.cars-grid') || c.parentElement));
-    }));
+    muts.forEach(m => m.addedNodes.forEach(n => handleNode(n).forEach(g => g && grids.add(g))));
     grids.forEach(scheduleGrid);
   }).observe(document.body, { childList: true, subtree: true });
 
-  Anim.revealCards = revealCards;   // available for manual use if ever needed
+  Anim.revealCards = revealCards;
+  Anim.popBadge = popBadge;
 }
