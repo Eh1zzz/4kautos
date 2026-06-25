@@ -206,6 +206,45 @@ if (!reduce) {
     }).observe(box, { childList: true });
   }
 
+  /* ── Bundle D — hero stats & wizard flow ───────────────────────────── */
+
+  // Count a hero stat up from 0 once it receives a numeric value.
+  function watchStat(el) {
+    if (!el || el.__w) return; el.__w = true;
+    const tryCount = () => {
+      if (el.__counting || el.__done) return;
+      const m = (el.textContent || '').trim().match(/^([\d,]+)(\+?)$/);
+      if (!m) return;
+      const target = +m[1].replace(/,/g, ''); if (!target) return;
+      el.__done = true;
+      if (document.hidden) return;                 // keep the real value as-is
+      el.__counting = true;
+      const suffix = m[2] || '', obj = { v: 0 };
+      animate(obj, {
+        v: target, duration: 1100, ease: 'out(3)',
+        onUpdate: () => { el.textContent = Math.round(obj.v).toLocaleString('en-US') + suffix; },
+        onComplete: () => { el.textContent = target.toLocaleString('en-US') + suffix; el.__counting = false; },
+      });
+    };
+    new MutationObserver(() => { if (!el.__counting) tryCount(); }).observe(el, { childList: true, characterData: true, subtree: true });
+    tryCount();                                     // in case it's already populated
+  }
+
+  // Pop the active wizard step indicator whenever the step changes.
+  function watchWizard(steps) {
+    if (!steps || steps.__w) return; steps.__w = true;
+    const pop = () => {
+      const active = steps.querySelector('.wstep.active');
+      if (!active || active.__last) return;
+      steps.querySelectorAll('.wstep').forEach(s => { s.__last = false; });
+      active.__last = true;
+      if (document.hidden) return;
+      animate(active.querySelector('.wstep-n') || active, { scale: { from: 0.7, to: 1 }, duration: 420, ease: 'out(3)' });
+    };
+    new MutationObserver(pop).observe(steps, { attributes: true, attributeFilter: ['class'], subtree: true });
+    pop();
+  }
+
   // Route an added node to the right enhancement; returns any grids to schedule.
   function handleNode(n) {
     const grids = [];
@@ -231,6 +270,8 @@ if (!reduce) {
   { const dl = document.getElementById('specs-dl'); if (dl) staggerSpecs(dl); }
   { const g = document.querySelector('.gallery-main'); if (g) initGallery(g); }
   { const tb = document.getElementById('thread-msgs'); if (tb) watchChat(tb); }
+  document.querySelectorAll('.hero-stat-n').forEach(watchStat);
+  { const ws = document.getElementById('wizard-steps'); if (ws) watchWizard(ws); }
 
   // Watch for everything rendered later (async loads, pagination, filters…).
   new MutationObserver(muts => {
