@@ -25,7 +25,32 @@
   </div>
 </nav>
 
-<div id="detail-spinner" class="spinner-wrap" style="min-height:60vh"><div class="spinner"></div></div>
+<!-- Content-shaped skeleton (mirrors .detail-layout so there's no shift when the
+     real content swaps in). Shown until load() reveals #detail-content. -->
+<div id="detail-spinner" style="min-height:60vh" aria-hidden="true">
+  <div class="detail-layout detail-skeleton">
+    <div class="detail-main">
+      <div class="skeleton sk-gallery"></div>
+      <div class="sk-thumbs">
+        <div class="skeleton sk-thumb"></div><div class="skeleton sk-thumb"></div>
+        <div class="skeleton sk-thumb"></div><div class="skeleton sk-thumb"></div>
+      </div>
+      <div class="skeleton skel-line lg"></div>
+      <div class="skeleton skel-line"></div>
+      <div class="skeleton skel-line sm"></div>
+    </div>
+    <aside class="detail-sidebar">
+      <div class="sk-card">
+        <div class="skeleton skel-line sm" style="margin:0 0 1rem"></div>
+        <div class="skeleton sk-title"></div>
+        <div class="skeleton sk-price"></div>
+        <div class="skeleton sk-btn"></div>
+        <div class="skeleton sk-btn"></div>
+        <div class="skeleton sk-btn"></div>
+      </div>
+    </aside>
+  </div>
+</div>
 <div id="detail-content" class="hidden">
 
   <div class="detail-layout">
@@ -285,7 +310,7 @@
       if (!isOwner) loadSimilar(car.id);   // owners don't need the comparables strip
       loadValuation(car.id);
     } catch(e) {
-      document.getElementById('detail-spinner').innerHTML = `<div class="empty-state"><h3>${window.t('detail.notFound', 'Car Not Found')}</h3><p><a href="listings.html" style="color:var(--accent)">Browse all listings</a></p></div>`;
+      document.getElementById('detail-spinner').innerHTML = `<div class="spinner-wrap"><div class="empty-state"><h3>${window.t('detail.notFound', 'Car Not Found')}</h3><p><a href="listings.html" style="color:var(--accent)">Browse all listings</a></p></div></div>`;
     }
   }
 

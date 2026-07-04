@@ -1307,6 +1307,17 @@ html.js-reveal .cars-grid>.reveal.in:nth-child(n+5){transition-delay:.2s}
 .skel-line.sm{width:40%;margin-bottom:1.1rem}
 @media (prefers-reduced-motion: reduce){ .skeleton::after{animation:none} }
 
+/* Detail-page skeleton — mirrors .detail-layout (gallery + CTA sidebar) so the
+   real content swaps in with no layout shift. */
+.detail-skeleton .sk-gallery{width:100%;aspect-ratio:16/10;border-radius:var(--radius-lg)}
+.detail-skeleton .sk-thumbs{display:flex;gap:.5rem;margin-top:.6rem}
+.detail-skeleton .sk-thumb{width:90px;height:64px;border-radius:8px;flex:0 0 auto}
+.detail-skeleton .skel-line{margin-left:0;margin-right:0}
+.detail-skeleton .sk-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem}
+.detail-skeleton .sk-title{height:28px;width:80%;border-radius:8px;margin-bottom:1.1rem}
+.detail-skeleton .sk-price{height:34px;width:55%;border-radius:8px;margin-bottom:1.5rem}
+.detail-skeleton .sk-btn{height:48px;border-radius:var(--radius);margin-bottom:.7rem}
+
 /* Premium cross-document page transitions (Chrome/Edge); ignored elsewhere. */
 @view-transition{ navigation: auto; }
 
