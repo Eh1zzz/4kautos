@@ -37,7 +37,8 @@
     "transform": {},
     "setupFiles": [
       "./backend/tests/setup.js"
-    ]
+    ],
+    "testTimeout": 30000
   },
   "engines": {
     "node": ">=18.18.0"

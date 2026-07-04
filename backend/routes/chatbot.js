@@ -6,6 +6,9 @@ import { rateLimitStore } from '../middleware/security.js';
 
 const router = express.Router();
 const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages';
+// Cap the paid API call — Node's global fetch has no default timeout, so a hung
+// upstream would pin the request open. On timeout the catch degrades to localAnswer.
+const CHAT_TIMEOUT_MS = Number(process.env.CHAT_TIMEOUT_MS) || 15000;
 
 const chatLimiter = rateLimit({ windowMs: 60_000, max: 20, standardHeaders: true, legacyHeaders: false, store: rateLimitStore('rl:chat:') });
 
@@ -235,6 +238,7 @@ router.post('/', chatLimiter, async (req, res) => {
         system,
         messages,
       }),
+      signal: AbortSignal.timeout(CHAT_TIMEOUT_MS),
     });
 
     if (!apiRes.ok) {
