@@ -14,3 +14,6 @@ public/uploads/
 npm-debug.log*
 .DS_Store
 Thumbs.db
+
+# Claude Code harness scheduling lock (per-machine, not shareable)
+.claude/scheduled_tasks.lock
