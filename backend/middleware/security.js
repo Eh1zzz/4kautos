@@ -22,9 +22,13 @@ export function rateLimitStore(prefix) {
 // Content-Security-Policy — allowlists exactly the external origins the frontend
 // uses (Leaflet from unpkg, the anime.js animation engine from esm.sh, Google
 // Fonts, OpenStreetMap tiles + nominatim geocode, placeholder/brand-icon CDNs,
-// R2 images). 'unsafe-inline' is required by the
-// current inline-handler/inline-style markup; migrating those to listeners is the
-// follow-up that lets script-src drop to 'self' for true inline-XSS protection.
+// R2 images). script-src has NO 'unsafe-inline': page scripts are external
+// (frontend/js/pages/*), interactions go through the data-act dispatcher in
+// app.js, and the sole inline script — the theme bootstrap in each <head>,
+// kept inline to avoid a theme flash — is allowed by its sha256 hash. So
+// injected inline scripts/handlers (stored XSS) simply don't execute.
+// style-src still needs 'unsafe-inline' (style="" attributes everywhere);
+// tightening it is Phase-6 work.
 const cspWith = scriptSrc => [
   "default-src 'self'",
   `script-src ${scriptSrc}`,
@@ -38,19 +42,14 @@ const cspWith = scriptSrc => [
   "frame-ancestors 'none'",
 ].join('; ');
 
-const CSP = cspWith("'self' 'unsafe-inline' https://unpkg.com https://cdn.socket.io https://esm.sh");
-
-// Strict policy, currently report-only alongside the enforcing one. The page
-// scripts are externalized (frontend/js/pages/*) and every inline handler is a
-// data-act attribute now; the only inline script left is the theme bootstrap in
-// each <head> (kept inline to avoid a theme flash) — allowed by its hash. The
-// hash stays OUT of the enforcing policy above: a hash's presence makes
-// browsers ignore 'unsafe-inline', which would be the flip itself. Once
-// /csp-report stays quiet in production, promote this string to the enforcing
-// header. NOTE: editing the theme snippet in any page invalidates the hash —
-// keep the snippet byte-identical across pages and recompute if it changes.
+// NOTE: editing the theme snippet in any page invalidates this hash — keep the
+// snippet byte-identical across all pages and recompute if it ever changes.
+// (A violation would show up immediately as [csp-report] in the server logs.)
 const THEME_BOOTSTRAP_HASH = "'sha256-TjJO5PLtGmDgl9ifTd5Zc2pWS5VoHbSfwr4zmApKyi0='";
-const CSP_REPORT_ONLY =
+
+// ENFORCED since CSP step 3. report-uri stays on so anything blocked in the
+// wild is still visible in the logs via POST /csp-report.
+const CSP =
   cspWith(`'self' ${THEME_BOOTSTRAP_HASH} https://unpkg.com https://cdn.socket.io https://esm.sh`) +
   '; report-uri /csp-report';
 
@@ -62,7 +61,6 @@ export function securityHeaders(_req, res, next) {
   res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   res.setHeader('Content-Security-Policy', CSP);
-  res.setHeader('Content-Security-Policy-Report-Only', CSP_REPORT_ONLY);
   if (process.env.NODE_ENV === 'production')
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   res.removeHeader('X-Powered-By');
