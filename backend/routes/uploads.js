@@ -8,9 +8,11 @@ import { hashBase, putObject } from '../utils/storage.js';
 const router = express.Router();
 
 // In-memory so we can sniff + re-encode before anything touches storage.
+// 8MB/file keeps the worst-case request footprint (10 files + sharp decode
+// buffers) inside a small container's RAM; phone photos run 2–5MB.
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 20 * 1024 * 1024, files: 10 },
+  limits: { fileSize: 8 * 1024 * 1024, files: 10 },
 });
 
 // POST /uploads — sellers upload photos; returns optimized, CDN-ready URLs.
@@ -65,7 +67,7 @@ router.post('/doc', writeLimiter, authenticate, authorize('seller'), upload.sing
 // Translate multer's limit errors into clean client responses.
 router.use((err, _req, res, next) => {
   if (err instanceof multer.MulterError) {
-    const msg = err.code === 'LIMIT_FILE_SIZE' ? 'Each image must be under 20MB'
+    const msg = err.code === 'LIMIT_FILE_SIZE' ? 'Each image must be under 8MB'
               : err.code === 'LIMIT_FILE_COUNT' ? 'Too many files (max 10)'
               : 'Upload error';
     return res.status(413).json({ message: msg });

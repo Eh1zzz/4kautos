@@ -68,20 +68,22 @@ router.post('/signup', authLimiter, async (req, res) => {
   }
 });
 
-// Per-account login throttle — closes the cross-IP brute-force gap that the
-// per-IP authLimiter misses (one account hammered from many IPs). In-memory
-// (single instance), bounded in practice by the global IP limiter; skipped in test.
-const LOGIN_FAILS = new Map(); // emailLower -> { count, until }
+// Per-account login throttle, keyed by email+IP. Keying on email alone let
+// anyone lock a victim's account with 8 deliberate wrong passwords (a
+// lockout DoS); with the IP in the key an attacker only locks their own view,
+// while cross-IP brute force stays bounded by the per-IP authLimiter above.
+// In-memory (single instance); skipped in test.
+const LOGIN_FAILS = new Map(); // `${emailLower}|${ip}` -> { count, until }
 const MAX_FAILS = 8;
 const LOCK_MS = 15 * 60 * 1000;
 const lockEnabled = () => process.env.NODE_ENV !== 'test';
-const loginLocked = email => { const e = LOGIN_FAILS.get(email); return !!(e && e.until > Date.now()); };
-function noteLoginFail(email) {
+const loginLocked = key => { const e = LOGIN_FAILS.get(key); return !!(e && e.until > Date.now()); };
+function noteLoginFail(key) {
   if (LOGIN_FAILS.size > 5000) { const now = Date.now(); for (const [k, v] of LOGIN_FAILS) if (!v.until || v.until < now) LOGIN_FAILS.delete(k); }
-  const e = LOGIN_FAILS.get(email) || { count: 0, until: 0 };
+  const e = LOGIN_FAILS.get(key) || { count: 0, until: 0 };
   e.count += 1;
   if (e.count >= MAX_FAILS) { e.until = Date.now() + LOCK_MS; e.count = 0; }
-  LOGIN_FAILS.set(email, e);
+  LOGIN_FAILS.set(key, e);
 }
 
 // POST /auth/login
@@ -92,16 +94,17 @@ router.post('/login', authLimiter, async (req, res) => {
     if (!email || !password)
       return res.status(400).json({ message: 'Email and password are required' });
 
-    if (lockEnabled() && loginLocked(email))
+    const lockKey = `${email}|${req.ip}`;
+    if (lockEnabled() && loginLocked(lockKey))
       return res.status(429).json({ message: 'Too many failed attempts. Please try again in a few minutes.' });
 
     const user = await findByEmail(email);
-    if (!user) { if (lockEnabled()) noteLoginFail(email); return res.status(401).json({ message: 'Invalid email or password' }); }
+    if (!user) { if (lockEnabled()) noteLoginFail(lockKey); return res.status(401).json({ message: 'Invalid email or password' }); }
 
     const match = await bcrypt.compare(password, user.password);
-    if (!match) { if (lockEnabled()) noteLoginFail(email); return res.status(401).json({ message: 'Invalid email or password' }); }
+    if (!match) { if (lockEnabled()) noteLoginFail(lockKey); return res.status(401).json({ message: 'Invalid email or password' }); }
 
-    if (lockEnabled()) LOGIN_FAILS.delete(email); // successful auth clears the counter
+    if (lockEnabled()) LOGIN_FAILS.delete(lockKey); // successful auth clears the counter
 
     // Email-verification wall — enforced only when an email driver is configured
     // (otherwise we'd lock everyone out, since no verification link can be sent).

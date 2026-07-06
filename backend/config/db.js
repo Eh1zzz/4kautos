@@ -46,6 +46,8 @@ export const pool = mysql.createPool(buildPoolConfig(DSN));
    fallback — so a DB where the index couldn't be created never errors. */
 export let fulltextReady = false;
 
+let sweepTimer = null; // module-level so repeated connectDB() calls (tests) don't stack timers
+
 export async function connectDB() {
   await pool.query('SELECT 1'); // verify connection
 
@@ -241,8 +243,13 @@ export async function connectDB() {
       created_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
   `);
-  // Opportunistic TTL sweep at boot (keys are only useful for minutes).
-  await pool.query('DELETE FROM idempotency_keys WHERE created_at < (NOW() - INTERVAL 2 DAY)').catch(() => {});
+  // TTL sweep for idempotency keys (only useful for minutes): once at boot,
+  // then every 6h — a long-lived instance otherwise grows the table forever.
+  // unref() so the timer never keeps the process (or the test runner) alive.
+  const sweepIdempotencyKeys = () =>
+    pool.query('DELETE FROM idempotency_keys WHERE created_at < (NOW() - INTERVAL 2 DAY)').catch(() => {});
+  await sweepIdempotencyKeys();
+  if (!sweepTimer) sweepTimer = setInterval(sweepIdempotencyKeys, 6 * 60 * 60 * 1000).unref();
 
   console.log('✅ MySQL connected and tables ready');
 }

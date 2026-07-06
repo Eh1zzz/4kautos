@@ -1,6 +1,7 @@
 import express from 'express';
 import crypto from 'crypto';
 import { authenticate, authorize } from '../middleware/auth.js';
+import { writeLimiter } from '../middleware/security.js';
 import { idempotent } from '../middleware/idempotency.js';
 import { toId } from '../utils/validation.js';
 import { findById as findTx, setPaymentInit, findByPaymentRef, markEscrowPaid, markRefunded, markReleased, revertRelease, pendingPayouts, markPayoutPaid, claimRelease, unclaimRelease, unrefund } from '../models/Transaction.js';
@@ -99,7 +100,9 @@ router.get('/banks', authenticate, async (_req, res) => {
 });
 
 // POST /payments/resolve-account { accountNumber, bankCode } — confirm the name.
-router.post('/resolve-account', authenticate, async (req, res) => {
+// Seller-only + write-limited: this proxies a paid Flutterwave lookup that maps
+// account numbers to holder names — don't leave it open as a PII probe.
+router.post('/resolve-account', writeLimiter, authenticate, authorize('seller'), async (req, res) => {
   if (!FLW.isConfigured()) return res.status(503).json({ message: 'Payments are not configured yet' });
   const { accountNumber, bankCode } = req.body;
   if (!accountNumber || !bankCode) return res.status(400).json({ message: 'accountNumber and bankCode are required' });
