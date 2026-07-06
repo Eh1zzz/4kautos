@@ -25,9 +25,9 @@ export function rateLimitStore(prefix) {
 // R2 images). 'unsafe-inline' is required by the
 // current inline-handler/inline-style markup; migrating those to listeners is the
 // follow-up that lets script-src drop to 'self' for true inline-XSS protection.
-const CSP = [
+const cspWith = scriptSrc => [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.socket.io https://esm.sh",
+  `script-src ${scriptSrc}`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com",
   "font-src 'self' https://fonts.gstatic.com",
   "img-src 'self' data: https:",
@@ -38,6 +38,17 @@ const CSP = [
   "frame-ancestors 'none'",
 ].join('; ');
 
+const CSP = cspWith("'self' 'unsafe-inline' https://unpkg.com https://cdn.socket.io https://esm.sh");
+
+// Step 1 of dropping 'unsafe-inline' from script-src: run the STRICT policy in
+// report-only mode alongside the enforcing one. Nothing breaks; every inline
+// script/handler that would break is reported to /csp-report (and the browser
+// console). Once the reports go quiet after the externalization refactor, this
+// string becomes the enforcing CSP above.
+const CSP_REPORT_ONLY =
+  cspWith("'self' https://unpkg.com https://cdn.socket.io https://esm.sh") +
+  '; report-uri /csp-report';
+
 export function securityHeaders(_req, res, next) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
@@ -46,6 +57,7 @@ export function securityHeaders(_req, res, next) {
   res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   res.setHeader('Content-Security-Policy', CSP);
+  res.setHeader('Content-Security-Policy-Report-Only', CSP_REPORT_ONLY);
   if (process.env.NODE_ENV === 'production')
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   res.removeHeader('X-Powered-By');

@@ -84,6 +84,29 @@ app.use(cors({
   exposedHeaders: ['X-Total-Count','X-Total-Pages'],
 }));
 
+/* ── CSP VIOLATION REPORTS ────────────────────
+   Intake for the report-only strict CSP (see middleware/security.js). Mounted
+   BEFORE the global limiter so browser-fired reports don't spend a visitor's
+   request budget; it gets its own tight limiter instead. Each unique violation
+   is logged once per boot (dedupe) so real users can't flood the logs. */
+const cspSeen = new Set();
+app.post('/csp-report',
+  rateLimit({ windowMs: 15 * 60 * 1000, max: 30, standardHeaders: false, legacyHeaders: false,
+              store: rateLimitStore('rl:csp:'), message: '' }),
+  express.json({ type: () => true, limit: '16kb' }), // browsers send application/csp-report, not application/json
+  (req, res) => {
+    const r = req.body?.['csp-report'] || {};
+    if (r['violated-directive']) {
+      const doc = String(r['document-uri'] || '').split('?')[0];
+      const key = `${doc} | ${r['violated-directive']} | ${r['blocked-uri'] || ''} | ${r['source-file'] || ''}:${r['line-number'] || ''}`;
+      if (!cspSeen.has(key) && cspSeen.size < 500) {
+        cspSeen.add(key);
+        console.warn(`[csp-report] ${key}`);
+      }
+    }
+    res.status(204).end();
+  });
+
 /* ── BODY PARSING ─────────────────────────── */
 app.use(express.json({ limit: '2mb' }));
 // extended:false (no qs nesting) + caps to blunt parameter-pollution / payload DoS.
