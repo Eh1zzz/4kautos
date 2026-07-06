@@ -398,6 +398,36 @@ window.esc = function (str) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 };
 
+/* ── DELEGATED ACTIONS (CSP: no inline handlers) ─────────────
+   Inline onclick/onerror attributes are blocked once script-src drops
+   'unsafe-inline', so every clickable carries data-act instead and this single
+   listener dispatches it. Shared actions live here; page scripts add their own
+   with Object.assign(window.ACTIONS, {...}). Handlers receive (dataset, el). */
+window.ACTIONS = {
+  goto:    d => { location.href = d.href; },
+  auth:    d => openAuth(d.mode || 'login', d.role ? { role: d.role } : undefined),
+  contact: () => openContact(),
+  logout:  () => API.logout(),
+};
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el) return;
+  const fn = window.ACTIONS[el.dataset.act];
+  if (!fn) return;
+  if (el.tagName === 'A') e.preventDefault();
+  if (el.dataset.stop) e.stopPropagation();
+  fn(el.dataset, el);
+});
+// Image fallback (replaces per-img onerror attributes). error doesn't bubble,
+// so listen in the capture phase; data-felled guards a broken fallback loop.
+document.addEventListener('error', e => {
+  const img = e.target;
+  if (!(img instanceof HTMLImageElement) || !img.dataset.fallback || img.dataset.felled) return;
+  img.dataset.felled = '1';
+  img.removeAttribute('srcset');
+  img.src = img.dataset.fallback;
+}, true);
+
 /* ── MONEY / FX (USD ⇄ NGN) ───────────────── */
 // Prices are stored in a native currency per listing; we display the user's
 // chosen currency as the headline and the converted value underneath.
@@ -581,7 +611,7 @@ window.carCard = function (c) {
   return `
     <div class="car-card reveal" data-id="${esc(c.id)}">
       <div class="card-img-wrap">
-        <img class="card-img" src="${esc(img)}"${window.imgSrcset(img) ? ` srcset="${esc(window.imgSrcset(img))}" sizes="(max-width:640px) 100vw, 340px"` : ''} alt="${esc(title)}" loading="lazy" onerror="this.onerror=null;this.removeAttribute('srcset');this.src='https://placehold.co/600x400/12121f/8b7cff?text=No+Photo'">
+        <img class="card-img" src="${esc(img)}"${window.imgSrcset(img) ? ` srcset="${esc(window.imgSrcset(img))}" sizes="(max-width:640px) 100vw, 340px"` : ''} alt="${esc(title)}" loading="lazy" data-fallback="https://placehold.co/600x400/12121f/8b7cff?text=No+Photo">
         <div class="card-badges">
           ${c.body_type ? `<span class="card-type">${window.bodyIcon(c.body_type)}${esc(c.body_type)}</span>` : ''}
           ${badge}
@@ -986,7 +1016,7 @@ document.addEventListener('keydown', e => {
         </div>
         <div class="footer-col">
           <h5 data-i18n="footer.sell">Sell</h5>
-          <a href="#" onclick="openAuth('signup',{role:'seller'});return false" data-i18n="nav.sell">List Your Car</a>
+          <a href="#" data-act="auth" data-mode="signup" data-role="seller" data-i18n="nav.sell">List Your Car</a>
           <a href="profile.html" data-i18n="footer.dashboard">Seller Dashboard</a>
           <a href="profile.html" data-i18n="footer.photoguide">Photo Guide</a>
           <a href="clearance.html" data-i18n="footer.shipping">Shipping &amp; Clearance</a>
@@ -1000,9 +1030,9 @@ document.addEventListener('keydown', e => {
         </div>
         <div class="footer-col">
           <h5 data-i18n="footer.support">Support</h5>
-          <a href="#" onclick="openContact();return false" data-i18n="footer.help">Help Center</a>
+          <a href="#" data-act="contact" data-i18n="footer.help">Help Center</a>
           <a href="#" data-i18n="footer.faqs">FAQs</a>
-          <a href="#" onclick="openContact();return false" data-i18n="footer.contact">Contact Us</a>
+          <a href="#" data-act="contact" data-i18n="footer.contact">Contact Us</a>
           <a href="#" data-i18n="footer.tos">Terms of Service</a>
           <a href="#" data-i18n="footer.privacy">Privacy Policy</a>
         </div>
@@ -1393,7 +1423,7 @@ window.RT = (function () {
       'about.v4h': 'Clearance, sorted', 'about.v4p': "Compare verified clearing agents by their best rate, and track your car from the seller's driveway to yours.",
       'about.started': 'How it started', 'about.startedP': "Importing a car into Nigeria has long meant guesswork — unclear duties, unreliable agents and sellers you can't verify. 4Kautos was built to replace that guesswork with transparency: real-time exchange rates, a customs estimator, and a marketplace where both sides are accountable.",
       'about.join': 'Join us',
-      'about.joinP': `Whether you're buying your first car or shipping your tenth, we'd love to have you. <a href="#" onclick="openAuth('signup');return false">Create an account</a> or <a href="listings.html">browse the latest arrivals</a>.`,
+      'about.joinP': `Whether you're buying your first car or shipping your tenth, we'd love to have you. <a href="#" data-act="auth" data-mode="signup">Create an account</a> or <a href="listings.html">browse the latest arrivals</a>.`,
       // Community page
       'community.label': 'Better Together', 'community.title': 'The 4Kautos <em>Community</em>',
       'community.sub': 'Buyers, sellers and clearing agents swapping import know-how, build threads and honest reviews.',
@@ -1404,7 +1434,7 @@ window.RT = (function () {
       'community.c3h': 'Build & ownership threads', 'community.c3p': "Owners sharing reliability notes, mods and maintenance on the models you're considering.",
       'community.c4h': 'Marketplace alerts', 'community.c4p': 'Get a heads-up when a car matching your search lands, and follow price moves on your shortlist.',
       'community.involved': 'Get involved',
-      'community.involvedP': `The community hub is rolling out soon. In the meantime, <a href="#" onclick="openAuth('signup');return false">create an account</a> to save cars, message sellers and be first in when it opens. Want updates? Subscribe in the footer below.`,
+      'community.involvedP': `The community hub is rolling out soon. In the meantime, <a href="#" data-act="auth" data-mode="signup">create an account</a> to save cars, message sellers and be first in when it opens. Want updates? Subscribe in the footer below.`,
       // Home page sections
       'home.tickerLabel': 'HOT DEALS',
       'cat.SUV': 'SUV', 'cat.Sedan': 'Sedan', 'cat.Hatchback': 'Hatchback', 'cat.Coupe': 'Coupe', 'cat.Pickup': 'Pickup', 'cat.Convertible': 'Convertible', 'cat.Van': 'Van',
@@ -1534,7 +1564,7 @@ window.RT = (function () {
       'about.v4h': 'Dédouanement réglé', 'about.v4p': "Comparez des agents de dédouanement vérifiés selon leur meilleur tarif, et suivez votre voiture du vendeur jusqu'à vous.",
       'about.started': 'Comment tout a commencé', 'about.startedP': "Importer une voiture au Nigeria a longtemps relevé du pari — droits flous, agents peu fiables et vendeurs invérifiables. 4Kautos a été créé pour remplacer ce pari par la transparence : taux de change en temps réel, estimateur de douane et une place de marché où chacun rend des comptes.",
       'about.join': 'Rejoignez-nous',
-      'about.joinP': `Que vous achetiez votre première voiture ou expédiiez la dixième, nous serions ravis de vous compter parmi nous. <a href="#" onclick="openAuth('signup');return false">Créez un compte</a> ou <a href="listings.html">parcourez les dernières arrivées</a>.`,
+      'about.joinP': `Que vous achetiez votre première voiture ou expédiiez la dixième, nous serions ravis de vous compter parmi nous. <a href="#" data-act="auth" data-mode="signup">Créez un compte</a> ou <a href="listings.html">parcourez les dernières arrivées</a>.`,
       // Page Communauté
       'community.label': 'Mieux ensemble', 'community.title': 'La <em>communauté</em> 4Kautos',
       'community.sub': "Acheteurs, vendeurs et agents de dédouanement qui échangent savoir-faire d'import, fils de build et avis honnêtes.",
@@ -1545,7 +1575,7 @@ window.RT = (function () {
       'community.c3h': 'Fils builds & possession', 'community.c3p': 'Des propriétaires partagent fiabilité, modifications et entretien sur les modèles qui vous intéressent.',
       'community.c4h': 'Alertes du marché', 'community.c4p': 'Soyez prévenu quand une voiture correspondant à votre recherche arrive, et suivez les variations de prix de votre sélection.',
       'community.involved': 'Participez',
-      'community.involvedP': `Le hub communautaire arrive bientôt. En attendant, <a href="#" onclick="openAuth('signup');return false">créez un compte</a> pour enregistrer des voitures, contacter les vendeurs et être prioritaire à l'ouverture. Envie de nouvelles ? Abonnez-vous dans le pied de page ci-dessous.`,
+      'community.involvedP': `Le hub communautaire arrive bientôt. En attendant, <a href="#" data-act="auth" data-mode="signup">créez un compte</a> pour enregistrer des voitures, contacter les vendeurs et être prioritaire à l'ouverture. Envie de nouvelles ? Abonnez-vous dans le pied de page ci-dessous.`,
       // Sections page d'accueil
       'home.tickerLabel': 'BONS PLANS',
       'cat.SUV': 'SUV', 'cat.Sedan': 'Berline', 'cat.Hatchback': 'Compacte', 'cat.Coupe': 'Coupé', 'cat.Pickup': 'Pick-up', 'cat.Convertible': 'Cabriolet', 'cat.Van': 'Fourgon',

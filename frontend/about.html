@@ -22,7 +22,7 @@
   <div class="nav-actions">
     <button class="nav-btn nav-btn-ghost" id="nav-login-btn">Sign In</button>
     <button class="nav-btn nav-btn-accent" id="nav-signup-btn">List Your Car</button>
-    <button class="nav-btn nav-btn-ghost hidden" id="nav-profile-btn" onclick="location.href='profile.html'">👤 <span class="nav-user-label">Profile</span></button>
+    <button class="nav-btn nav-btn-ghost hidden" id="nav-profile-btn" data-act="goto" data-href="profile.html">👤 <span class="nav-user-label">Profile</span></button>
   </div>
 </nav>
 
@@ -50,7 +50,7 @@
     <p data-i18n="about.startedP">Importing a car into Nigeria has long meant guesswork — unclear duties, unreliable agents and sellers you can't verify. 4Kautos was built to replace that guesswork with transparency: real-time exchange rates, a customs estimator, and a marketplace where both sides are accountable.</p>
 
     <h3 data-i18n="about.join">Join us</h3>
-    <p data-i18n-html="about.joinP">Whether you're buying your first car or shipping your tenth, we'd love to have you. <a href="#" onclick="openAuth('signup');return false">Create an account</a> or <a href="listings.html">browse the latest arrivals</a>.</p>
+    <p data-i18n-html="about.joinP">Whether you're buying your first car or shipping your tenth, we'd love to have you. <a href="#" data-act="auth" data-mode="signup">Create an account</a> or <a href="listings.html">browse the latest arrivals</a>.</p>
   </div>
 </section>
 

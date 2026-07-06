@@ -40,13 +40,18 @@ const cspWith = scriptSrc => [
 
 const CSP = cspWith("'self' 'unsafe-inline' https://unpkg.com https://cdn.socket.io https://esm.sh");
 
-// Step 1 of dropping 'unsafe-inline' from script-src: run the STRICT policy in
-// report-only mode alongside the enforcing one. Nothing breaks; every inline
-// script/handler that would break is reported to /csp-report (and the browser
-// console). Once the reports go quiet after the externalization refactor, this
-// string becomes the enforcing CSP above.
+// Strict policy, currently report-only alongside the enforcing one. The page
+// scripts are externalized (frontend/js/pages/*) and every inline handler is a
+// data-act attribute now; the only inline script left is the theme bootstrap in
+// each <head> (kept inline to avoid a theme flash) — allowed by its hash. The
+// hash stays OUT of the enforcing policy above: a hash's presence makes
+// browsers ignore 'unsafe-inline', which would be the flip itself. Once
+// /csp-report stays quiet in production, promote this string to the enforcing
+// header. NOTE: editing the theme snippet in any page invalidates the hash —
+// keep the snippet byte-identical across pages and recompute if it changes.
+const THEME_BOOTSTRAP_HASH = "'sha256-TjJO5PLtGmDgl9ifTd5Zc2pWS5VoHbSfwr4zmApKyi0='";
 const CSP_REPORT_ONLY =
-  cspWith("'self' https://unpkg.com https://cdn.socket.io https://esm.sh") +
+  cspWith(`'self' ${THEME_BOOTSTRAP_HASH} https://unpkg.com https://cdn.socket.io https://esm.sh`) +
   '; report-uri /csp-report';
 
 export function securityHeaders(_req, res, next) {
