@@ -5,6 +5,8 @@ import { writeLimiter } from '../middleware/security.js';
 import { validateCarInput } from '../utils/validation.js';
 import { getRate } from './fx.js';
 import { usdOf, priceVerdict } from '../utils/valuation.js';
+import { governmentCharges, customsNotes, customsDisclaimer, round2 } from '../utils/customs.js';
+import { resolveDestination, destinationCountry } from '../utils/locale.js';
 
 const router = express.Router();
 
@@ -78,6 +80,76 @@ router.get('/:id/valuation', async (req, res) => {
   } catch (err) {
     console.error('GET /cars/:id/valuation:', err.message);
     res.status(500).json({ message: 'Failed to compute valuation' });
+  }
+});
+
+// GET /cars/:id/customs — full customs fees, duty & percentage for THIS listing.
+// Uses the car's own price/currency/year with the live FX rate, so the figures
+// stay current without the buyer re-entering a value. ?destination=<locale>
+// overrides the import destination (defaults to Nigeria).
+router.get('/:id/customs', async (req, res) => {
+  try {
+    const car = await findById(req.params.id);
+    if (!car) return res.status(404).json({ message: 'Car not found' });
+
+    const { usdToNgn, updatedAt, source } = await getRate();
+    const cifUsd = usdOf(car.price, car.currency, usdToNgn);
+    if (cifUsd == null || cifUsd <= 0)
+      return res.json({ available: false, reason: 'This listing has no asking price yet.' });
+
+    const dest = resolveDestination(req.query.destination);
+
+    // Already in the destination country → nothing to import.
+    if (destinationCountry(car.location) === dest.country) {
+      return res.json({
+        available: true, inCountry: true,
+        destination: { country: dest.country, currency: dest.currency },
+        charges: { lineItems: [], totalUsd: 0, totalNgn: 0, effectivePct: 0, estimate: false },
+        notes: [`This vehicle is already in ${dest.country} — no customs duty applies.`],
+      });
+    }
+
+    let charges;
+    if (dest.country === 'Nigeria') {
+      const gov = governmentCharges(cifUsd);
+      charges = {
+        lineItems: gov.lineItems.map(li => ({ ...li, amountNgn: round2(li.amountUsd * usdToNgn) })),
+        totalUsd: gov.total,
+        totalNgn: round2(gov.total * usdToNgn),
+        effectivePct: gov.effectivePct,
+        estimate: false,
+      };
+    } else {
+      const totalUsd = round2((cifUsd * dest.effectiveDutyPct) / 100);
+      charges = {
+        lineItems: [{
+          key: 'effective', label: `Effective import charges (${dest.country})`,
+          ratePct: dest.effectiveDutyPct, basis: 'CIF value',
+          amountUsd: totalUsd, amountNgn: round2(totalUsd * usdToNgn),
+        }],
+        totalUsd, totalNgn: round2(totalUsd * usdToNgn),
+        effectivePct: dest.effectiveDutyPct,
+        estimate: true,
+      };
+    }
+
+    res.json({
+      available: true,
+      inCountry: false,
+      carId: car.id,
+      fx: { usdToNgn, updatedAt, source },
+      input: { cifValueUsd: round2(cifUsd), cifValueNgn: round2(cifUsd * usdToNgn) },
+      destination: {
+        country: dest.country, port: dest.port, currency: dest.currency,
+        effectiveDutyPct: dest.effectiveDutyPct, estimate: dest.estimate,
+      },
+      charges,
+      notes: customsNotes(car.year, dest),
+      disclaimer: customsDisclaimer(dest.country),
+    });
+  } catch (err) {
+    console.error('GET /cars/:id/customs:', err.message);
+    res.status(500).json({ message: 'Failed to compute customs charges' });
   }
 });
 

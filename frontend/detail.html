@@ -241,7 +241,7 @@
       const thumbsEl = document.getElementById('gallery-thumbs');
       if (photos.length > 1) {
         thumbsEl.innerHTML = photos.map((p,i) =>
-          `<div class="gallery-thumb ${i===0?'active':''}" data-i="${i}"><img src="${p}" ${window.imgSrcset?.(p) ? `srcset="${window.imgSrcset(p)}" sizes="90px"` : ''} alt="Photo ${i+1}" loading="lazy"></div>`
+          `<div class="gallery-thumb ${i===0?'active':''}" data-i="${i}"><img src="${esc(p)}" ${window.imgSrcset?.(p) ? `srcset="${esc(window.imgSrcset(p))}" sizes="90px"` : ''} alt="Photo ${i+1}" loading="lazy"></div>`
         ).join('');
         thumbsEl.querySelectorAll('.gallery-thumb').forEach(t =>
           t.addEventListener('click', () => setPhoto(+t.dataset.i))
@@ -306,6 +306,7 @@
       if (window.AutoBot) window.AutoBot.setCar(car);
 
       renderLanded(car);
+      loadCustoms(car);
       initMap(car);
       if (!isOwner) loadSimilar(car.id);   // owners don't need the comparables strip
       loadValuation(car.id);
@@ -395,6 +396,30 @@
       ${row('Shipping (RoRo est.)', r.shippingUsd)}
       <div class="landed-total"><span>To your door</span><span class="js-usd" data-usd="${r.totalUsd}">${Money.one(r.totalUsd)}</span></div>
       <a class="landed-link" href="clearance.html?cif=${encodeURIComponent(car.price)}&cur=${encodeURIComponent(car.currency||'NGN')}">Full customs breakdown →</a>`;
+  }
+
+  // Upgrade the quick local estimate above with the ACCURATE server breakdown:
+  // every customs fee with its rate %, the all-in duty total, and the effective
+  // percentage of the car's value — computed with the live FX rate.
+  async function loadCustoms(car){
+    const box = document.getElementById('landed-box');
+    if (!box || car.price == null) return;
+    try {
+      const c = await API.getCustoms(car.id, API.getUser()?.location || '');
+      if (!c || !c.available || c.inCountry) return;   // in-country note already rendered
+      const ship = Landed.calc(car.price, car.currency || 'NGN', car.location).shippingUsd;
+      const row = (label, usd, cls='landed-row') =>
+        `<div class="${cls}"><span>${esc(label)}</span><span class="js-usd" data-usd="${usd}">${Money.one(usd)}</span></div>`;
+      box.innerHTML = `
+        <div class="landed-head">Import duty &amp; fees — ${esc(c.destination.country)}</div>
+        ${row('Vehicle price', c.input.cifValueUsd)}
+        ${c.charges.lineItems.map(li => row(`${li.label} (${li.ratePct}%)`, li.amountUsd)).join('')}
+        ${row(`Total import charges (≈${c.charges.effectivePct}% of value)`, c.charges.totalUsd, 'landed-row landed-subtotal')}
+        ${row('Shipping (RoRo est.)', ship)}
+        <div class="landed-total"><span>To your door</span><span class="js-usd" data-usd="${c.input.cifValueUsd + c.charges.totalUsd + ship}">${Money.one(c.input.cifValueUsd + c.charges.totalUsd + ship)}</span></div>
+        ${(c.notes || []).map(n => `<div class="landed-note">${esc(n)}</div>`).join('')}
+        <a class="landed-link" href="clearance.html?cif=${encodeURIComponent(car.price)}&cur=${encodeURIComponent(car.currency||'NGN')}">Compare clearing agents →</a>`;
+    } catch { /* non-critical — the quick estimate stays */ }
   }
 
   function tileUrl(){

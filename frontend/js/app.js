@@ -581,7 +581,7 @@ window.carCard = function (c) {
   return `
     <div class="car-card reveal" data-id="${esc(c.id)}">
       <div class="card-img-wrap">
-        <img class="card-img" src="${esc(img)}"${window.imgSrcset(img) ? ` srcset="${window.imgSrcset(img)}" sizes="(max-width:640px) 100vw, 340px"` : ''} alt="${esc(title)}" loading="lazy" onerror="this.onerror=null;this.removeAttribute('srcset');this.src='https://placehold.co/600x400/12121f/8b7cff?text=No+Photo'">
+        <img class="card-img" src="${esc(img)}"${window.imgSrcset(img) ? ` srcset="${esc(window.imgSrcset(img))}" sizes="(max-width:640px) 100vw, 340px"` : ''} alt="${esc(title)}" loading="lazy" onerror="this.onerror=null;this.removeAttribute('srcset');this.src='https://placehold.co/600x400/12121f/8b7cff?text=No+Photo'">
         <div class="card-badges">
           ${c.body_type ? `<span class="card-type">${window.bodyIcon(c.body_type)}${esc(c.body_type)}</span>` : ''}
           ${badge}

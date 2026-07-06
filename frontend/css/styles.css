@@ -1467,6 +1467,7 @@ html.has-cursor-warn,html.has-cursor-warn *{cursor:none!important}
 .landed-row .js-usd{font-family:var(--font-mono);color:var(--text);font-size:.8rem}
 .landed-total{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-top:.5rem;padding-top:.6rem;border-top:1px solid var(--border);font-weight:700;font-size:.85rem}
 .landed-total .js-usd{font-family:var(--font-display);font-size:1.12rem;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.landed-subtotal{border-top:1px dashed var(--border);margin-top:.3rem;padding-top:.5rem;color:var(--text);font-weight:600}
 .landed-note{font-size:.78rem;color:var(--text2);line-height:1.55}
 .landed-link{display:inline-block;margin-top:.65rem;font-size:.74rem;color:var(--accent);font-weight:600}
 .landed-link:hover{color:var(--accent-lt)}

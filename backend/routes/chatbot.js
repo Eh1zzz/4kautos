@@ -219,7 +219,9 @@ router.post('/', chatLimiter, async (req, res) => {
     ...history
       .filter(h => h && (h.role === 'user' || h.role === 'assistant') && typeof h.content === 'string')
       .slice(-10)
-      .map(h => ({ role: h.role, content: h.content })),
+      // Cap each turn — otherwise a caller can stuff 10 × ~200KB strings into the
+      // paid API call (token-cost abuse within the 2MB JSON body limit).
+      .map(h => ({ role: h.role, content: h.content.slice(0, 4000) })),
     { role: 'user', content: message.trim() },
   ];
 
