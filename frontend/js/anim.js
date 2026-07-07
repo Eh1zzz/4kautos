@@ -8,7 +8,7 @@
    Bundle A (this file): staggered car-grid reveals + price count-up.
    (Bundles B/C/D — detail page, micro-interactions, flows — added later.)
    ========================================================================= */
-import { animate, stagger } from 'https://esm.sh/animejs@4';
+import { animate, stagger, createTimeline, spring, splitText, onScroll } from 'https://esm.sh/animejs@4';
 
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -20,6 +20,10 @@ window.Anim = Anim;
 if (!reduce) {
 
   const animated = new WeakSet();   // cards we've already revealed
+
+  // Real spring physics for the "pop" moments (slight overshoot, then settle).
+  // A spring supplies its own duration, so `duration` is ignored where used.
+  const springPop = spring({ stiffness: 210, damping: 13 });
 
   const gridCols = grid => {
     try { return Math.max(1, getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length); }
@@ -101,9 +105,7 @@ if (!reduce) {
   function popBadge(el) {
     if (!el || el.__an || el.closest('.car-card')) return; el.__an = true;
     if (document.hidden) return;   // leave it in its natural (visible) state
-    // Quick scale-in "pop". Uses only the proven out(3) ease + {from,to} form
-    // (verified in bundle A) so nothing here can throw on the live site.
-    animate(el, { scale: { from: 0, to: 1 }, opacity: { from: 0, to: 1 }, duration: 520, ease: 'out(3)' });
+    animate(el, { scale: { from: 0, to: 1 }, opacity: { from: 0, to: 1 }, ease: springPop });
   }
 
   // Stagger the spec rows in on the detail page.
@@ -147,7 +149,7 @@ if (!reduce) {
 
   // ❤️ pop + particle burst when a car is saved.
   function heartBurst(btn) {
-    if (btn.matches('.card-saves')) animate(btn, { scale: { from: 0.55, to: 1 }, duration: 440, ease: 'out(3)' });
+    if (btn.matches('.card-saves')) animate(btn, { scale: { from: 0.55, to: 1 }, ease: springPop });
     if (document.hidden) return;
     const r = btn.getBoundingClientRect();
     const layer = document.createElement('div');
@@ -239,11 +241,110 @@ if (!reduce) {
       steps.querySelectorAll('.wstep').forEach(s => { s.__last = false; });
       active.__last = true;
       if (document.hidden) return;
-      animate(active.querySelector('.wstep-n') || active, { scale: { from: 0.7, to: 1 }, duration: 420, ease: 'out(3)' });
+      animate(active.querySelector('.wstep-n') || active, { scale: { from: 0.7, to: 1 }, ease: springPop });
     };
     new MutationObserver(pop).observe(steps, { attributes: true, attributeFilter: ['class'], subtree: true });
     pop();
   }
+
+  /* ── Bundle E — choreographed hero entrance ────────────────────────── */
+  // One timeline: eyebrow → headline words → sub → search card → stats.
+  // Only runs while the page is still "fresh" (fast loads); on a slow first
+  // visit the hero has long been visible, and re-hiding it would look broken.
+  function heroIntro() {
+    const title = document.querySelector('.hero-title');
+    if (!title || title.__an || performance.now() > 1200) return;
+    title.__an = true;
+    const eyebrow = document.querySelector('.hero-eyebrow');
+    const sub     = document.querySelector('.hero-sub');
+    const card    = document.querySelector('.hero-search-card');
+    const stats   = [...document.querySelectorAll('.hero-stats > div')];
+
+    // Split the headline into word spans; if the splitter dislikes the markup
+    // (<em>/<br> inside), fall back to animating the whole heading.
+    let words = null;
+    try { const s = splitText(title, { words: true, chars: false }); if (s.words?.length) words = s.words; }
+    catch { /* fallback below */ }
+
+    const rest = [eyebrow, sub, card, ...stats].filter(Boolean);
+    rest.forEach(el => { el.style.opacity = '0'; });
+
+    const tl = createTimeline({ defaults: { ease: 'out(3)' } });
+    if (eyebrow) tl.add(eyebrow, { opacity: { from: 0, to: 1 }, translateY: { from: 12, to: 0 }, duration: 420 });
+    if (words) {
+      tl.add(words, {
+        opacity: { from: 0, to: 1 }, translateY: { from: '0.6em', to: 0 }, rotate: { from: 4, to: 0 },
+        delay: stagger(46), duration: 620,
+      }, '-=180');
+    } else {
+      tl.add(title, { opacity: { from: 0, to: 1 }, translateY: { from: 18, to: 0 }, duration: 620 }, '-=180');
+    }
+    if (sub)  tl.add(sub,  { opacity: { from: 0, to: 1 }, translateY: { from: 14, to: 0 }, duration: 460 }, '-=340');
+    if (card) tl.add(card, { opacity: { from: 0, to: 1 }, translateY: { from: 22, to: 0 }, scale: { from: 0.985, to: 1 }, duration: 520 }, '-=260');
+    if (stats.length) tl.add(stats, { opacity: { from: 0, to: 1 }, translateY: { from: 12, to: 0 }, delay: stagger(70), duration: 420 }, '-=300');
+    // Safety net: whatever happens, nothing stays hidden.
+    setTimeout(() => rest.concat(title).forEach(el => { el.style.opacity = ''; }), 2600);
+  }
+  heroIntro();
+
+  /* ── Bundle F — scroll-driven car journey (How it works) ──────────── */
+  // A small car drives across the steps grid as the section scrolls through
+  // the viewport; each step lights up as the car reaches it.
+  function journey() {
+    const grid = document.querySelector('.how-section .steps-grid');
+    if (!grid || grid.__an) return; grid.__an = true;
+    const steps = [...grid.querySelectorAll('.step-card')];
+    if (steps.length < 2) return;
+
+    const car = document.createElement('div');
+    car.className = 'journey-car';
+    car.setAttribute('aria-hidden', 'true');
+    car.innerHTML = `<svg viewBox="0 0 48 26" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19V15q0-2 3-2h36q3 0 3 2v4"/><path d="M12 13 16 8h14l4 5"/><circle cx="14" cy="20" r="3.2"/><circle cx="34" cy="20" r="3.2"/></svg>`;
+    grid.appendChild(car);
+
+    // Horizontal when the cards share a row, vertical when they stack.
+    const horizontal = () => steps[0].offsetTop === steps[steps.length - 1].offsetTop;
+    const span = () => {
+      const a = steps[0], b = steps[steps.length - 1];
+      return horizontal()
+        ? { axis: 'translateX', from: a.offsetLeft, to: b.offsetLeft + b.offsetWidth - 46 }
+        : { axis: 'translateY', from: a.offsetTop, to: b.offsetTop + 8 };
+    };
+
+    const light = progress => {
+      const lit = Math.floor(progress * steps.length + 0.15);
+      steps.forEach((s, i) => s.classList.toggle('lit', i < lit));
+    };
+
+    let anim = null;
+    const build = () => {
+      if (anim) { try { anim.revert(); } catch { /* keep going */ } }
+      const s = span();
+      car.style.transform = '';
+      try {
+        anim = animate(car, {
+          [s.axis]: { from: s.from, to: s.to },
+          ease: 'linear',
+          onUpdate: self => light(self.progress ?? 0),
+          autoplay: onScroll({ target: grid, enter: 'bottom-=60 top', leave: 'top+=120 bottom', sync: 0.28 }),
+        });
+      } catch {
+        // Scroll-sync unavailable → one-shot drive across when the grid appears.
+        new IntersectionObserver((ents, io) => ents.forEach(e => {
+          if (!e.isIntersecting) return; io.disconnect();
+          const obj = { p: 0 };
+          animate(obj, { p: 1, duration: 1600, ease: 'inOut(2)', onUpdate: () => {
+            const q = span();
+            car.style.transform = `${q.axis}(${q.from + (q.to - q.from) * obj.p}px)`;
+            light(obj.p);
+          } });
+        }), { threshold: 0.35 }).observe(grid);
+      }
+    };
+    build();
+    let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(build, 300); });
+  }
+  journey();
 
   // Route an added node to the right enhancement; returns any grids to schedule.
   function handleNode(n) {

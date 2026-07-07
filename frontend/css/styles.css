@@ -676,7 +676,13 @@ section{padding:5rem 2rem}
    HOW IT WORKS
 ═══════════════════════════════════════════ */
 .how-section{background:var(--bg2)}
-.steps-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.25rem}
+.steps-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.25rem;position:relative;padding-top:34px}
+/* the little car anim.js drives across the steps as you scroll */
+.journey-car{position:absolute;top:0;left:0;width:46px;color:var(--accent);pointer-events:none;filter:drop-shadow(0 4px 10px rgba(139,124,255,.35))}
+.journey-car svg{width:100%;height:auto}
+.step-card.lit{border-color:var(--border-hi)}
+.step-card.lit .step-icon{background:var(--grad-soft);border-color:transparent;box-shadow:0 0 0 3px rgba(139,124,255,.12)}
+.step-card .step-icon{transition:background var(--speed),border-color var(--speed),box-shadow var(--speed)}
 .step-card{
   background:var(--surface);border:1.5px solid var(--border);
   border-radius:var(--radius-lg);padding:1.75rem 1.5rem;
