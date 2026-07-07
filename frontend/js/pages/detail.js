@@ -63,7 +63,10 @@
       const seller = car.seller;
       const initials = seller?.name ? seller.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2) : '?';
       document.getElementById('seller-ava').textContent  = initials;
-      document.getElementById('seller-name').textContent = seller?.name || 'Unknown Seller';
+      const sellerNameEl = document.getElementById('seller-name');
+      if (seller?.id) // name links to the public seller profile (their other inventory)
+        sellerNameEl.innerHTML = `<a class="seller-link" href="seller.html?id=${encodeURIComponent(seller.id)}">${esc(seller.name || 'Seller')}</a>`;
+      else sellerNameEl.textContent = 'Unknown Seller';
       if (!seller?.verified) document.getElementById('seller-badge').innerHTML = '<span style="color:var(--text3)">Unverified</span>';
 
       // If the logged-in user owns this listing, the buyer-facing actions

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seller | 4Kautos</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <meta name="theme-color" content="#f5f6fc">
+  <script>try{var t=localStorage.getItem('4k_theme')||'light';document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','light');}</script>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<nav class="navbar">
+  <a href="index.html" class="nav-logo"></a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="listings.html">Listings</a></li>
+    <li><a href="clearance.html">Clearance</a></li>
+  </ul>
+  <div class="nav-actions">
+    <button class="nav-btn nav-btn-ghost" id="nav-login-btn">Sign In</button>
+    <button class="nav-btn nav-btn-accent" id="nav-signup-btn">List Your Car</button>
+    <button class="nav-btn nav-btn-ghost hidden" id="nav-profile-btn" data-act="goto" data-href="profile.html">👤 <span class="nav-user-label">Profile</span></button>
+  </div>
+</nav>
+
+<div class="section-inner" style="padding-top:2.5rem">
+  <div id="seller-spinner" class="spinner-wrap"><div class="spinner"></div></div>
+
+  <div id="seller-content" class="hidden">
+    <div class="seller-hero">
+      <div class="seller-hero-ava" id="s-ava">?</div>
+      <div>
+        <h1 class="seller-hero-name" id="s-name">—</h1>
+        <div class="seller-hero-badge" id="s-badge"></div>
+        <div class="seller-hero-meta" id="s-meta">—</div>
+      </div>
+    </div>
+
+    <section class="similar-section" style="margin-top:2rem">
+      <div class="section-head">
+        <div>
+          <div class="section-label" data-i18n="seller.inventoryLabel">Inventory</div>
+          <h2 class="section-title" data-i18n="seller.listingsTitle">Listings from this seller</h2>
+        </div>
+        <a href="listings.html" class="view-all" data-i18n="seller.browseAll">Browse all cars →</a>
+      </div>
+      <div class="cars-grid" id="seller-grid"></div>
+      <div class="empty-state hidden" id="seller-empty">
+        <h3 data-i18n="seller.noListings">No live listings right now</h3>
+        <p><a href="listings.html" style="color:var(--accent)" data-i18n="seller.browseOthers">Browse other cars</a></p>
+      </div>
+    </section>
+  </div>
+
+  <div id="seller-notfound" class="empty-state hidden" style="padding:4rem 1rem">
+    <h3 data-i18n="seller.notFound">Seller not found</h3>
+    <p><a href="listings.html" style="color:var(--accent)" data-i18n="seller.browseOthers">Browse other cars</a></p>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+<script src="js/pages/seller.js"></script>
+</body>
+</html>
