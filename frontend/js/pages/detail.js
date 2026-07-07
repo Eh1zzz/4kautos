@@ -42,6 +42,16 @@
         priceEl.dataset.native = car.currency || 'NGN';
         priceEl.innerHTML = Money.fmt(car.price, car.currency || 'NGN');
       } else { priceEl.textContent = 'Price on Request'; }
+      // WhatsApp share: title · price + the listing URL (the server injects OG
+      // tags into this page, so the link unfurls with the car's photo).
+      const wa = document.getElementById('wa-share-btn');
+      if (wa) {
+        const title = car.title || `${car.year} ${car.make} ${car.model}`;
+        const sym = (car.currency || 'NGN') === 'USD' ? '$' : '₦';
+        const p = car.price != null ? ` · ${sym}${Number(car.price).toLocaleString('en-US')}` : '';
+        wa.href = 'https://wa.me/?text=' + encodeURIComponent(`${title}${p}\n${location.origin}${location.pathname}?id=${car.id}`);
+        wa.hidden = false;
+      }
       // Prefill the clearance estimator with this car's value.
       document.getElementById('clearance-btn').href =
         `clearance.html?cif=${encodeURIComponent(car.price || '')}&cur=${encodeURIComponent(car.currency || 'NGN')}`;

@@ -188,6 +188,48 @@ app.use('/uploads', uploadRoutes); // POST / (static above only answers GET/HEAD
 
 /* ── SERVE STATIC FRONTEND ────────────────── */
 const frontendDir = path.join(__dirname, '..', 'frontend');
+
+/* Listing links shared into WhatsApp/social must unfurl with the car's photo,
+   title and price — crawlers don't run JS, so the Open Graph tags are injected
+   server-side into detail.html before the static handler can serve it plain.
+   Unknown/missing ids fall through to the unmodified page. */
+const escAttr = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+app.get('/detail.html', async (req, res, next) => {
+  try {
+    const { toId } = await import('./utils/validation.js');
+    if (!toId(req.query.id)) return next();
+    const { findById } = await import('./models/Car.js');
+    const car = await findById(req.query.id);
+    if (!car) return next();
+
+    const { baseUrl } = await import('./utils/url.js');
+    const base  = baseUrl(req);
+    const title = car.title || [car.year, car.make, car.model].filter(Boolean).join(' ');
+    const sym   = (car.currency || 'NGN') === 'USD' ? '$' : '₦';
+    const price = car.price != null ? `${sym}${Number(car.price).toLocaleString('en-US')}` : 'Price on request';
+    const bits  = [price, car.mileage ? `${Number(car.mileage).toLocaleString('en-US')} km` : null, car.location].filter(Boolean).join(' · ');
+    const desc  = `${bits}. ${String(car.description || 'Verified listing on 4Kautos, with escrow protection and clearance handled.').replace(/\s+/g, ' ')}`.slice(0, 200);
+    let img = car.photos?.[0] || '';
+    if (img.startsWith('/')) img = base + img;   // legacy local uploads → absolute
+
+    const tags = [
+      `<meta property="og:type" content="website">`,
+      `<meta property="og:site_name" content="4Kautos">`,
+      `<meta property="og:title" content="${escAttr(`${title} · ${price}`)}">`,
+      `<meta property="og:description" content="${escAttr(desc)}">`,
+      img ? `<meta property="og:image" content="${escAttr(img)}">` : '',
+      `<meta property="og:url" content="${escAttr(`${base}/detail.html?id=${car.id}`)}">`,
+      `<meta name="twitter:card" content="${img ? 'summary_large_image' : 'summary'}">`,
+    ].filter(Boolean).join('\n  ');
+
+    const html = (await fs.promises.readFile(path.join(frontendDir, 'detail.html'), 'utf8'))
+      .replace('<title>Car Details | 4Kautos</title>', `<title>${escAttr(title)} | 4Kautos</title>\n  ${tags}`);
+    res.type('html').send(html);
+  } catch (err) {
+    console.error('OG inject:', err.message);
+    next(); // never block the page over the unfurl garnish
+  }
+});
 app.use(express.static(frontendDir));
 app.get('/{*path}', (_req, res) => res.sendFile(path.join(frontendDir, 'index.html')));
 
