@@ -427,6 +427,36 @@ section{padding:5rem 2rem}
 .card-footer{display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:.75rem;border-top:1px solid var(--border)}
 .card-price{font-family:var(--font-display);font-size:1.35rem;font-weight:700;color:var(--accent)}
 .card-price small{font-size:.7rem;font-weight:400;color:var(--text3);font-family:var(--font-body)}
+/* Keyboard a11y: a clear ring for keyboard focus only (mouse stays clean) */
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.car-card:focus-visible{outline-offset:0;border-radius:var(--radius-lg)}
+
+/* Sticky bottom CTA bar on the detail page (phones: keep money actions in thumb reach) */
+.mobile-cta{display:none}
+@media(max-width:900px){
+  .mobile-cta{
+    position:fixed;left:0;right:0;bottom:0;z-index:60;
+    display:flex;align-items:center;gap:.6rem;
+    padding:.6rem .9rem calc(.6rem + env(safe-area-inset-bottom));
+    background:var(--surface);border-top:1px solid var(--border);
+    box-shadow:0 -10px 30px rgba(0,0,0,.22);
+  }
+  .mobile-cta .cta-btn{width:auto;margin:0;padding:.7rem 1.1rem;font-size:.85rem;white-space:nowrap}
+  .mobile-cta-price{flex:1;min-width:0;font-family:var(--font-display);font-weight:700;font-size:1.05rem;color:var(--accent)}
+  .mobile-cta-price .price-sub{display:block;font-family:var(--font-body);font-size:.66rem;font-weight:400;color:var(--text3)}
+  body.has-mobile-cta{padding-bottom:84px}
+  /* lift the AutoBot bubble clear of the bar */
+  body.has-mobile-cta .chat-fab{bottom:calc(88px + env(safe-area-inset-bottom))}
+}
+
+/* Fullscreen gallery lightbox */
+.lightbox{position:fixed;inset:0;z-index:120;background:rgba(6,6,12,.94);display:flex;align-items:center;justify-content:center}
+.lightbox img{max-width:94vw;max-height:88vh;object-fit:contain;border-radius:8px}
+.lb-close{position:absolute;top:14px;right:16px;width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.08);color:#fff;font-size:1.1rem;border:1px solid rgba(255,255,255,.15)}
+.lb-nav{position:absolute;top:50%;transform:translateY(-50%);width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.08);color:#fff;font-size:1.6rem;line-height:1;border:1px solid rgba(255,255,255,.15)}
+.lb-prev{left:12px}.lb-next{right:12px}
+.lb-close:hover,.lb-nav:hover{background:var(--accent)}
+
 /* public seller profile header (seller.html) */
 .seller-hero{display:flex;align-items:center;gap:1.25rem;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:1.75rem}
 .seller-hero-ava{width:72px;height:72px;border-radius:50%;background:var(--grad);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:1.6rem;font-weight:700;flex:none}

@@ -162,6 +162,8 @@
 
       renderLanded(car);
       loadCustoms(car);
+      mobileCtaBar(car, isOwner);
+      initLightbox();
       initMap(car);
       if (!isOwner) loadSimilar(car.id);   // owners don't need the comparables strip
       loadValuation(car.id);
@@ -275,6 +277,65 @@
         ${(c.notes || []).map(n => `<div class="landed-note">${esc(n)}</div>`).join('')}
         <a class="landed-link" href="clearance.html?cif=${encodeURIComponent(car.price)}&cur=${encodeURIComponent(car.currency||'NGN')}">Compare clearing agents →</a>`;
     } catch { /* non-critical — the quick estimate stays */ }
+  }
+
+  /* ── Mobile ergonomics ── */
+
+  // Sticky bottom bar on phones: price + the two money actions, always in
+  // thumb reach (the sidebar CTAs stack far down the page on small screens).
+  function mobileCtaBar(car, isOwner){
+    document.querySelector('.mobile-cta')?.remove();
+    document.body.classList.remove('has-mobile-cta');
+    if (isOwner) return;
+    const bar = document.createElement('div');
+    bar.className = 'mobile-cta';
+    const price = car.price != null
+      ? `<div class="mobile-cta-price js-price" data-amount="${esc(car.price)}" data-native="${esc(car.currency || 'NGN')}">${Money.fmt(car.price, car.currency || 'NGN')}</div>`
+      : `<div class="mobile-cta-price">${esc(window.t('detail.priceOnRequest', 'Price on request'))}</div>`;
+    bar.innerHTML = `${price}
+      <button class="cta-btn cta-btn-secondary" type="button" id="m-msg-btn" aria-label="Message the seller">💬</button>
+      <button class="cta-btn cta-btn-primary" type="button" id="m-buy-btn">${esc(window.t('detail.buyShort', 'Buy now'))}</button>`;
+    document.body.appendChild(bar);
+    document.body.classList.add('has-mobile-cta');
+    bar.querySelector('#m-buy-btn').addEventListener('click', () => document.getElementById('buy-btn')?.click());
+    bar.querySelector('#m-msg-btn').addEventListener('click', () => document.getElementById('message-btn')?.click());
+  }
+
+  // Tap the main photo → fullscreen lightbox (prev/next, Esc, tap-out close).
+  function initLightbox(){
+    const main = document.getElementById('gallery-main-img');
+    if (!main || main.__lb) return; main.__lb = true;
+    main.style.cursor = 'zoom-in';
+    let downX = 0, downY = 0;
+    main.addEventListener('pointerdown', e => { downX = e.clientX; downY = e.clientY; });
+    main.addEventListener('click', e => {
+      // A swipe on the gallery ends in a click too — only open on a real tap.
+      if (Math.hypot(e.clientX - downX, e.clientY - downY) > 8 || !photos.length) return;
+      const lb = document.createElement('div');
+      lb.className = 'lightbox';
+      lb.innerHTML = `
+        <button class="lb-close" type="button" aria-label="Close">✕</button>
+        <img src="${esc(photos[currentPhoto])}" alt="Car photo (fullscreen)">
+        ${photos.length > 1 ? `
+          <button class="lb-nav lb-prev" type="button" aria-label="Previous photo">‹</button>
+          <button class="lb-nav lb-next" type="button" aria-label="Next photo">›</button>` : ''}`;
+      document.body.appendChild(lb);
+      document.body.style.overflow = 'hidden';
+      const img = lb.querySelector('img');
+      const show = i => { setPhoto(i); img.src = photos[currentPhoto]; };
+      const close = () => { lb.remove(); document.body.style.overflow = ''; document.removeEventListener('keydown', onKey); };
+      const onKey = ev => {
+        if (ev.key === 'Escape') close();
+        else if (ev.key === 'ArrowLeft') show(currentPhoto - 1);
+        else if (ev.key === 'ArrowRight') show(currentPhoto + 1);
+      };
+      document.addEventListener('keydown', onKey);
+      lb.addEventListener('click', ev => { if (ev.target === lb || ev.target === img) close(); });
+      lb.querySelector('.lb-close').addEventListener('click', close);
+      lb.querySelector('.lb-prev')?.addEventListener('click', () => show(currentPhoto - 1));
+      lb.querySelector('.lb-next')?.addEventListener('click', () => show(currentPhoto + 1));
+      lb.querySelector('.lb-close').focus();
+    });
   }
 
   function tileUrl(){

@@ -20,12 +20,14 @@ function buildFulltextExpr(q) {
 
 // Public seller projection — deliberately omits email so listings/detail don't
 // leak seller PII to anonymous visitors. Contact happens through a transaction.
-const SELLER_JSON =
+// Exported (with normalize) so satellite models (SavedCar) can produce
+// identically-shaped car rows without duplicating the projection.
+export const SELLER_JSON =
   `JSON_OBJECT('id', u.id, 'name', u.name, 'verified', u.verified) AS seller`;
 
 // mysql2 usually parses JSON columns automatically, but normalize defensively
 // so the API always returns photos as an array and seller as an object.
-function normalize(row) {
+export function normalize(row) {
   if (!row) return row;
   if (typeof row.photos === 'string') {
     try { row.photos = JSON.parse(row.photos); } catch { row.photos = []; }

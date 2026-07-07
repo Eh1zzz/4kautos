@@ -167,6 +167,18 @@ export async function connectDB() {
     )
   `);
 
+  // Saved cars (server-synced hearts — localStorage stays the anonymous store).
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS saved_cars (
+      user_id    INT       NOT NULL,
+      car_id     INT       NOT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (user_id, car_id),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (car_id)  REFERENCES cars(id)  ON DELETE CASCADE
+    )
+  `);
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS contact_messages (
       id         INT           AUTO_INCREMENT PRIMARY KEY,

@@ -55,12 +55,12 @@ const API = {
   /* ── AUTH ── */
   async signup(name, email, password, role) {
     const data = await req('POST', '/auth/signup', { name, email, password, role });
-    if (data.token) { setToken(data.token); localStorage.setItem('4k_user', JSON.stringify(data.user)); }
+    if (data.token) { setToken(data.token); localStorage.setItem('4k_user', JSON.stringify(data.user)); API.syncSaved(); }
     return data;
   },
   async login(email, password) {
     const data = await req('POST', '/auth/login', { email, password });
-    if (data.token) { setToken(data.token); localStorage.setItem('4k_user', JSON.stringify(data.user)); }
+    if (data.token) { setToken(data.token); localStorage.setItem('4k_user', JSON.stringify(data.user)); API.syncSaved(); }
     return data;
   },
   forgotPassword(email)          { return req('POST', '/auth/forgot', { email }); },
@@ -197,7 +197,11 @@ const API = {
   getClearanceAgents()      { return req('GET', '/clearance/agents'); },
   estimateClearance(data)   { return req('POST', '/clearance/estimate', data); },
 
-  /* ── SAVED / FAVOURITES (client-side) ── */
+  /* ── SAVED / FAVOURITES ─────────────────────
+     localStorage is always the instant, synchronous store (works anonymously
+     and offline). When signed in, every toggle mirrors to the server and
+     syncSaved() merges server↔local so hearts follow the account across
+     devices instead of dying with the browser. */
   getSaved() {
     try { return JSON.parse(localStorage.getItem('4k_saved')) || []; } catch { return []; }
   },
@@ -205,9 +209,27 @@ const API = {
   toggleSaved(id) {
     id = String(id);
     const set = new Set(API.getSaved());
-    set.has(id) ? set.delete(id) : set.add(id);
+    const on = !set.has(id);
+    on ? set.add(id) : set.delete(id);
     localStorage.setItem('4k_saved', JSON.stringify([...set]));
-    return set.has(id);
+    if (API.isLoggedIn()) // fire-and-forget mirror; local state already updated
+      req(on ? 'PUT' : 'DELETE', `/saved-cars/${encodeURIComponent(id)}`).catch(() => {});
+    return on;
+  },
+  getSavedCars(full)    { return req('GET', `/saved-cars${full ? '?full=1' : ''}`); },
+  async syncSaved() {
+    if (!API.isLoggedIn()) return;
+    try {
+      const { ids } = await API.getSavedCars();
+      const server = new Set(ids.map(String));
+      const local  = API.getSaved();
+      const merged = [...new Set([...server, ...local])];
+      localStorage.setItem('4k_saved', JSON.stringify(merged));
+      // Push local-only hearts up so the merge is two-way.
+      await Promise.all(local.filter(i => !server.has(i))
+        .map(i => req('PUT', `/saved-cars/${encodeURIComponent(i)}`).catch(() => {})));
+      window.dispatchEvent(new CustomEvent('saved-sync')); // let the UI re-paint hearts
+    } catch { /* sync is best-effort */ }
   },
 
   /* ── SAVED SEARCHES (server-side) ── */

@@ -615,7 +615,7 @@ window.carCard = function (c) {
   const evalHtml = (vv && VEVAL[vv]) ? `<span class="price-eval eval-${vv}" title="vs. ${c.valuation.sampleSize || 0} similar listings">${VEVAL[vv]}</span>` : '';
 
   return `
-    <div class="car-card reveal" data-id="${esc(c.id)}">
+    <div class="car-card reveal" data-id="${esc(c.id)}" tabindex="0" role="link" aria-label="${esc(title)}">
       <div class="card-img-wrap">
         <img class="card-img" src="${esc(img)}"${window.imgSrcset(img) ? ` srcset="${esc(window.imgSrcset(img))}" sizes="(max-width:640px) 100vw, 340px"` : ''} alt="${esc(title)}" loading="lazy" data-fallback="https://placehold.co/600x400/12121f/8b7cff?text=No+Photo">
         <div class="card-badges">
@@ -652,6 +652,22 @@ document.addEventListener('click', e => {
   const card = e.target.closest('.car-card');
   if (card && card.dataset.id) location.href = `detail.html?id=${card.dataset.id}`;
 });
+// Keyboard access: cards are focusable "links" — Enter opens them.
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const card = e.target.closest?.('.car-card');
+  if (card && card.dataset.id) location.href = `detail.html?id=${card.dataset.id}`;
+});
+
+// Server-synced hearts: merge on load, repaint rendered save buttons after.
+window.addEventListener('saved-sync', () => {
+  document.querySelectorAll('.card-saves').forEach(b => {
+    const on = API.isSaved(b.dataset.save);
+    b.classList.toggle('saved', on);
+    b.textContent = on ? '♥' : '♡';
+  });
+});
+if (API.isLoggedIn()) API.syncSaved();
 
 /* ── BRAND STRIP (shop by brand) ──────────── */
 // Logos via simple-icons CDN with a monogram fallback when a logo is missing.
@@ -1377,6 +1393,7 @@ window.RT = (function () {
       'detail.description': 'Description', 'detail.specs': 'Vehicle Specifications', 'detail.location': 'Location', 'detail.askingPrice': 'Asking Price',
       'detail.buy': 'Initiate Purchase', 'detail.ask': '💬 Ask AutoBot about this car', 'detail.clearance': '🛃 Estimate import clearance',
       'detail.message': '💬 Message the seller', 'detail.save': '♡ Save this car', 'detail.saved': '♥ Saved', 'detail.share': '🔗 Share listing', 'detail.waShare': 'Share on WhatsApp',
+      'detail.buyShort': 'Buy now', 'detail.priceOnRequest': 'Price on request', 'listings.clearAll': 'Clear all',
       'detail.similar': 'Similar listings', 'detail.notFound': 'Car Not Found',
       'spec.make': 'Make', 'spec.model': 'Model', 'spec.year': 'Year', 'spec.bodyType': 'Body type', 'spec.mileage': 'Mileage', 'spec.condition': 'Condition',
       'spec.engine': 'Engine', 'spec.transmission': 'Transmission', 'spec.drivetrain': 'Drivetrain', 'spec.horsepower': 'Horsepower', 'spec.fuel': 'Fuel economy',
@@ -1521,6 +1538,7 @@ window.RT = (function () {
       'detail.description': 'Description', 'detail.specs': 'Caractéristiques du véhicule', 'detail.location': 'Emplacement', 'detail.askingPrice': 'Prix demandé',
       'detail.buy': "Lancer l'achat", 'detail.ask': '💬 Demander à AutoBot', 'detail.clearance': '🛃 Estimer le dédouanement',
       'detail.message': '💬 Contacter le vendeur', 'detail.save': '♡ Enregistrer', 'detail.saved': '♥ Enregistré', 'detail.share': '🔗 Partager', 'detail.waShare': 'Partager sur WhatsApp',
+      'detail.buyShort': 'Acheter', 'detail.priceOnRequest': 'Prix sur demande', 'listings.clearAll': 'Tout effacer',
       'detail.similar': 'Annonces similaires', 'detail.notFound': 'Voiture introuvable',
       'spec.make': 'Marque', 'spec.model': 'Modèle', 'spec.year': 'Année', 'spec.bodyType': 'Carrosserie', 'spec.mileage': 'Kilométrage', 'spec.condition': 'État',
       'spec.engine': 'Moteur', 'spec.transmission': 'Boîte de vitesses', 'spec.drivetrain': 'Roues motrices', 'spec.horsepower': 'Puissance', 'spec.fuel': 'Consommation',

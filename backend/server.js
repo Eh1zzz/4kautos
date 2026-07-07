@@ -25,6 +25,7 @@ import paymentRoutes     from './routes/payments.js';
 import savedSearchRoutes from './routes/savedSearches.js';
 import contactRoutes     from './routes/contact.js';
 import sellerRoutes      from './routes/sellers.js';
+import savedCarRoutes    from './routes/savedCars.js';
 
 dotenv.config();
 
@@ -169,6 +170,7 @@ api.use('/payments',     paymentRoutes);
 api.use('/saved-searches', savedSearchRoutes);
 api.use('/contact',      contactRoutes);
 api.use('/sellers',      sellerRoutes);
+api.use('/saved-cars',   savedCarRoutes);
 api.get('/health', (_req, res) => res.json({ status: 'ok', ts: Date.now() }));
 
 app.use('/v1', api);
