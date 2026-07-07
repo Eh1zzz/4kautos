@@ -251,7 +251,7 @@ document.getElementById('nav-signup-btn')?.addEventListener('click', () => openA
     win.classList.toggle('open', isOpen);
     if (isOpen && msgs.children.length === 0) {
       addBotMsg(carCtx
-        ? `Hi! I'm AutoBot 🚗 Ask me anything about the ${carCtx.label} — its details, whether the price looks fair, common issues to check, or running costs.`
+        ? `Hi! I'm AutoBot 🚗 Ask me anything about the ${carCtx.label}: its details, whether the price looks fair, common issues to check, or running costs.`
         : "Hi! I'm AutoBot 🚗 I can help you find the perfect car, understand our buying process, or list your vehicle. What can I help you with?");
       renderQuickReplies();
     }
@@ -357,7 +357,7 @@ document.getElementById('nav-signup-btn')?.addEventListener('click', () => openA
     if (m.includes('document'))
       return "For buying you'll need: valid ID, proof of insurance, and payment method.\n\nFor selling you'll need: vehicle title (clean), government-issued ID, and service history if available.";
     if (carCtx)
-      return `I can't reach the server right now, so I can't pull the full write-up for the ${carCtx.label}. The listing's specs are on this page — and once I'm back online I'll add the model's reliability and running-cost notes. Please try again in a moment. 🚗`;
+      return `I can't reach the server right now, so I can't pull the full write-up for the ${carCtx.label}. The listing's specs are on this page, and once I'm back online I'll add the model's reliability and running cost notes. Please try again in a moment. 🚗`;
     return "I'm having trouble connecting to the server right now. Please try again in a moment, or browse our listings page to find your perfect car! 🚗";
   }
 
@@ -600,9 +600,15 @@ window.carCard = function (c) {
     : landed.inCountry
       ? `<div class="card-landed in-country">✓ Already in ${esc(landed.destCountry)}</div>`
       : `<div class="card-landed js-landed" data-price="${esc(c.price)}" data-cur="${esc(native)}" data-loc="${esc(c.location || '')}">≈ ${Money.one(landed.totalUsd)} to your door</div>`;
-  const locHtml = c.location
-    ? `<div class="card-loc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${esc(c.location)}</div>`
-    : '';
+  // One quiet meta line under the title (year · mileage · gearbox/condition ·
+  // location) instead of stacked rows, so the card scans in a glance.
+  const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+  const metaLine = [
+    c.year,
+    c.mileage ? `${Number(c.mileage).toLocaleString()} km` : null,
+    c.transmission || (c.condition ? cap(c.condition) : null),
+    c.location,
+  ].filter(Boolean).map(v => esc(v)).join(' · ');
   // Price-evaluator badge (only the meaningful verdicts — 'fair' stays unmarked).
   const VEVAL = { great: 'Great price', good: 'Good price', high: 'Above market' };
   const vv = c.valuation && c.valuation.verdict;
@@ -620,13 +626,8 @@ window.carCard = function (c) {
       </div>
       <div class="card-body">
         <div class="card-title">${esc(title)}</div>
+        ${metaLine ? `<div class="card-meta">${metaLine}</div>` : ''}
         ${c.seller?.verified ? `<div class="card-verified" title="Identity-verified seller"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V5z"/><path d="m9 12 2 2 4-4"/></svg><span data-i18n="card.verified">${esc(T('card.verified', 'Verified seller'))}</span></div>` : ''}
-        ${locHtml}
-        <div class="card-specs">
-          ${c.mileage ? `<span class="spec-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${Number(c.mileage).toLocaleString()} km</span>` : ''}
-          ${c.condition ? `<span class="spec-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 12l2 2 4-4"/></svg>${esc(c.condition)}</span>` : ''}
-          ${c.year ? `<span class="spec-chip">${esc(c.year)}</span>` : ''}
-        </div>
         <div class="card-footer">
           <div class="card-price-wrap">
             ${priceHtml}
@@ -894,7 +895,7 @@ document.addEventListener('keydown', e => {
           </button>
         </div>
         <div class="modal-body">
-          <p style="color:var(--text2);font-size:.88rem;margin:0 0 1rem" data-i18n="contact.intro">Questions, feedback, or help with a listing — we'll get back to you by email.</p>
+          <p style="color:var(--text2);font-size:.88rem;margin:0 0 1rem" data-i18n="contact.intro">Questions, feedback, or help with a listing. We'll get back to you by email.</p>
           <div class="form-group"><label class="form-label" data-i18n="contact.name">Your name</label><input class="form-input" id="ct-name" autocomplete="name"></div>
           <div class="form-group"><label class="form-label" data-i18n="auth.email">Email</label><input class="form-input" type="email" id="ct-email" placeholder="you@example.com" autocomplete="email"></div>
           <div class="form-group"><label class="form-label" data-i18n="contact.message">Message</label><textarea class="form-input" id="ct-msg" rows="4" placeholder="How can we help?" data-i18n-ph="contact.msgPh" style="resize:vertical"></textarea></div>
@@ -925,7 +926,7 @@ document.addEventListener('keydown', e => {
     const btn = document.getElementById('ct-submit'); btn.disabled = true; const o = btn.textContent; btn.textContent = window.t('contact.sending', 'Sending…');
     try {
       await API.sendContact({ name, email, message, website });
-      toast(window.t('toast.contactSent', "Message sent — we'll be in touch ✉️"), 'success');
+      toast(window.t('toast.contactSent', "Message sent. We'll be in touch ✉️"), 'success');
       ['ct-name', 'ct-email', 'ct-msg'].forEach(id => document.getElementById(id).value = '');
       close();
     } catch (e) { err.textContent = e.message || 'Could not send your message'; err.classList.remove('hidden'); }
@@ -995,7 +996,7 @@ document.addEventListener('keydown', e => {
       <div class="footer-grid">
         <div class="footer-brand">
           <a href="index.html" class="nav-logo" style="display:inline-flex;margin-bottom:.6rem"></a>
-          <p data-i18n="footer.tagline">A global preowned-car marketplace — buy verified vehicles from international sellers, with customs clearance and delivery handled across Nigeria.</p>
+          <p data-i18n="footer.tagline">A global preowned-car marketplace. Buy verified vehicles from international sellers, with customs clearance and delivery handled across Nigeria.</p>
           <div class="footer-social">
             <a href="#" aria-label="WhatsApp">${SOC.wa}</a>
             <a href="#" aria-label="Instagram">${SOC.ig}</a>
@@ -1077,7 +1078,7 @@ document.addEventListener('keydown', e => {
     note.className = 'news-note'; note.textContent = 'Subscribing…';
     try {
       await API.subscribe(email);
-      note.className = 'news-note ok'; note.textContent = "✓ You're in — watch your inbox.";
+      note.className = 'news-note ok'; note.textContent = "✓ You're in. Watch your inbox.";
       newsBand.querySelector('#news-form').reset();
     } catch (err) {
       note.className = 'news-note bad'; note.textContent = err.message || 'Could not subscribe right now.';
@@ -1239,7 +1240,7 @@ window.RT = (function () {
             <div class="tmsg-bubble">${esc(m.body)}</div>
             <div class="tmsg-meta">${esc(m.sender_name)} · ${new Date(m.created_at).toLocaleString()}</div>
           </div>`).join('')
-      : '<div class="thread-empty">No messages yet — say hello 👋</div>';
+      : '<div class="thread-empty">No messages yet. Say hello 👋</div>';
     if (atBottom) box.scrollTop = box.scrollHeight;
   }
 
@@ -1298,6 +1299,7 @@ window.RT = (function () {
   $('thread-input').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
 
   // Unread badge on the profile nav button
+  let unreadPoll = null;
   window.updateUnreadBadge = async function () {
     if (!API.isLoggedIn()) return;
     try {
@@ -1308,13 +1310,22 @@ window.RT = (function () {
         b.textContent = count > 9 ? '9+' : count;
         b.classList.toggle('hidden', !count);
       });
-    } catch {}
+    } catch (e) {
+      // Expired/invalid token: sign out locally and stop polling, otherwise the
+      // badge hits the API with a dead token every 30s forever (403 spam).
+      if (e && (e.status === 401 || e.status === 403)) {
+        localStorage.removeItem('4k_token');
+        localStorage.removeItem('4k_user');
+        clearInterval(unreadPoll); unreadPoll = null;
+        document.querySelectorAll('#nav-profile-btn .nav-badge').forEach(b => b.remove());
+      }
+    }
   };
   RT.on('unread', () => updateUnreadBadge());
   document.addEventListener('DOMContentLoaded', () => {
     updateUnreadBadge();
-    RT.connect();                          // live unread nudges
-    setInterval(updateUnreadBadge, 30000); // slow fallback
+    RT.connect();                                        // live unread nudges
+    unreadPoll = setInterval(updateUnreadBadge, 30000);  // slow fallback
   });
 })();
 
@@ -1340,13 +1351,13 @@ window.RT = (function () {
       'search.buy': 'Buy a Car', 'search.sell': 'Sell Your Car',
       'search.make': 'Make', 'search.model': 'Model', 'search.maxprice': 'Max Price (₦)',
       'search.btn': 'Search Cars',
-      'search.make_ph': 'Any make — or type your own',
+      'search.make_ph': 'Any make, or type your own',
       'search.model_ph': 'Pick a make first, or type any model',
       'newsletter.title': 'Get the weekly drop',
       'newsletter.sub': 'New arrivals & price moves, straight to your inbox.',
       'newsletter.btn': 'Subscribe', 'newsletter.email_ph': 'you@example.com',
       'nav.dashboard': 'My Dashboard', 'nav.signout': 'Sign Out',
-      'footer.tagline': 'A global preowned-car marketplace — buy verified vehicles from international sellers, with customs clearance and delivery handled across Nigeria.',
+      'footer.tagline': 'A global preowned-car marketplace. Buy verified vehicles from international sellers, with customs clearance and delivery handled across Nigeria.',
       'footer.buy': 'Buy', 'footer.sell': 'Sell', 'footer.company': 'Company', 'footer.support': 'Support',
       'footer.browse': 'Browse Listings', 'footer.premium': 'Premium Cars', 'footer.clearance': 'Customs Clearance',
       'footer.dashboard': 'Seller Dashboard', 'footer.photoguide': 'Photo Guide', 'footer.shipping': 'Shipping & Clearance',
@@ -1368,8 +1379,8 @@ window.RT = (function () {
       'spec.make': 'Make', 'spec.model': 'Model', 'spec.year': 'Year', 'spec.bodyType': 'Body type', 'spec.mileage': 'Mileage', 'spec.condition': 'Condition',
       'spec.engine': 'Engine', 'spec.transmission': 'Transmission', 'spec.drivetrain': 'Drivetrain', 'spec.horsepower': 'Horsepower', 'spec.fuel': 'Fuel economy',
       'spec.seats': 'Seats', 'spec.exterior': 'Exterior', 'spec.interior': 'Interior', 'spec.towing': 'Towing', 'spec.vin': 'VIN', 'spec.location': 'Location', 'spec.listed': 'Listed',
-      'clr.eyebrow': 'Import Made Easy', 'clr.title': 'Nigeria Customs Clearance', 'clr.sub': 'Estimate import duty on any vehicle and compare verified clearing agents by their all-in rate — so you pay less and clear faster at the port.',
-      'clr.estimator': 'Duty Estimator', 'clr.cifLabel': 'Vehicle value (CIF)', 'clr.cifHint': 'Cost + Insurance + Freight — the landed value Customs assesses.', 'clr.yearLabel': 'Year of manufacture', 'clr.estimateBtn': 'Estimate & Compare Agents', 'clr.partners': 'Partner Clearing Agents',
+      'clr.eyebrow': 'Import Made Easy', 'clr.title': 'Nigeria Customs Clearance', 'clr.sub': 'Estimate import duty on any vehicle and compare verified clearing agents by their all in rate, so you pay less and clear faster at the port.',
+      'clr.estimator': 'Duty Estimator', 'clr.cifLabel': 'Vehicle value (CIF)', 'clr.cifHint': 'Cost + Insurance + Freight, the landed value Customs assesses.', 'clr.yearLabel': 'Year of manufacture', 'clr.estimateBtn': 'Estimate & Compare Agents', 'clr.partners': 'Partner Clearing Agents',
       'cond.poor': 'Poor',
       // Dashboard
       'dash.overview': 'Overview', 'dash.listings': 'My Listings', 'dash.transactions': 'Transactions', 'dash.messages': 'Messages',
@@ -1386,7 +1397,7 @@ window.RT = (function () {
       'admin.users': 'Users', 'admin.listings': 'Listings', 'admin.pendingPayouts': 'Pending payouts',
       'admin.intlPayouts': 'Pending international payouts', 'admin.intlPayoutsSub': 'pay via Wise, then mark settled',
       'admin.allListings': 'All Listings', 'admin.contactMsgs': 'Contact messages', 'admin.maintenance': 'Maintenance',
-      'admin.maintenanceP': 'Regenerate responsive image sizes for older uploads so they load fast on phones (creates <code>_400/_800/_1600</code> variants). Safe to run repeatedly — already-optimized photos are skipped.',
+      'admin.maintenanceP': 'Regenerate responsive image sizes for older uploads so they load fast on phones (creates <code>_400/_800/_1600</code> variants). Safe to run repeatedly; already optimized photos are skipped.',
       'admin.preview': 'Preview changes', 'admin.regen': 'Regenerate now',
       // Add-listing wizard
       'wiz.addTitle': 'Add New Listing', 'wiz.editTitle': 'Edit Listing',
@@ -1400,37 +1411,37 @@ window.RT = (function () {
       'wiz.select': 'Select…', 'wiz.trAuto': 'Automatic', 'wiz.trManual': 'Manual', 'wiz.trSemi': 'Semi-automatic', 'wiz.trDct': 'Dual-clutch',
       'wiz.hpPh': 'e.g. 200', 'wiz.seatsPh': 'e.g. 5',
       'wiz.accident': 'Accident history', 'wiz.accidentNo': 'No reported accidents', 'wiz.accidentYes': 'Has accident history',
-      'wiz.accidentHint': "Helps us assess the vehicle's condition — not shown publicly on your listing.",
+      'wiz.accidentHint': "Helps us assess the vehicle's condition. Not shown publicly on your listing.",
       'wiz.inspection': 'Inspection report', 'wiz.uploadReport': '⬆ Upload report',
-      'wiz.inspectionHint': 'Latest inspection report (PDF or photo) — a backend condition criterion, not shown publicly.',
+      'wiz.inspectionHint': 'Latest inspection report (PDF or photo). Used for our condition checks, not shown publicly.',
       'wiz.towing': 'Max towing capacity', 'wiz.towingPh': 'e.g. 3,500 kg', 'wiz.towingHint': 'Required for pickups.',
       'wiz.extras': 'Optional extras', 'wiz.comfort': 'Comfort & convenience', 'wiz.comfortPh': 'Heated seats, Sunroof, Apple CarPlay (comma-separated)',
       'wiz.safety': 'Safety', 'wiz.safetyPh': 'Blind-spot monitor, Lane assist, 360° camera (comma-separated)',
       'wiz.mods': 'Modifications', 'wiz.modsPh': 'Lift kit, Aftermarket exhaust (comma-separated)',
       'wiz.locationLabel': 'Location (where the car is)', 'wiz.locationPh': 'e.g. Atlanta, GA, USA', 'wiz.locate': '📍 Locate',
-      'wiz.locHint': "City and country — we'll pin it on the map for buyers.",
+      'wiz.locHint': "City and country. We'll pin it on the map for buyers.",
       'wiz.descPh': "Describe the vehicle's history, features, and any known issues…",
       'wiz.reqPhotos': 'Required photos', 'wiz.addPhotos': 'Additional photos (optional, one URL per line)',
       'wiz.back': '← Back', 'wiz.next': 'Next →', 'wiz.submit': '📋 Submit Listing',
       // About page
       'about.label': 'Our Story', 'about.title': 'About <em>4Kautos</em>',
       'about.sub': 'We make buying a car from anywhere in the world feel as safe as buying one down the street.',
-      'about.intro': '4Kautos is a global preowned-car marketplace built for the Nigerian buyer. Sellers list verified vehicles from the US, UK, Europe, the Gulf and Asia; we handle the parts that usually go wrong — inspection standards, secure escrow, import duty and door-to-door clearance — so you always know the real cost to your door before you commit.',
+      'about.intro': '4Kautos is a global preowned-car marketplace built for the Nigerian buyer. Sellers list verified vehicles from the US, UK, Europe, the Gulf and Asia; we handle the parts that usually go wrong: inspection standards, secure escrow, import duty and door to door clearance. That way you always know the real cost to your door before you commit.',
       'about.believe': 'What we believe',
-      'about.v1h': 'Honest pricing', 'about.v1p': 'Every listing shows its all-in landed cost in ₦ and $ — duty and shipping included. No surprises at the port.',
+      'about.v1h': 'Honest pricing', 'about.v1p': 'Every listing shows its all-in landed cost in ₦ and $, with duty and shipping included. No surprises at the port.',
       'about.v2h': 'Verified inventory', 'about.v2p': 'Listings require a valid VIN, accurate mileage and clear photos of every key angle before they go live.',
       'about.v3h': 'Protected payments', 'about.v3p': 'Funds sit in escrow and are only released to the seller once you confirm the vehicle is as described.',
       'about.v4h': 'Clearance, sorted', 'about.v4p': "Compare verified clearing agents by their best rate, and track your car from the seller's driveway to yours.",
-      'about.started': 'How it started', 'about.startedP': "Importing a car into Nigeria has long meant guesswork — unclear duties, unreliable agents and sellers you can't verify. 4Kautos was built to replace that guesswork with transparency: real-time exchange rates, a customs estimator, and a marketplace where both sides are accountable.",
+      'about.started': 'How it started', 'about.startedP': "Importing a car into Nigeria has long meant guesswork: unclear duties, unreliable agents and sellers you can't verify. 4Kautos was built to replace that guesswork with transparency: real-time exchange rates, a customs estimator, and a marketplace where both sides are accountable.",
       'about.join': 'Join us',
       'about.joinP': `Whether you're buying your first car or shipping your tenth, we'd love to have you. <a href="#" data-act="auth" data-mode="signup">Create an account</a> or <a href="listings.html">browse the latest arrivals</a>.`,
       // Community page
       'community.label': 'Better Together', 'community.title': 'The 4Kautos <em>Community</em>',
       'community.sub': 'Buyers, sellers and clearing agents swapping import know-how, build threads and honest reviews.',
-      'community.intro': "Importing and selling cars is a lot easier with people who've done it before. Our community is where members share what they learned — which agents clear fastest, how to budget for duty, and what to check before you buy from abroad.",
+      'community.intro': "Importing and selling cars is a lot easier with people who've done it before. Our community is where members share what they learned: which agents clear fastest, how to budget for duty, and what to check before you buy from abroad.",
       'community.inside': "What's inside",
       'community.c1h': 'Import guides', 'community.c1p': 'Step-by-step walkthroughs on duty, shipping and paperwork for first-time importers.',
-      'community.c2h': 'Agent reviews', 'community.c2p': 'Real ratings of clearing agents from buyers who used them — so you pick the best rate with confidence.',
+      'community.c2h': 'Agent reviews', 'community.c2p': 'Real ratings of clearing agents from buyers who used them, so you pick the best rate with confidence.',
       'community.c3h': 'Build & ownership threads', 'community.c3p': "Owners sharing reliability notes, mods and maintenance on the models you're considering.",
       'community.c4h': 'Marketplace alerts', 'community.c4p': 'Get a heads-up when a car matching your search lands, and follow price moves on your shortlist.',
       'community.involved': 'Get involved',
@@ -1446,15 +1457,15 @@ window.RT = (function () {
       'home.processLabel': 'Process', 'home.howTitle': 'How 4Kautos Works', 'home.howSub': 'Our secure process protects buyers and sellers from listing to handover.',
       'home.step1t': 'Browse & Search', 'home.step1d': 'Filter by make, model, year, price and condition to find your perfect match from our verified inventory.',
       'home.step2t': 'Request Inspection', 'home.step2d': "Initiate a purchase and our certified inspectors verify the vehicle's condition before you commit.",
-      'home.step3t': 'Pay Into Escrow', 'home.step3d': "Your funds are held securely in our escrow system — released to the seller only when you're satisfied.",
+      'home.step3t': 'Pay Into Escrow', 'home.step3d': "Your funds are held securely in our escrow system and released to the seller only when you're satisfied.",
       'home.step4t': 'Drive Away', 'home.step4d': 'Title is transferred, keys handed over. Your new car is ready. We handle all the paperwork.',
-      'home.whyLabel': 'Why 4Kautos', 'home.whyTitle': 'Built For <em>Confident</em> Buying', 'home.whySub': 'Verified inventory, secure escrow, and door-to-door clearance — the parts that usually go wrong, handled for you.',
+      'home.whyLabel': 'Why 4Kautos', 'home.whyTitle': 'Built For <em>Confident</em> Buying', 'home.whySub': 'Verified inventory, secure escrow, and door to door clearance. The parts that usually go wrong, handled for you.',
       'home.why1': 'Cars delivered & cleared', 'home.why2': 'Inspection-backed listings', 'home.why3': 'Average port clearance', 'home.why4': 'Hidden fees, ever',
       'home.reviewsLabel': 'Loved By Drivers', 'home.reviewsTitle': 'What Our Buyers Say',
-      'home.review1': `"Bought a Lexus from a seller in Japan and 4Kautos handled the duty and shipping. The landed-cost figure was spot on — zero surprises at the port."`, 'home.review1meta': 'Lagos · Verified buyer',
+      'home.review1': `"Bought a Lexus from a seller in Japan and 4Kautos handled the duty and shipping. The landed cost figure was spot on. Zero surprises at the port."`, 'home.review1meta': 'Lagos · Verified buyer',
       'home.review2': `"As a seller in Houston, listing was painless and I got paid through escrow the moment the buyer confirmed. Easily the smoothest export I've done."`, 'home.review2meta': 'Houston · Verified seller',
       'home.review3': `"The dual ₦/$ pricing and the clearance estimator helped me budget properly before committing. Delivered to Abuja in good time."`, 'home.review3meta': 'Abuja · Verified buyer',
-      'home.promoTitle': 'Selling from abroad? List free this month.', 'home.promoText': 'Reach thousands of Nigerian buyers. We handle clearance, escrow and delivery — you just hand over the keys.', 'home.promoCta': 'Start Selling →',
+      'home.promoTitle': 'Selling from abroad? List free this month.', 'home.promoText': 'Reach thousands of Nigerian buyers. We handle clearance, escrow and delivery. You just hand over the keys.', 'home.promoCta': 'Start Selling →',
       // Auth modal
       'auth.login': 'Login', 'auth.signup': 'Sign Up', 'auth.email': 'Email', 'auth.password': 'Password', 'auth.passwordPh': 'Your password',
       'auth.fullName': 'Full Name', 'auth.namePh': 'John Doe', 'auth.pwMin': 'Min. 6 characters', 'auth.forgot': 'Forgot password?',
@@ -1462,14 +1473,14 @@ window.RT = (function () {
       'auth.roleNote': `You're creating a <strong>seller</strong> account to list your car.`, 'auth.buyInstead': 'Sign up to buy instead',
       'auth.createBtn': 'Create Account', 'auth.haveAccountQ': 'Already have an account?', 'auth.signinLink': 'Sign in',
       // Contact + forgot modals
-      'contact.title': 'Send us a message', 'contact.intro': "Questions, feedback, or help with a listing — we'll get back to you by email.",
+      'contact.title': 'Send us a message', 'contact.intro': "Questions, feedback, or help with a listing. We'll get back to you by email.",
       'contact.name': 'Your name', 'contact.message': 'Message', 'contact.msgPh': 'How can we help?', 'contact.send': 'Send message',
       'contact.sending': 'Sending…', 'contact.fillAll': 'Please fill in your name, email and message.',
       'forgot.title': 'Reset your password', 'forgot.intro': "Enter your account email and we'll send a reset link.", 'forgot.send': 'Send reset link',
       // Toasts
       'toast.welcomeBack': 'Welcome back! 🚗', 'toast.accountCreated': 'Account created! Welcome to 4Kautos 🚗',
       'toast.verifyEmail': 'Account created! Check your email to verify your address before signing in.',
-      'toast.contactSent': "Message sent — we'll be in touch ✉️",
+      'toast.contactSent': "Message sent. We'll be in touch ✉️",
     },
     fr: {
       'nav.home': 'Accueil', 'nav.listings': 'Annonces', 'nav.clearance': 'Dédouanement',
@@ -1481,13 +1492,13 @@ window.RT = (function () {
       'search.buy': 'Acheter', 'search.sell': 'Vendre',
       'search.make': 'Marque', 'search.model': 'Modèle', 'search.maxprice': 'Prix max (₦)',
       'search.btn': 'Rechercher',
-      'search.make_ph': 'Toute marque — ou saisissez la vôtre',
+      'search.make_ph': 'Toute marque, ou saisissez la vôtre',
       'search.model_ph': "Choisissez d'abord une marque, ou saisissez un modèle",
       'newsletter.title': "L'actu hebdo",
       'newsletter.sub': 'Nouveautés et baisses de prix, directement dans votre boîte mail.',
       'newsletter.btn': "S'abonner", 'newsletter.email_ph': 'vous@exemple.com',
       'nav.dashboard': 'Mon tableau de bord', 'nav.signout': 'Déconnexion',
-      'footer.tagline': "Une place de marché mondiale de voitures d'occasion — achetez des véhicules vérifiés auprès de vendeurs internationaux, dédouanement et livraison gérés partout au Nigeria.",
+      'footer.tagline': "Une place de marché mondiale de voitures d'occasion. Achetez des véhicules vérifiés auprès de vendeurs internationaux, dédouanement et livraison gérés partout au Nigeria.",
       'footer.buy': 'Acheter', 'footer.sell': 'Vendre', 'footer.company': 'Entreprise', 'footer.support': 'Aide',
       'footer.browse': 'Voir les annonces', 'footer.premium': 'Voitures premium', 'footer.clearance': 'Dédouanement',
       'footer.dashboard': 'Espace vendeur', 'footer.photoguide': 'Guide photo', 'footer.shipping': 'Expédition & dédouanement',
@@ -1509,8 +1520,8 @@ window.RT = (function () {
       'spec.make': 'Marque', 'spec.model': 'Modèle', 'spec.year': 'Année', 'spec.bodyType': 'Carrosserie', 'spec.mileage': 'Kilométrage', 'spec.condition': 'État',
       'spec.engine': 'Moteur', 'spec.transmission': 'Boîte de vitesses', 'spec.drivetrain': 'Roues motrices', 'spec.horsepower': 'Puissance', 'spec.fuel': 'Consommation',
       'spec.seats': 'Sièges', 'spec.exterior': 'Extérieur', 'spec.interior': 'Intérieur', 'spec.towing': 'Remorquage', 'spec.vin': 'VIN', 'spec.location': 'Emplacement', 'spec.listed': 'Publié',
-      'clr.eyebrow': 'Importation simplifiée', 'clr.title': 'Dédouanement au Nigeria', 'clr.sub': "Estimez les droits d'importation sur tout véhicule et comparez des agents vérifiés selon leur tarif tout compris — pour payer moins et dédouaner plus vite au port.",
-      'clr.estimator': 'Estimateur de droits', 'clr.cifLabel': 'Valeur du véhicule (CAF)', 'clr.cifHint': 'Coût + Assurance + Fret — la valeur évaluée par les douanes.', 'clr.yearLabel': 'Année de fabrication', 'clr.estimateBtn': 'Estimer & comparer', 'clr.partners': 'Agents de dédouanement partenaires',
+      'clr.eyebrow': 'Importation simplifiée', 'clr.title': 'Dédouanement au Nigeria', 'clr.sub': "Estimez les droits d'importation sur tout véhicule et comparez des agents vérifiés selon leur tarif tout compris, pour payer moins et dédouaner plus vite au port.",
+      'clr.estimator': 'Estimateur de droits', 'clr.cifLabel': 'Valeur du véhicule (CAF)', 'clr.cifHint': 'Coût + Assurance + Fret, la valeur évaluée par les douanes.', 'clr.yearLabel': 'Année de fabrication', 'clr.estimateBtn': 'Estimer & comparer', 'clr.partners': 'Agents de dédouanement partenaires',
       'cond.poor': 'Médiocre',
       // Tableau de bord
       'dash.overview': 'Aperçu', 'dash.listings': 'Mes annonces', 'dash.transactions': 'Transactions', 'dash.messages': 'Messages',
@@ -1527,7 +1538,7 @@ window.RT = (function () {
       'admin.users': 'Utilisateurs', 'admin.listings': 'Annonces', 'admin.pendingPayouts': 'Versements en attente',
       'admin.intlPayouts': 'Versements internationaux en attente', 'admin.intlPayoutsSub': 'payez via Wise, puis marquez réglé',
       'admin.allListings': 'Toutes les annonces', 'admin.contactMsgs': 'Messages de contact', 'admin.maintenance': 'Maintenance',
-      'admin.maintenanceP': "Régénère les tailles d'image responsives pour les anciens téléversements afin qu'elles se chargent vite sur mobile (crée les variantes <code>_400/_800/_1600</code>). Sans risque à relancer — les photos déjà optimisées sont ignorées.",
+      'admin.maintenanceP': "Régénère les tailles d'image responsives pour les anciens téléversements afin qu'elles se chargent vite sur mobile (crée les variantes <code>_400/_800/_1600</code>). Sans risque à relancer ; les photos déjà optimisées sont ignorées.",
       'admin.preview': 'Aperçu des changements', 'admin.regen': 'Régénérer maintenant',
       // Assistant d'ajout d'annonce
       'wiz.addTitle': 'Ajouter une annonce', 'wiz.editTitle': "Modifier l'annonce",
@@ -1541,37 +1552,37 @@ window.RT = (function () {
       'wiz.select': 'Choisir…', 'wiz.trAuto': 'Automatique', 'wiz.trManual': 'Manuelle', 'wiz.trSemi': 'Semi-automatique', 'wiz.trDct': 'Double embrayage',
       'wiz.hpPh': 'ex. 200', 'wiz.seatsPh': 'ex. 5',
       'wiz.accident': "Antécédents d'accident", 'wiz.accidentNo': 'Aucun accident signalé', 'wiz.accidentYes': "A des antécédents d'accident",
-      'wiz.accidentHint': "Nous aide à évaluer l'état du véhicule — non affiché publiquement sur votre annonce.",
+      'wiz.accidentHint': "Nous aide à évaluer l'état du véhicule. Non affiché publiquement sur votre annonce.",
       'wiz.inspection': "Rapport d'inspection", 'wiz.uploadReport': '⬆ Téléverser le rapport',
-      'wiz.inspectionHint': "Dernier rapport d'inspection (PDF ou photo) — critère d'état interne, non affiché publiquement.",
+      'wiz.inspectionHint': "Dernier rapport d'inspection (PDF ou photo). Critère d'état interne, non affiché publiquement.",
       'wiz.towing': 'Capacité de remorquage max', 'wiz.towingPh': 'ex. 3 500 kg', 'wiz.towingHint': 'Obligatoire pour les pick-up.',
       'wiz.extras': 'Options supplémentaires', 'wiz.comfort': 'Confort & commodités', 'wiz.comfortPh': 'Sièges chauffants, Toit ouvrant, Apple CarPlay (séparés par des virgules)',
       'wiz.safety': 'Sécurité', 'wiz.safetyPh': "Surveillance d'angle mort, Aide au maintien de voie, Caméra 360° (séparés par des virgules)",
       'wiz.mods': 'Modifications', 'wiz.modsPh': 'Kit de rehausse, Échappement sport (séparés par des virgules)',
       'wiz.locationLabel': 'Emplacement (où se trouve la voiture)', 'wiz.locationPh': 'ex. Atlanta, GA, USA', 'wiz.locate': '📍 Localiser',
-      'wiz.locHint': 'Ville et pays — nous le placerons sur la carte pour les acheteurs.',
+      'wiz.locHint': 'Ville et pays. Nous le placerons sur la carte pour les acheteurs.',
       'wiz.descPh': "Décrivez l'historique, les équipements et les éventuels problèmes connus du véhicule…",
       'wiz.reqPhotos': 'Photos requises', 'wiz.addPhotos': 'Photos supplémentaires (facultatif, une URL par ligne)',
       'wiz.back': '← Retour', 'wiz.next': 'Suivant →', 'wiz.submit': "📋 Publier l'annonce",
       // Page À propos
       'about.label': 'Notre histoire', 'about.title': 'À propos de <em>4Kautos</em>',
       'about.sub': "Nous rendons l'achat d'une voiture à l'autre bout du monde aussi sûr que dans la rue d'à côté.",
-      'about.intro': "4Kautos est une place de marché mondiale de voitures d'occasion conçue pour l'acheteur nigérian. Les vendeurs publient des véhicules vérifiés des États-Unis, du Royaume-Uni, d'Europe, du Golfe et d'Asie ; nous gérons les étapes qui tournent souvent mal — normes d'inspection, séquestre sécurisé, droits d'importation et dédouanement porte-à-porte — pour que vous connaissiez toujours le vrai coût rendu chez vous avant de vous engager.",
+      'about.intro': "4Kautos est une place de marché mondiale de voitures d'occasion conçue pour l'acheteur nigérian. Les vendeurs publient des véhicules vérifiés des États-Unis, du Royaume-Uni, d'Europe, du Golfe et d'Asie ; nous gérons les étapes qui tournent souvent mal : normes d'inspection, séquestre sécurisé, droits d'importation et dédouanement porte-à-porte, pour que vous connaissiez toujours le vrai coût rendu chez vous avant de vous engager.",
       'about.believe': 'Nos convictions',
-      'about.v1h': 'Des prix honnêtes', 'about.v1p': 'Chaque annonce affiche son coût rendu tout compris en ₦ et $ — droits et transport inclus. Aucune surprise au port.',
+      'about.v1h': 'Des prix honnêtes', 'about.v1p': 'Chaque annonce affiche son coût rendu tout compris en ₦ et $, droits et transport inclus. Aucune surprise au port.',
       'about.v2h': 'Stock vérifié', 'about.v2p': 'Les annonces exigent un VIN valide, un kilométrage exact et des photos nettes de chaque angle clé avant leur mise en ligne.',
       'about.v3h': 'Paiements protégés', 'about.v3p': "Les fonds sont placés sous séquestre et ne sont versés au vendeur qu'une fois que vous confirmez que le véhicule est conforme.",
       'about.v4h': 'Dédouanement réglé', 'about.v4p': "Comparez des agents de dédouanement vérifiés selon leur meilleur tarif, et suivez votre voiture du vendeur jusqu'à vous.",
-      'about.started': 'Comment tout a commencé', 'about.startedP': "Importer une voiture au Nigeria a longtemps relevé du pari — droits flous, agents peu fiables et vendeurs invérifiables. 4Kautos a été créé pour remplacer ce pari par la transparence : taux de change en temps réel, estimateur de douane et une place de marché où chacun rend des comptes.",
+      'about.started': 'Comment tout a commencé', 'about.startedP': "Importer une voiture au Nigeria a longtemps relevé du pari : droits flous, agents peu fiables et vendeurs invérifiables. 4Kautos a été créé pour remplacer ce pari par la transparence : taux de change en temps réel, estimateur de douane et une place de marché où chacun rend des comptes.",
       'about.join': 'Rejoignez-nous',
       'about.joinP': `Que vous achetiez votre première voiture ou expédiiez la dixième, nous serions ravis de vous compter parmi nous. <a href="#" data-act="auth" data-mode="signup">Créez un compte</a> ou <a href="listings.html">parcourez les dernières arrivées</a>.`,
       // Page Communauté
       'community.label': 'Mieux ensemble', 'community.title': 'La <em>communauté</em> 4Kautos',
       'community.sub': "Acheteurs, vendeurs et agents de dédouanement qui échangent savoir-faire d'import, fils de build et avis honnêtes.",
-      'community.intro': "Importer et vendre des voitures est bien plus simple avec des gens qui l'ont déjà fait. Notre communauté est l'endroit où les membres partagent ce qu'ils ont appris — quels agents dédouanent le plus vite, comment budgétiser les droits, et quoi vérifier avant d'acheter à l'étranger.",
+      'community.intro': "Importer et vendre des voitures est bien plus simple avec des gens qui l'ont déjà fait. Notre communauté est l'endroit où les membres partagent ce qu'ils ont appris : quels agents dédouanent le plus vite, comment budgétiser les droits, et quoi vérifier avant d'acheter à l'étranger.",
       'community.inside': 'Au programme',
       'community.c1h': "Guides d'importation", 'community.c1p': 'Tutoriels pas à pas sur les droits, le transport et les démarches pour les primo-importateurs.',
-      'community.c2h': 'Avis sur les agents', 'community.c2p': 'De vraies notes des agents de dédouanement par les acheteurs qui les ont utilisés — pour choisir le meilleur tarif en confiance.',
+      'community.c2h': 'Avis sur les agents', 'community.c2p': 'De vraies notes des agents de dédouanement par les acheteurs qui les ont utilisés, pour choisir le meilleur tarif en confiance.',
       'community.c3h': 'Fils builds & possession', 'community.c3p': 'Des propriétaires partagent fiabilité, modifications et entretien sur les modèles qui vous intéressent.',
       'community.c4h': 'Alertes du marché', 'community.c4p': 'Soyez prévenu quand une voiture correspondant à votre recherche arrive, et suivez les variations de prix de votre sélection.',
       'community.involved': 'Participez',
@@ -1587,15 +1598,15 @@ window.RT = (function () {
       'home.processLabel': 'Processus', 'home.howTitle': 'Comment fonctionne 4Kautos', 'home.howSub': 'Notre processus sécurisé protège acheteurs et vendeurs, de la mise en ligne à la remise des clés.',
       'home.step1t': 'Parcourir & rechercher', 'home.step1d': 'Filtrez par marque, modèle, année, prix et état pour trouver la perle rare dans notre stock vérifié.',
       'home.step2t': 'Demander une inspection', 'home.step2d': "Lancez un achat et nos inspecteurs certifiés vérifient l'état du véhicule avant que vous vous engagiez.",
-      'home.step3t': 'Payer sous séquestre', 'home.step3d': 'Vos fonds sont conservés en toute sécurité sous séquestre — versés au vendeur seulement quand vous êtes satisfait.',
+      'home.step3t': 'Payer sous séquestre', 'home.step3d': 'Vos fonds sont conservés en toute sécurité sous séquestre, puis versés au vendeur seulement quand vous êtes satisfait.',
       'home.step4t': 'Prenez la route', 'home.step4d': 'Le titre est transféré, les clés remises. Votre nouvelle voiture est prête. Nous gérons toutes les démarches.',
-      'home.whyLabel': 'Pourquoi 4Kautos', 'home.whyTitle': 'Conçu pour acheter <em>en confiance</em>', 'home.whySub': 'Stock vérifié, séquestre sécurisé et dédouanement porte-à-porte — les étapes qui tournent mal, gérées pour vous.',
+      'home.whyLabel': 'Pourquoi 4Kautos', 'home.whyTitle': 'Conçu pour acheter <em>en confiance</em>', 'home.whySub': 'Stock vérifié, séquestre sécurisé et dédouanement porte-à-porte. Les étapes qui tournent mal, gérées pour vous.',
       'home.why1': 'Voitures livrées & dédouanées', 'home.why2': 'Annonces avec inspection', 'home.why3': 'Dédouanement moyen au port', 'home.why4': 'Frais cachés, jamais',
       'home.reviewsLabel': 'Plébiscité par les conducteurs', 'home.reviewsTitle': 'Ce que disent nos acheteurs',
-      'home.review1': `« J'ai acheté une Lexus auprès d'un vendeur au Japon et 4Kautos a géré les droits et le transport. Le coût rendu annoncé était juste — zéro surprise au port. »`, 'home.review1meta': 'Lagos · Acheteur vérifié',
+      'home.review1': `« J'ai acheté une Lexus auprès d'un vendeur au Japon et 4Kautos a géré les droits et le transport. Le coût rendu annoncé était juste. Zéro surprise au port. »`, 'home.review1meta': 'Lagos · Acheteur vérifié',
       'home.review2': `« En tant que vendeur à Houston, publier a été un jeu d'enfant et j'ai été payé via le séquestre dès la confirmation de l'acheteur. De loin l'export le plus fluide que j'aie réalisé. »`, 'home.review2meta': 'Houston · Vendeur vérifié',
       'home.review3': `« La double tarification ₦/$ et l'estimateur de dédouanement m'ont aidé à bien budgétiser avant de m'engager. Livrée à Abuja dans les temps. »`, 'home.review3meta': 'Abuja · Acheteur vérifié',
-      'home.promoTitle': "Vous vendez depuis l'étranger ? Publiez gratuitement ce mois-ci.", 'home.promoText': "Touchez des milliers d'acheteurs nigérians. Nous gérons dédouanement, séquestre et livraison — vous remettez simplement les clés.", 'home.promoCta': 'Commencer à vendre →',
+      'home.promoTitle': "Vous vendez depuis l'étranger ? Publiez gratuitement ce mois-ci.", 'home.promoText': "Touchez des milliers d'acheteurs nigérians. Nous gérons dédouanement, séquestre et livraison. Vous remettez simplement les clés.", 'home.promoCta': 'Commencer à vendre →',
       // Fenêtre de connexion
       'auth.login': 'Connexion', 'auth.signup': "S'inscrire", 'auth.email': 'E-mail', 'auth.password': 'Mot de passe', 'auth.passwordPh': 'Votre mot de passe',
       'auth.fullName': 'Nom complet', 'auth.namePh': 'Jean Dupont', 'auth.pwMin': 'Min. 6 caractères', 'auth.forgot': 'Mot de passe oublié ?',
@@ -1603,14 +1614,14 @@ window.RT = (function () {
       'auth.roleNote': `Vous créez un compte <strong>vendeur</strong> pour publier votre voiture.`, 'auth.buyInstead': 'Inscrivez-vous plutôt pour acheter',
       'auth.createBtn': 'Créer un compte', 'auth.haveAccountQ': 'Vous avez déjà un compte ?', 'auth.signinLink': 'Connectez-vous',
       // Fenêtres contact + mot de passe oublié
-      'contact.title': 'Envoyez-nous un message', 'contact.intro': 'Questions, retours ou aide sur une annonce — nous vous répondrons par e-mail.',
+      'contact.title': 'Envoyez-nous un message', 'contact.intro': 'Questions, retours ou aide sur une annonce. Nous vous répondrons par e-mail.',
       'contact.name': 'Votre nom', 'contact.message': 'Message', 'contact.msgPh': 'Comment pouvons-nous aider ?', 'contact.send': 'Envoyer le message',
       'contact.sending': 'Envoi…', 'contact.fillAll': 'Veuillez renseigner votre nom, votre e-mail et votre message.',
       'forgot.title': 'Réinitialiser le mot de passe', 'forgot.intro': "Saisissez l'e-mail de votre compte et nous vous enverrons un lien de réinitialisation.", 'forgot.send': 'Envoyer le lien',
       // Notifications
       'toast.welcomeBack': 'Bon retour ! 🚗', 'toast.accountCreated': 'Compte créé ! Bienvenue chez 4Kautos 🚗',
       'toast.verifyEmail': 'Compte créé ! Vérifiez votre e-mail pour confirmer votre adresse avant de vous connecter.',
-      'toast.contactSent': 'Message envoyé — nous vous recontacterons ✉️',
+      'toast.contactSent': 'Message envoyé. Nous vous recontacterons ✉️',
     },
   };
 

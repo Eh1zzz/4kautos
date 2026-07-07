@@ -18,7 +18,7 @@
       document.getElementById('reset-form').classList.add('hidden');
       document.getElementById('reset-done').classList.remove('hidden');
     } catch (e) {
-      err.textContent = e.message || 'Could not reset password — the link may have expired.';
+      err.textContent = e.message || 'Could not reset password. The link may have expired.';
       err.classList.remove('hidden');
       submit.disabled = false; submit.textContent = o;
     }

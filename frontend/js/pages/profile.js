@@ -271,7 +271,7 @@
           </div>
           <button type="submit" class="pay-btn" style="margin-top:.7rem">Save payout</button>
         </form>
-        ${banks.length === 0 ? '<p style="color:var(--text3);font-size:.72rem;margin-top:.5rem">Nigerian bank list unavailable — payments may not be configured yet.</p>' : ''}`;
+        ${banks.length === 0 ? '<p style="color:var(--text3);font-size:.72rem;margin-top:.5rem">Nigerian bank list unavailable. Payments may not be configured yet.</p>' : ''}`;
       el.querySelectorAll('.po-tab').forEach(tab => tab.addEventListener('click', () => {
         const method = tab.dataset.m;
         el.querySelectorAll('.po-tab').forEach(t => { t.classList.toggle('pay-btn', t.dataset.m === method); t.classList.toggle('adm-btn', t.dataset.m !== method); });
@@ -598,7 +598,7 @@
 
       const html = group('Under-market listings', under) + group('Duplicate VINs', dups)
                  + group('Unverified sellers', unver) + group('Buyers not completing', stalled);
-      el.innerHTML = html || '<div class="empty-state" style="padding:2rem"><p>✓ No risk signals — all clear.</p></div>';
+      el.innerHTML = html || '<div class="empty-state" style="padding:2rem"><p>✓ No risk signals. All clear.</p></div>';
     } catch (e) { el.innerHTML = `<p class="empty-state">Failed: ${esc(e.message)}</p>`; }
   }
 
@@ -681,7 +681,7 @@
     if (!q) { hint.className = 'field-hint bad'; hint.textContent = 'Enter a city and country first.'; return; }
     hint.className = 'field-hint'; hint.textContent = 'Searching…';
     let g = null; try { g = await geocodeLocation(q); } catch {}
-    if (!g) { hint.className = 'field-hint bad'; hint.textContent = 'Couldn’t find that — try "City, Country".'; return; }
+    if (!g) { hint.className = 'field-hint bad'; hint.textContent = 'Couldn’t find that. Try "City, Country".'; return; }
     geo = g; hint.className = 'field-hint ok'; hint.textContent = '✓ ' + g.display;
     const mapEl = document.getElementById('upload-map'); mapEl.style.display = '';
     if (typeof L !== 'undefined') {
@@ -813,7 +813,7 @@
     const hint = document.getElementById('vin-hint');
     hint.className = 'field-hint ' + (vin === '' ? '' : (VIN_RE.test(vin) ? 'ok' : 'bad'));
     hint.textContent = vin === '' ? '17 characters · letters I, O, Q are not allowed'
-      : (VIN_RE.test(vin) ? '✓ Valid VIN format' : `✗ ${vin.length}/17 — check length & characters`);
+      : (VIN_RE.test(vin) ? '✓ Valid VIN format' : `✗ ${vin.length}/17, check length & characters`);
   }
 
   let vinTimer;
@@ -869,7 +869,7 @@
     });
     geo = { lat: null, lng: null, display: null };
     const vh = document.getElementById('vin-hint'); vh.className = 'field-hint'; vh.textContent = '17 characters · letters I, O, Q are not allowed';
-    const lh = document.getElementById('loc-hint'); lh.className = 'field-hint'; lh.textContent = "City and country — we'll pin it on the map for buyers.";
+    const lh = document.getElementById('loc-hint'); lh.className = 'field-hint'; lh.textContent = "City and country. We'll pin it on the map for buyers.";
     document.getElementById('upload-map').style.display = 'none';
     document.getElementById('add-car-title').textContent  = 'Add New Listing';
     document.getElementById('submit-car-btn').textContent = '📋 Submit Listing';

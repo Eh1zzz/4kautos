@@ -130,7 +130,7 @@
         const sym = (c.currency === 'USD') ? '$' : '₦';
         const price = (c.price != null && c.price !== '') ? `${sym}${Number(c.price).toLocaleString('en-US')}` : 'Enquire';
         const km = c.mileage ? ` · ${Number(c.mileage).toLocaleString()} km` : '';
-        return `${c.year || ''} ${c.make || ''} ${c.model || ''} — ${price}${km}`.replace(/\s+/g, ' ').trim();
+        return `${c.year || ''} ${c.make || ''} ${c.model || ''} · ${price}${km}`.replace(/\s+/g, ' ').trim();
       });
     } catch { /* offline — fall back to promos only */ }
     const promos = ['Escrow-protected payments', 'Customs clearance handled', 'Free inspection reports', '150-point checks on every car'];

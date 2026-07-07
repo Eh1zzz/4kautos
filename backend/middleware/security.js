@@ -35,7 +35,10 @@ const cspWith = scriptSrc => [
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com",
   "font-src 'self' https://fonts.gstatic.com",
   "img-src 'self' data: https:",
-  "connect-src 'self' https://nominatim.openstreetmap.org",
+  // The script CDNs are also in connect-src: the browser fetches their
+  // .map files (sourcemaps) whenever DevTools is open, and blocking those
+  // floods the console + /csp-report with noise.
+  "connect-src 'self' https://nominatim.openstreetmap.org https://esm.sh https://cdn.socket.io https://unpkg.com",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",

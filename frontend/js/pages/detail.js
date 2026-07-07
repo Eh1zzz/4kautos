@@ -20,9 +20,21 @@
     if (!id) { location.href = 'listings.html'; return; }
     try {
       car = await API.getCar(id);
-      document.title = `${car.title || car.make + ' ' + car.model} — 4Kautos`;
+      document.title = `${car.title || car.make + ' ' + car.model} | 4Kautos`;
       document.getElementById('bc-title').textContent = car.title || `${car.year} ${car.make} ${car.model}`;
       document.getElementById('d-title').textContent  = car.title || `${car.year} ${car.make} ${car.model}`;
+      // One quiet, dot-separated summary line under the title (the year badge
+      // stays hidden when this renders, so the year isn't shown twice).
+      const dMeta = [
+        car.year,
+        car.mileage ? `${Number(car.mileage).toLocaleString()} km` : null,
+        car.transmission, car.drivetrain, car.location,
+      ].filter(Boolean).join(' · ');
+      document.querySelector('.detail-meta')?.remove();
+      if (dMeta) {
+        document.getElementById('d-title').insertAdjacentHTML('afterend', `<div class="detail-meta">${esc(dMeta)}</div>`);
+        document.getElementById('d-year').style.display = 'none';
+      }
       const priceEl = document.getElementById('d-price');
       if (car.price != null) {
         priceEl.classList.add('js-price');
@@ -214,8 +226,8 @@
     if (!box || car.price == null) { if (box) box.innerHTML = ''; return; }
     const r = Landed.calc(car.price, car.currency || 'NGN', car.location);
     if (r.inCountry) {
-      box.innerHTML = `<div class="landed-head">In Nigeria — no import needed</div>
-        <div class="landed-note">✓ Already in-country. No customs duty or shipping — ready for local handover.</div>`;
+      box.innerHTML = `<div class="landed-head">In Nigeria: no import needed</div>
+        <div class="landed-note">✓ Already in the country. No customs duty or shipping. Ready for local handover.</div>`;
       return;
     }
     const row = (label, usd) => `<div class="landed-row"><span>${label}</span><span class="js-usd" data-usd="${usd}">${Money.one(usd)}</span></div>`;
@@ -241,7 +253,7 @@
       const row = (label, usd, cls='landed-row') =>
         `<div class="${cls}"><span>${esc(label)}</span><span class="js-usd" data-usd="${usd}">${Money.one(usd)}</span></div>`;
       box.innerHTML = `
-        <div class="landed-head">Import duty &amp; fees — ${esc(c.destination.country)}</div>
+        <div class="landed-head">Import duty &amp; fees · ${esc(c.destination.country)}</div>
         ${row('Vehicle price', c.input.cifValueUsd)}
         ${c.charges.lineItems.map(li => row(`${li.label} (${li.ratePct}%)`, li.amountUsd)).join('')}
         ${row(`Total import charges (≈${c.charges.effectivePct}% of value)`, c.charges.totalUsd, 'landed-row landed-subtotal')}

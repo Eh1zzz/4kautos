@@ -118,7 +118,7 @@
   async function saveCurrentSearch() {
     if (!API.isLoggedIn()) { toast('Sign in to save searches', 'info'); if (window.openAuth) openAuth('login'); return; }
     const f = buildParams(); delete f.sort;
-    try { await API.saveSearch(searchLabel(f), f); toast('Search saved — find it in your dashboard', 'success'); }
+    try { await API.saveSearch(searchLabel(f), f); toast('Search saved. Find it in your dashboard', 'success'); }
     catch (e) { toast(e.message || 'Could not save search', 'error'); }
   }
   (function () {

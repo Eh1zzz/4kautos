@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Dashboard — 4Kautos</title>
+  <title>My Dashboard | 4Kautos</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <meta name="theme-color" content="#f5f6fc">
   <script>try{var t=localStorage.getItem('4k_theme')||'light';document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','light');}</script>
@@ -213,7 +213,7 @@
       <div class="panel">
         <div class="panel-head"><h3 data-i18n="admin.maintenance">Maintenance</h3></div>
         <div class="panel-body">
-          <p style="color:var(--text2);font-size:.88rem;margin-bottom:.75rem" data-i18n-html="admin.maintenanceP">Regenerate responsive image sizes for older uploads so they load fast on phones (creates <code>_400/_800/_1600</code> variants). Safe to run repeatedly — already-optimized photos are skipped.</p>
+          <p style="color:var(--text2);font-size:.88rem;margin-bottom:.75rem" data-i18n-html="admin.maintenanceP">Regenerate responsive image sizes for older uploads so they load fast on phones (creates <code>_400/_800/_1600</code> variants). Safe to run repeatedly; already optimized photos are skipped.</p>
           <div style="display:flex;gap:.5rem;flex-wrap:wrap">
             <button class="adm-btn" id="backfill-dry" data-i18n="admin.preview">Preview changes</button>
             <button class="pay-btn" id="backfill-apply" data-i18n="admin.regen">Regenerate now</button>
@@ -332,7 +332,7 @@
           <div class="form-row">
             <div class="form-group"><label class="form-label req" data-i18n="wiz.accident">Accident history</label>
               <select class="form-select" id="car-accident"><option value="" data-i18n="wiz.select">Select…</option><option value="no" data-i18n="wiz.accidentNo">No reported accidents</option><option value="yes" data-i18n="wiz.accidentYes">Has accident history</option></select>
-              <div class="field-hint" data-i18n="wiz.accidentHint">Helps us assess the vehicle's condition — not shown publicly on your listing.</div>
+              <div class="field-hint" data-i18n="wiz.accidentHint">Helps us assess the vehicle's condition. Not shown publicly on your listing.</div>
             </div>
           </div>
           <div class="form-group">
@@ -342,7 +342,7 @@
               <label class="shot-file-btn" title="Upload the latest inspection report (PDF or image)"><span data-i18n="wiz.uploadReport">⬆ Upload report</span><input type="file" id="file-inspection" accept="application/pdf,image/*" hidden></label>
               <span class="shot-badge" id="badge-inspection"></span>
             </div>
-            <div class="field-hint" data-i18n="wiz.inspectionHint">Latest inspection report (PDF or photo) — a backend condition criterion, not shown publicly.</div>
+            <div class="field-hint" data-i18n="wiz.inspectionHint">Latest inspection report (PDF or photo). Used for our condition checks, not shown publicly.</div>
           </div>
           <div class="form-group" id="towing-group" style="display:none">
             <label class="form-label req" data-i18n="wiz.towing">Max towing capacity</label>
@@ -363,7 +363,7 @@
               <input class="form-input" type="text" id="car-location" placeholder="e.g. Atlanta, GA, USA" data-i18n-ph="wiz.locationPh" autocomplete="off">
               <button class="nav-btn nav-btn-ghost" type="button" id="locate-btn" data-i18n="wiz.locate">📍 Locate</button>
             </div>
-            <div class="field-hint" id="loc-hint" data-i18n="wiz.locHint">City and country — we'll pin it on the map for buyers.</div>
+            <div class="field-hint" id="loc-hint" data-i18n="wiz.locHint">City and country. We'll pin it on the map for buyers.</div>
             <div id="upload-map" class="car-map upload-map" style="display:none"></div>
           </div>
           <div class="form-group">

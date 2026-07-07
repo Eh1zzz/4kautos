@@ -44,7 +44,9 @@ async function req(method, path, body = null, isForm = false, extraHeaders = {})
   const res = await fetch(`${BASE}${API_PREFIX}${path}`, opts);
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(err.message || `HTTP ${res.status}`);
+    const e = new Error(err.message || `HTTP ${res.status}`);
+    e.status = res.status; // callers use this to tell auth failures from other errors
+    throw e;
   }
   return res.json();
 }
