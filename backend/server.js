@@ -7,6 +7,7 @@ import fs            from 'fs';
 import http          from 'http';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { connectDB, pool } from './config/db.js';
+import { scheduleBackups } from './utils/backup.js';
 import { securityHeaders, rateLimitStore } from './middleware/security.js';
 import { initRealtime } from './realtime.js';
 import authRoutes        from './routes/auth.js';
@@ -25,6 +26,33 @@ import savedSearchRoutes from './routes/savedSearches.js';
 import contactRoutes     from './routes/contact.js';
 
 dotenv.config();
+
+/* ── SENTRY (error observability) ─────────────
+   Inert without SENTRY_DSN ($0 mode). With a DSN set on Railway, unhandled
+   route errors are captured via the Express handler below, and every
+   console.error is forwarded too — the route handlers all catch their own
+   errors and log them, so without this forwarding Sentry would only ever see
+   the rare unhandled ones. */
+const SENTRY_DSN = process.env.SENTRY_DSN || '';
+let Sentry = null;
+if (SENTRY_DSN) {
+  Sentry = await import('@sentry/node');
+  Sentry.init({
+    dsn: SENTRY_DSN,
+    environment: process.env.NODE_ENV || 'development',
+    release: process.env.RAILWAY_GIT_COMMIT_SHA || undefined,
+    tracesSampleRate: 0, // errors only — no paid-tier performance tracing
+  });
+  const origError = console.error.bind(console);
+  console.error = (...args) => {
+    origError(...args);
+    try {
+      const msg = args.map(a => (a instanceof Error ? a.stack : typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
+      Sentry.captureMessage(msg.slice(0, 2000), 'error');
+    } catch { /* never let telemetry break logging */ }
+  };
+  console.log('🛰  Sentry error reporting enabled');
+}
 
 // Fail fast in production if the JWT secret is missing or weak.
 if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
@@ -164,6 +192,7 @@ app.use(express.static(frontendDir));
 app.get('/{*path}', (_req, res) => res.sendFile(path.join(frontendDir, 'index.html')));
 
 /* ── GLOBAL ERROR HANDLER ─────────────────── */
+if (Sentry) Sentry.setupExpressErrorHandler(app); // report, then fall through to ours
 app.use((err, _req, res, _next) => {
   console.error('[error]', err.message);
   const status = err.status || err.statusCode || 500;
@@ -184,6 +213,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
       app.set('io', io); // the messages route pushes new-message nudges through this
       httpServer.listen(PORT, () =>
         console.log(`🚗  4Kautos server → http://localhost:${PORT}`));
+
+      // Daily DB backups (on by default in production; BACKUP_ENABLED=1 forces on in dev).
+      if (isProd || process.env.BACKUP_ENABLED === '1') scheduleBackups();
 
       // Graceful shutdown: PaaS platforms send SIGTERM on every deploy/restart.
       // Disconnect sockets, let in-flight requests finish, close the DB pool, then

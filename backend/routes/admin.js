@@ -6,6 +6,7 @@ import { findAll as findContactMessages, deleteById as deleteContactMessage } fr
 import { authenticate, authorize } from '../middleware/auth.js';
 import { toId } from '../utils/validation.js';
 import { runBackfill, startBackfill, getBackfillJob } from '../utils/backfillImages.js';
+import { runBackup, backupStatus } from '../utils/backup.js';
 import { pool } from '../config/db.js';
 import { getRate } from './fx.js';
 
@@ -241,5 +242,14 @@ router.post('/backfill-images', async (req, res) => {
 
 // GET /admin/backfill-images/status — progress of the most recent detached run.
 router.get('/backfill-images/status', (_req, res) => res.json(getBackfillJob()));
+
+// POST /admin/backup — run a database backup now (also runs on the daily schedule).
+router.post('/backup', async (_req, res) => {
+  const r = await runBackup();
+  res.status(r.ok ? 200 : 500).json(r);
+});
+
+// GET /admin/backup/status — last run + schedule config.
+router.get('/backup/status', (_req, res) => res.json(backupStatus()));
 
 export default router;
