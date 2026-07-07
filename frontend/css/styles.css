@@ -683,6 +683,10 @@ section{padding:5rem 2rem}
 .step-card.lit{border-color:var(--border-hi)}
 .step-card.lit .step-icon{background:var(--grad-soft);border-color:transparent;box-shadow:0 0 0 3px rgba(139,124,255,.12)}
 .step-card .step-icon{transition:background var(--speed),border-color var(--speed),box-shadow var(--speed)}
+/* strips enhanced by anim.js drag-to-scroll (desktop mouse) */
+.drag-scroll{cursor:grab;scrollbar-width:thin}
+.drag-scroll.dragging{cursor:grabbing;user-select:none;scroll-behavior:auto}
+.drag-scroll.dragging *{pointer-events:none}
 .step-card{
   background:var(--surface);border:1.5px solid var(--border);
   border-radius:var(--radius-lg);padding:1.75rem 1.5rem;

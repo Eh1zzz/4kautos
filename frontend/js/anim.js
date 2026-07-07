@@ -346,6 +346,53 @@ if (!reduce) {
   }
   journey();
 
+  /* ── Bundle G — draggable strips (grab, throw, glide) ─────────────── */
+  // Mouse drag-to-scroll with thrown momentum for the horizontal scrollers
+  // (listings brand strip, gallery thumbs). Touch keeps native scrolling —
+  // this only adds the desktop "grab" feel, so wheel/scrollbar still work.
+  function dragScroll(el) {
+    if (!el || el.__drag) return; el.__drag = true;
+    el.classList.add('drag-scroll');
+    el.addEventListener('dragstart', e => e.preventDefault()); // no image ghost-drag
+    let down = false, lastX = 0, moved = 0, vel = 0, lastT = 0, glide = null;
+    el.addEventListener('pointerdown', e => {
+      if (e.pointerType !== 'mouse' || e.button !== 0) return;
+      down = true; moved = 0; vel = 0; lastX = e.clientX; lastT = e.timeStamp;
+      if (glide) { try { glide.pause(); } catch { /* ok */ } glide = null; }
+      el.classList.add('dragging');
+    });
+    el.addEventListener('pointermove', e => {
+      if (!down) return;
+      const dx = e.clientX - lastX;
+      try { if (Math.abs(dx) > 2 && !el.hasPointerCapture(e.pointerId)) el.setPointerCapture(e.pointerId); }
+      catch { /* capture is best-effort — never let it stop the drag */ }
+      el.scrollLeft -= dx;
+      moved += Math.abs(dx);
+      const dt = Math.max(1, e.timeStamp - lastT);
+      vel = 0.8 * vel + 0.2 * (dx / dt) * 16;      // px per frame, smoothed
+      lastX = e.clientX; lastT = e.timeStamp;
+    });
+    const release = () => {
+      if (!down) return; down = false;
+      el.classList.remove('dragging');
+      if (Math.abs(vel) > 2) {                      // throw → glide out
+        const target = el.scrollLeft - vel * 14;
+        const obj = { s: el.scrollLeft };
+        glide = animate(obj, {
+          s: Math.max(0, Math.min(target, el.scrollWidth - el.clientWidth)),
+          duration: 700, ease: 'out(3)',
+          onUpdate: () => { el.scrollLeft = obj.s; },
+        });
+      }
+    };
+    el.addEventListener('pointerup', release);
+    el.addEventListener('pointercancel', release);
+    // A real drag must not fire the tile's click when the mouse is released.
+    el.addEventListener('click', e => { if (moved > 6) { e.preventDefault(); e.stopPropagation(); } }, true);
+  }
+  const DRAG_SEL = '.listings-main .brand-strip-sm, .gallery-thumbs';
+  document.querySelectorAll(DRAG_SEL).forEach(dragScroll);
+
   // Route an added node to the right enhancement; returns any grids to schedule.
   function handleNode(n) {
     const grids = [];
@@ -362,6 +409,8 @@ if (!reduce) {
     n.querySelectorAll?.('.toast').forEach(decorateToast);
     if (n.matches?.('#thread-msgs')) watchChat(n);
     else { const tb = n.querySelector?.('#thread-msgs'); if (tb) watchChat(tb); }
+    if (n.matches?.(DRAG_SEL)) dragScroll(n);
+    n.querySelectorAll?.(DRAG_SEL).forEach(dragScroll);
     return grids;
   }
 
