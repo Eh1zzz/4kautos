@@ -634,7 +634,6 @@ window.carCard = function (c) {
             ${evalHtml}
             ${landedHtml}
           </div>
-          <button class="card-cta" data-i18n="card.view">${esc(T('card.view', 'View Details'))}</button>
         </div>
       </div>
     </div>`;

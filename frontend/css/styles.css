@@ -427,6 +427,20 @@ section{padding:5rem 2rem}
 .card-footer{display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:.75rem;border-top:1px solid var(--border)}
 .card-price{font-family:var(--font-display);font-size:1.35rem;font-weight:700;color:var(--accent)}
 .card-price small{font-size:.7rem;font-weight:400;color:var(--text3);font-family:var(--font-body)}
+/* active-filter chips above the listings grid (click ✕ to remove one) */
+.filter-chips{display:flex;flex-wrap:wrap;gap:.5rem;margin:0 0 1rem}
+.f-chip{
+  display:inline-flex;align-items:center;gap:.45rem;
+  background:var(--surface2);border:1px solid var(--border);border-radius:999px;
+  padding:.32rem .8rem;font-size:.76rem;font-weight:600;color:var(--text2);
+  transition:border-color var(--speed),color var(--speed);cursor:pointer;
+}
+.f-chip span{color:var(--text3);font-size:.7rem;line-height:1}
+.f-chip:hover{border-color:var(--border-hi);color:var(--text)}
+.f-chip:hover span{color:var(--red)}
+.f-chip-clear{background:transparent;border-style:dashed;color:var(--accent)}
+
+/* pill link used by the dashboard listing/saved-search rows */
 .card-cta{
   padding:6px 14px;border-radius:7px;
   background:rgba(139,124,255,.1);border:1px solid rgba(139,124,255,.2);

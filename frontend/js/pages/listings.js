@@ -26,8 +26,55 @@
     return p;
   }
 
+  /* ── Active-filter chips (click ✕ on one to drop it, or clear all) ── */
+  let activeChips = [];
+  function collectChips() {
+    const chips = [];
+    const el = id => document.getElementById(id);
+    const num = v => Number(v).toLocaleString();
+    const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+    if (el('f-make').value)  chips.push({ label: el('f-make').value,  clear: () => { el('f-make').value = ''; } });
+    if (el('f-model').value) chips.push({ label: el('f-model').value, clear: () => { el('f-model').value = ''; } });
+    if (el('f-price-min').value) chips.push({ label: `From ₦${num(el('f-price-min').value)}`,  clear: () => { el('f-price-min').value = ''; } });
+    if (el('f-price-max').value) chips.push({ label: `Up to ₦${num(el('f-price-max').value)}`, clear: () => { el('f-price-max').value = ''; } });
+    document.querySelectorAll('.filter-check input:checked').forEach(c =>
+      chips.push({ label: cap(c.value), clear: () => { c.checked = false; } }));
+    // Filters carried in the URL (body type tiles, budget/mileage presets, search)
+    const URL_FMT = {
+      q: v => `"${v}"`, type: v => v,
+      minMileage: v => `From ${num(v)} km`, maxMileage: v => `Up to ${num(v)} km`,
+      minUsd: v => `From $${num(v)}`,       maxUsd: v => `Up to $${num(v)}`,
+    };
+    for (const [k, fmt] of Object.entries(URL_FMT)) {
+      const v = urlP.get(k);
+      if (v) chips.push({ label: fmt(v), clear: () => {
+        urlP.delete(k);
+        history.replaceState(null, '', location.pathname + (urlP.toString() ? `?${urlP}` : ''));
+      } });
+    }
+    return chips;
+  }
+  function renderFilterChips() {
+    const wrap = document.getElementById('filter-chips');
+    if (!wrap) return;
+    activeChips = collectChips();
+    wrap.hidden = !activeChips.length;
+    wrap.innerHTML = activeChips.map((c, i) =>
+      `<button type="button" class="f-chip" data-chip="${i}" title="Remove this filter">${esc(c.label)} <span>✕</span></button>`
+    ).join('') + (activeChips.length > 1
+      ? `<button type="button" class="f-chip f-chip-clear" data-chip="all">${esc(window.t('listings.clearAll', 'Clear all'))}</button>` : '');
+  }
+  document.getElementById('filter-chips')?.addEventListener('click', e => {
+    const btn = e.target.closest('[data-chip]');
+    if (!btn) return;
+    if (btn.dataset.chip === 'all') activeChips.forEach(c => c.clear());
+    else activeChips[Number(btn.dataset.chip)]?.clear();
+    loadListings(1);
+  });
+
   async function loadListings(page = 1) {
     currentPage = page;
+    renderFilterChips();
     const spinner = document.getElementById('listings-spinner');
     const grid = document.getElementById('listings-grid');
     const empty = document.getElementById('listings-empty');
