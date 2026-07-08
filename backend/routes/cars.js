@@ -7,6 +7,7 @@ import { getRate } from './fx.js';
 import { usdOf, priceVerdict } from '../utils/valuation.js';
 import { governmentCharges, customsNotes, customsDisclaimer, round2 } from '../utils/customs.js';
 import { resolveDestination, destinationCountry } from '../utils/locale.js';
+import { notifySavedSearchMatches } from '../utils/searchAlerts.js';
 
 const router = express.Router();
 
@@ -161,6 +162,11 @@ router.post('/', writeLimiter, authenticate, authorize('seller'), async (req, re
       return res.status(400).json({ message: errors[0], errors });
 
     const car = await create({ ...value, sellerId: req.user.id });
+    // Alert buyers whose saved search matches this new listing (fire-and-forget;
+    // no-ops until an email driver is configured, so it never blocks the create).
+    // Skipped under tests so its async DB/log work can't outlive the suite's
+    // teardown; the matcher itself is covered directly in searchAlerts.test.js.
+    if (process.env.NODE_ENV !== 'test') notifySavedSearchMatches(car);
     res.status(201).json({ message: 'Car added successfully', car });
   } catch (err) {
     console.error('POST /cars:', err.message);

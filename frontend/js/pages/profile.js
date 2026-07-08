@@ -12,6 +12,7 @@
       if (link.dataset.tab === 'transactions') loadTransactions();
       if (link.dataset.tab === 'messages')     loadThreads();
       if (link.dataset.tab === 'saved')        loadSavedSearches();
+      if (link.dataset.tab === 'saved-cars')   loadSavedCars();
       if (link.dataset.tab === 'admin')        loadAdmin();
     });
   });
@@ -41,13 +42,14 @@
     const hideTab = tab => { const l = navLink(tab); if (l) l.style.display = 'none'; };
 
     if (user.role === 'admin') {
-      ['overview', 'listings', 'transactions', 'messages', 'saved'].forEach(hideTab);
+      ['overview', 'listings', 'transactions', 'messages', 'saved', 'saved-cars'].forEach(hideTab);
       document.getElementById('admin-nav').style.display = 'flex';
       switchTab('admin'); loadAdmin();
     } else if (user.role === 'seller') {
       document.getElementById('add-car-nav').style.display = 'flex';
       document.getElementById('new-listing-btn').style.display = '';
       hideTab('saved');                 // saved searches is a buyer feature
+      hideTab('saved-cars');            // saved cars too
     } else { // buyer
       hideTab('listings');              // "My Listings" is seller inventory
       setupBuyerLocation();             // saved location card in the overview
@@ -140,6 +142,34 @@
       }).join('');
     } catch (e) { el.innerHTML = `<p class="empty-state">Failed: ${esc(e.message)}</p>`; }
   }
+
+  // Saved cars: server-synced hearts, rendered with the shared card grid.
+  async function loadSavedCars() {
+    const el = document.getElementById('saved-cars-content');
+    el.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div></div>';
+    try {
+      const cars = await API.getSavedCars(true); // full=1 → full car rows
+      if (!cars.length) {
+        el.innerHTML = `<div class="empty-state" style="padding:2.5rem"><p>${esc(window.t('dash.noSavedCars', 'No saved cars yet. Tap the ♡ on any listing to save it here.'))} <a href="listings.html" style="color:var(--accent)">${esc(window.t('dash.browseListings', 'Browse listings'))}</a></p></div>`;
+        return;
+      }
+      el.innerHTML = `<div class="cars-grid">${cars.map(c => window.carCard(c)).join('')}</div>`;
+      window.observeReveals?.();
+      Money.repriceAll?.();
+    } catch (e) { el.innerHTML = `<p class="empty-state">Failed: ${esc(e.message)}</p>`; }
+  }
+  // When a heart is toggled elsewhere while this tab is open, keep it fresh.
+  window.addEventListener('saved-sync', () => {
+    if (document.getElementById('tab-saved-cars')?.classList.contains('active')) loadSavedCars();
+  });
+  // Un-hearting a card on THIS tab should drop it from the grid. app.js's shared
+  // handler toggles first (document-level, runs after this bubble), so re-check
+  // on the next tick and remove any card that's no longer saved.
+  document.getElementById('saved-cars-content')?.addEventListener('click', e => {
+    const save = e.target.closest('.card-saves'); if (!save) return;
+    const card = save.closest('.car-card');
+    setTimeout(() => { if (card && !API.isSaved(save.dataset.save)) card.remove(); }, 0);
+  });
 
   async function removeSavedSearch(id) {
     if (!confirm('Delete this saved search?')) return;

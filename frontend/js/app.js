@@ -1410,6 +1410,7 @@ window.RT = (function () {
       'dash.yourLocation': 'Your location', 'dash.locationPh': 'e.g. Port Harcourt, Nigeria', 'dash.save': 'Save',
       'dash.locationHint': 'We use this to estimate shipping & duties to your door.',
       'dash.savedSub': 're-run a search anytime', 'dash.newListing': '+ New Listing',
+      'dash.savedCars': 'Saved cars', 'dash.savedCarsSub': 'the cars you hearted', 'dash.noSavedCars': 'No saved cars yet. Tap the ♡ on any listing to save it here.', 'dash.browseListings': 'Browse listings',
       'dash.payout': 'Payout details', 'dash.payoutSub': 'where your sales are paid', 'dash.txHistory': 'Transaction History',
       'dash.gateTitle': 'Sign in to access your dashboard', 'dash.gateSub': 'Manage your listings, track purchases, and update your profile.',
       // Admin cockpit
@@ -1557,6 +1558,7 @@ window.RT = (function () {
       'dash.yourLocation': 'Votre localisation', 'dash.locationPh': 'ex. Port Harcourt, Nigeria', 'dash.save': 'Enregistrer',
       'dash.locationHint': "Nous l'utilisons pour estimer la livraison et les droits jusqu'à votre porte.",
       'dash.savedSub': 'relancez une recherche à tout moment', 'dash.newListing': '+ Nouvelle annonce',
+      'dash.savedCars': 'Voitures enregistrées', 'dash.savedCarsSub': 'les voitures que vous avez aimées', 'dash.noSavedCars': 'Aucune voiture enregistrée. Touchez le ♡ sur une annonce pour l’enregistrer ici.', 'dash.browseListings': 'Parcourir les annonces',
       'dash.payout': 'Coordonnées de paiement', 'dash.payoutSub': 'où vos ventes sont versées', 'dash.txHistory': 'Historique des transactions',
       'dash.gateTitle': 'Connectez-vous pour accéder à votre tableau de bord', 'dash.gateSub': 'Gérez vos annonces, suivez vos achats et mettez à jour votre profil.',
       // Espace admin

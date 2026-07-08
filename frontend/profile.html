@@ -63,6 +63,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
         <span data-i18n="dash.saved">Saved searches</span>
       </div>
+      <div class="profile-nav-link" data-tab="saved-cars">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1a5.5 5.5 0 0 0-7.8 7.7L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8z"/></svg>
+        <span data-i18n="dash.savedCars">Saved cars</span>
+      </div>
       <div class="profile-nav-link" data-tab="add-car" id="add-car-nav" style="display:none">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
         <span data-i18n="dash.addListing">Add Listing</span>
@@ -117,6 +121,14 @@
       <div class="panel">
         <div class="panel-head"><h3 data-i18n="dash.saved">Saved searches</h3><span style="font-size:.75rem;color:var(--text3)" data-i18n="dash.savedSub">re-run a search anytime</span></div>
         <div id="saved-content"><div class="spinner-wrap"><div class="spinner"></div></div></div>
+      </div>
+    </div>
+
+    <!-- Saved Cars Tab -->
+    <div class="profile-tab hidden" id="tab-saved-cars">
+      <div class="panel">
+        <div class="panel-head"><h3 data-i18n="dash.savedCars">Saved cars</h3><span style="font-size:.75rem;color:var(--text3)" data-i18n="dash.savedCarsSub">the cars you hearted</span></div>
+        <div id="saved-cars-content"><div class="spinner-wrap"><div class="spinner"></div></div></div>
       </div>
     </div>
 

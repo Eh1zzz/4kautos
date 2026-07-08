@@ -11,6 +11,7 @@ jest.unstable_mockModule('../utils/email.js', () => ({
   sendWelcome:       jest.fn(async () => true),
   notifyNewMessage:  jest.fn(async () => true),
   notifyContactMessage: jest.fn(async () => true),
+  notifySavedSearchMatch: jest.fn(async () => true),
   sendMail:          jest.fn(async () => true),
 }));
 

@@ -102,6 +102,26 @@ export async function notifyContactMessage({ name, email, message }) {
        <p style="white-space:pre-wrap;background:#f6f6fb;padding:12px;border-radius:8px">${esc(message)}</p>`));
 }
 
+// Alert a buyer that a new listing matches one of their saved searches.
+export async function notifySavedSearchMatch({ to, name, car }) {
+  if (!to || !car) return false;
+  const base = process.env.APP_BASE_URL || '';
+  const title = car.title || [car.year, car.make, car.model].filter(Boolean).join(' ');
+  const sym = (car.currency || 'NGN') === 'USD' ? '$' : '₦';
+  const price = car.price != null ? `${sym}${Number(car.price).toLocaleString('en-US')}` : 'Price on request';
+  const link = `${base}/detail.html?id=${car.id}`;
+  const bits = [price, car.mileage != null ? `${Number(car.mileage).toLocaleString('en-US')} km` : null, car.location]
+    .filter(Boolean).join(' · ');
+  return sendMail(to, `New match for your search: ${title}`,
+    shell('A car matching your search just landed',
+      `<p>Hi ${esc(name || 'there')},</p>
+       <p>A new listing matches one of your saved searches on 4Kautos:</p>
+       <p style="font-size:16px;font-weight:700;margin:.4rem 0">${esc(title)}</p>
+       <p style="color:#555">${esc(bits)}</p>
+       <p><a href="${esc(link)}" style="display:inline-block;background:#6d4dff;color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px;font-weight:700">View the listing</a></p>
+       <p style="font-size:12px;color:#888">You're getting this because you saved a search on 4Kautos. Manage your saved searches from your dashboard.</p>`));
+}
+
 // Email-verification link (expires in 24 hours).
 export async function sendVerifyEmail(email, link) {
   return sendMail(email, 'Confirm your 4Kautos email',
