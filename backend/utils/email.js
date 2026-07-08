@@ -10,15 +10,28 @@ import { pool } from '../config/db.js';
 
 // Resend's onboarding@resend.dev works without verifying a domain — good for the
 // first smoke test. Switch MAIL_FROM to your own verified domain for real sends.
+// From address. When RESEND_API_KEY is set we default to Resend's shared test
+// sender (a lingering GMAIL_USER must NOT become the Resend "from" — Resend
+// rejects unverified addresses). Set MAIL_FROM to your verified domain for prod.
 const MAIL_FROM = process.env.MAIL_FROM
-  || (process.env.GMAIL_USER ? `4Kautos <${process.env.GMAIL_USER}>` : '4Kautos <onboarding@resend.dev>');
+  || (process.env.RESEND_API_KEY ? '4Kautos <onboarding@resend.dev>'
+    : process.env.GMAIL_USER    ? `4Kautos <${process.env.GMAIL_USER}>`
+    : '4Kautos <onboarding@resend.dev>');
 
 let transporter; // undefined = not built yet, false = disabled
 function getTransporter() {
   if (transporter !== undefined) return transporter;
   const user = process.env.GMAIL_USER, pass = process.env.GMAIL_APP_PASSWORD;
+  // Force IPv4 (PaaS containers often have no IPv6 route → connect ENETUNREACH on
+  // Gmail's IPv6 SMTP address) and cap the timeouts so a blocked SMTP port fails
+  // fast instead of hanging. If SMTP is filtered outright, use RESEND_API_KEY.
   transporter = (user && pass)
-    ? nodemailer.createTransport({ service: 'gmail', auth: { user, pass } })
+    ? nodemailer.createTransport({
+        host: 'smtp.gmail.com', port: 465, secure: true,
+        auth: { user, pass },
+        family: 4,
+        connectionTimeout: 10000, greetingTimeout: 10000, socketTimeout: 15000,
+      })
     : false;
   return transporter;
 }
