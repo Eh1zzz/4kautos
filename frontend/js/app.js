@@ -59,6 +59,9 @@ document.addEventListener('click', e => {
               </div>
             </div>
             <div class="form-error hidden" id="login-error"></div>
+            <div class="form-alt hidden" id="login-verify-note" style="margin:.1rem 0 .4rem">
+              <a id="resend-verify" style="cursor:pointer;color:var(--accent)" data-i18n="auth.resend">Resend verification email</a>
+            </div>
             <button class="form-submit" id="login-btn" data-i18n="nav.signin">Sign In</button>
             <p class="form-alt" style="margin-top:.6rem"><a id="go-forgot" style="cursor:pointer" data-i18n="auth.forgot">Forgot password?</a></p>
             <p class="form-alt"><span data-i18n="auth.noAccountQ">No account?</span> <a id="go-signup" data-i18n="auth.createOne">Create one</a></p>
@@ -131,14 +134,28 @@ document.addEventListener('click', e => {
     const email = document.getElementById('login-email').value.trim();
     const pass  = document.getElementById('login-password').value;
     const errEl = document.getElementById('login-error');
-    errEl.classList.add('hidden');
+    const verifyNote = document.getElementById('login-verify-note');
+    errEl.classList.add('hidden'); verifyNote.classList.add('hidden');
     try {
       await API.login(email, pass);
       closeAuth(); toast(window.t('toast.welcomeBack', 'Welcome back! 🚗'), 'success');
       updateNavAuth(); setTimeout(() => location.reload(), 600);
     } catch(e) {
       errEl.textContent = e.message; errEl.classList.remove('hidden');
+      // Unverified email → offer to resend the verification link.
+      if (e.verifyRequired) verifyNote.classList.remove('hidden');
     }
+  });
+
+  // Resend the verification email for whatever address is in the login field.
+  document.getElementById('resend-verify').addEventListener('click', async () => {
+    const email = document.getElementById('login-email').value.trim();
+    if (!email) { toast(window.t('auth.enterEmail', 'Enter your email above first'), 'error'); return; }
+    try {
+      await API.resendVerification(email);
+      document.getElementById('login-verify-note').classList.add('hidden');
+      toast(window.t('toast.verifyResent', 'Verification email sent — check your inbox (and spam).'), 'success');
+    } catch { toast(window.t('toast.verifyResent', 'Verification email sent — check your inbox (and spam).'), 'success'); }
   });
 
   // Signup
@@ -1491,6 +1508,7 @@ window.RT = (function () {
       // Auth modal
       'auth.login': 'Login', 'auth.signup': 'Sign Up', 'auth.email': 'Email', 'auth.password': 'Password', 'auth.passwordPh': 'Your password',
       'auth.fullName': 'Full Name', 'auth.namePh': 'John Doe', 'auth.pwMin': 'Min. 6 characters', 'auth.forgot': 'Forgot password?',
+      'auth.resend': 'Resend verification email', 'auth.enterEmail': 'Enter your email above first', 'toast.verifyResent': 'Verification email sent — check your inbox (and spam).',
       'auth.noAccountQ': 'No account?', 'auth.createOne': 'Create one', 'auth.iam': 'I am a', 'auth.buyer': 'Buyer', 'auth.seller': 'Seller',
       'auth.roleNote': `You're creating a <strong>seller</strong> account to list your car.`, 'auth.buyInstead': 'Sign up to buy instead',
       'auth.createBtn': 'Create Account', 'auth.haveAccountQ': 'Already have an account?', 'auth.signinLink': 'Sign in',
@@ -1639,6 +1657,7 @@ window.RT = (function () {
       // Fenêtre de connexion
       'auth.login': 'Connexion', 'auth.signup': "S'inscrire", 'auth.email': 'E-mail', 'auth.password': 'Mot de passe', 'auth.passwordPh': 'Votre mot de passe',
       'auth.fullName': 'Nom complet', 'auth.namePh': 'Jean Dupont', 'auth.pwMin': 'Min. 6 caractères', 'auth.forgot': 'Mot de passe oublié ?',
+      'auth.resend': 'Renvoyer l’e-mail de vérification', 'auth.enterEmail': 'Saisissez d’abord votre e-mail ci-dessus', 'toast.verifyResent': 'E-mail de vérification envoyé — vérifiez votre boîte (et les spams).',
       'auth.noAccountQ': 'Pas de compte ?', 'auth.createOne': 'Créez-en un', 'auth.iam': 'Je suis', 'auth.buyer': 'Acheteur', 'auth.seller': 'Vendeur',
       'auth.roleNote': `Vous créez un compte <strong>vendeur</strong> pour publier votre voiture.`, 'auth.buyInstead': 'Inscrivez-vous plutôt pour acheter',
       'auth.createBtn': 'Créer un compte', 'auth.haveAccountQ': 'Vous avez déjà un compte ?', 'auth.signinLink': 'Connectez-vous',

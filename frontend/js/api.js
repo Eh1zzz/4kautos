@@ -46,6 +46,7 @@ async function req(method, path, body = null, isForm = false, extraHeaders = {})
     const err = await res.json().catch(() => ({ message: res.statusText }));
     const e = new Error(err.message || `HTTP ${res.status}`);
     e.status = res.status; // callers use this to tell auth failures from other errors
+    e.verifyRequired = !!err.verifyRequired; // login wall → offer a resend link
     throw e;
   }
   return res.json();
@@ -58,6 +59,7 @@ const API = {
     if (data.token) { setToken(data.token); localStorage.setItem('4k_user', JSON.stringify(data.user)); API.syncSaved(); }
     return data;
   },
+  resendVerification(email) { return req('POST', '/auth/resend', { email }); },
   async login(email, password) {
     const data = await req('POST', '/auth/login', { email, password });
     if (data.token) { setToken(data.token); localStorage.setItem('4k_user', JSON.stringify(data.user)); API.syncSaved(); }
