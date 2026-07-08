@@ -192,13 +192,18 @@
         const canPay    = isBuyer && ['initiated','pending_inspection'].includes(t.status);
         const canSettle = (isBuyer || me?.role === 'admin') && t.status === 'payment_in_escrow';
         const canReview = isBuyer && t.status === 'completed' && !t.review_id;
+        // Payout chip: only meaningful once the deal is completed. 'processing'
+        // is a transient in-escrow release lock and must NEVER read "sent to
+        // seller"; unknown values show nothing rather than falling through.
+        const PAYOUT_LABELS = { transferred: 'sent to seller', pending: 'payout pending', paid: 'paid out' };
+        const payoutLabel = t.status === 'completed' ? PAYOUT_LABELS[t.payout_status] : null;
         return `<div class="tx-row">
           <div>
             <div class="tx-car">${esc(car?.title || 'Car Listing')}</div>
             <div class="tx-meta">${other ? `${isBuyer ? 'Purchase from' : 'Sale to'} ${esc(other)}` : ''} · <span class="js-price" data-amount="${esc(car?.price ?? '')}" data-native="${esc(car?.currency||'NGN')}">${car?.price!=null ? Money.fmt(car.price, car.currency||'NGN') : '—'}</span></div>
           </div>
           <span class="tx-status status-${t.status}">${t.status.replace(/_/g,' ')}</span>
-          ${t.payout_status ? `<span class="tx-status" style="background:rgba(139,124,255,.14);color:var(--accent)">${t.payout_status === 'pending' ? 'payout pending' : t.payout_status === 'paid' ? 'paid out' : 'sent to seller'}</span>` : ''}
+          ${payoutLabel ? `<span class="tx-status" style="background:rgba(139,124,255,.14);color:var(--accent)">${payoutLabel}</span>` : ''}
           <div class="tx-actions">
             ${canPay ? `<button class="pay-btn" data-act="pay-escrow" data-id="${t.id}">💳 Pay into escrow</button>` : ''}
             ${canSettle ? `<button class="pay-btn" data-act="release-tx" data-id="${t.id}">✓ Confirm &amp; release</button>` : ''}
