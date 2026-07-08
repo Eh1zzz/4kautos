@@ -67,6 +67,13 @@
       if (seller?.id) // name links to the public seller profile (their other inventory)
         sellerNameEl.innerHTML = `<a class="seller-link" href="seller.html?id=${encodeURIComponent(seller.id)}">${esc(seller.name || 'Seller')}</a>`;
       else sellerNameEl.textContent = 'Unknown Seller';
+      // Star rating under the badge (non-critical fetch; shown once reviews exist).
+      if (seller?.id) API.getSeller(seller.id).then(p => {
+        if (!p.rating?.count || document.querySelector('.seller-rating')) return;
+        document.getElementById('seller-badge')?.insertAdjacentHTML('afterend',
+          `<a class="seller-rating" href="seller.html?id=${encodeURIComponent(seller.id)}">` +
+          `<span class="stars">★</span> ${esc(p.rating.avg)} · ${p.rating.count} ${esc(window.t('seller.reviews', 'reviews'))}</a>`);
+      }).catch(() => {});
       if (!seller?.verified) document.getElementById('seller-badge').innerHTML = '<span style="color:var(--text3)">Unverified</span>';
 
       // If the logged-in user owns this listing, the buyer-facing actions

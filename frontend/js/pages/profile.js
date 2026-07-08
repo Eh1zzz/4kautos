@@ -161,6 +161,7 @@
         const isBuyer   = me?.id === t.buyer_id;
         const canPay    = isBuyer && ['initiated','pending_inspection'].includes(t.status);
         const canSettle = (isBuyer || me?.role === 'admin') && t.status === 'payment_in_escrow';
+        const canReview = isBuyer && t.status === 'completed' && !t.review_id;
         return `<div class="tx-row">
           <div>
             <div class="tx-car">${esc(car?.title || 'Car Listing')}</div>
@@ -172,6 +173,8 @@
             ${canPay ? `<button class="pay-btn" data-act="pay-escrow" data-id="${t.id}">💳 Pay into escrow</button>` : ''}
             ${canSettle ? `<button class="pay-btn" data-act="release-tx" data-id="${t.id}">✓ Confirm &amp; release</button>` : ''}
             ${canSettle ? `<button class="adm-btn danger" data-act="refund-tx" data-id="${t.id}">Cancel &amp; refund</button>` : ''}
+            ${canReview ? `<button class="pay-btn" data-act="review-tx" data-id="${t.id}">★ ${esc(window.t('review.rate', 'Rate seller'))}</button>` : ''}
+            ${isBuyer && t.status === 'completed' && t.review_id ? `<span class="tx-status" style="background:rgba(240,180,41,.14);color:#f0b429">★ ${esc(window.t('review.done', 'reviewed'))}</span>` : ''}
             <select data-chg="update-tx" data-id="${t.id}" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:6px;font-size:.75rem">
               <option value="">Update…</option>
               <option value="pending_inspection">Inspection</option>
@@ -182,6 +185,44 @@
         </div>`;
       }).join('');
     } catch(e) { el.innerHTML = `<p class="empty-state">Failed: ${e.message}</p>`; }
+  }
+
+  // Post-purchase review: 5 tappable stars + optional comment in a small modal.
+  function openReviewModal(txId) {
+    document.getElementById('review-modal')?.remove();
+    const m = document.createElement('div');
+    m.id = 'review-modal'; m.className = 'rv-overlay';
+    m.innerHTML = `
+      <div class="rv-card" role="dialog" aria-modal="true" aria-label="${esc(window.t('review.title', 'Rate the seller'))}">
+        <h3>${esc(window.t('review.title', 'Rate the seller'))}</h3>
+        <div class="rv-stars">${[1, 2, 3, 4, 5].map(i =>
+          `<button type="button" data-star="${i}" aria-label="${i}/5">★</button>`).join('')}</div>
+        <textarea id="rv-comment" maxlength="600" placeholder="${esc(window.t('review.ph', 'How was the deal? (optional)'))}"></textarea>
+        <div class="rv-actions">
+          <button class="adm-btn" type="button" id="rv-cancel">${esc(window.t('review.cancel', 'Cancel'))}</button>
+          <button class="pay-btn" type="button" id="rv-submit" disabled>${esc(window.t('review.submit', 'Submit review'))}</button>
+        </div>
+      </div>`;
+    document.body.appendChild(m);
+    let rating = 0;
+    m.addEventListener('click', e => {
+      const s = e.target.closest('[data-star]');
+      if (s) {
+        rating = +s.dataset.star;
+        m.querySelectorAll('[data-star]').forEach(b => b.classList.toggle('on', +b.dataset.star <= rating));
+        m.querySelector('#rv-submit').disabled = !rating;
+        return;
+      }
+      if (e.target === m || e.target.id === 'rv-cancel') m.remove();
+    });
+    m.querySelector('#rv-submit').addEventListener('click', async () => {
+      try {
+        await API.createReview(txId, rating, m.querySelector('#rv-comment').value.trim());
+        toast(window.t('review.thanks', 'Thanks! Your review is live'), 'success');
+        m.remove();
+        loadTransactions();
+      } catch (e) { toast(e.message || 'Could not post the review', 'error'); }
+    });
   }
 
   async function updateTx(id, status) {
@@ -1017,6 +1058,7 @@ Object.assign(window.ACTIONS, {
   'remove-saved-search': d => removeSavedSearch(d.id),
   'pay-escrow':          (d, el) => payEscrow(d.id, el),
   'release-tx':          (d, el) => releaseTx(d.id, el),
+  'review-tx':           d => openReviewModal(d.id),
   'refund-tx':           (d, el) => refundTx(d.id, el),
   'remove-tx':           (d, el) => removeTx(d.id, el),
   'mark-paid':           (d, el) => markPaid(d.id, el),

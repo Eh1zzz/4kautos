@@ -1,6 +1,7 @@
 import express from 'express';
 import { pool } from '../config/db.js';
 import { toId } from '../utils/validation.js';
+import { listBySeller, aggregateForSeller } from '../models/Review.js';
 
 const router = express.Router();
 
@@ -19,6 +20,7 @@ router.get('/:id', async (req, res) => {
     const [[{ listings }]]  = await pool.query('SELECT COUNT(*) AS listings FROM cars WHERE seller_id = ?', [id]);
     const [[{ completed }]] = await pool.query(
       "SELECT COUNT(*) AS completed FROM transactions WHERE seller_id = ? AND status = 'completed'", [id]);
+    const rating = await aggregateForSeller(id);
 
     res.json({
       id: seller.id,
@@ -27,10 +29,23 @@ router.get('/:id', async (req, res) => {
       memberSince: seller.created_at,
       listings: Number(listings),
       completedSales: Number(completed),
+      rating, // { avg, count }
     });
   } catch (err) {
     console.error('GET /sellers/:id:', err.message);
     res.status(500).json({ message: 'Failed to load seller profile' });
+  }
+});
+
+// GET /sellers/:id/reviews — public review list (buyer name + car, no PII).
+router.get('/:id/reviews', async (req, res) => {
+  try {
+    const id = toId(req.params.id);
+    if (!id) return res.status(404).json({ message: 'Seller not found' });
+    res.json(await listBySeller(id));
+  } catch (err) {
+    console.error('GET /sellers/:id/reviews:', err.message);
+    res.status(500).json({ message: 'Failed to load reviews' });
   }
 });
 

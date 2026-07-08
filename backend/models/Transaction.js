@@ -16,6 +16,7 @@ function withRelations(withEmail = false) {
     SELECT t.*,
       ${person('b')} AS buyer,
       ${person('s')} AS seller,
+      r.id AS review_id,
       CASE WHEN c.id IS NOT NULL
         THEN JSON_OBJECT('id', c.id, 'title', c.title, 'price', c.price, 'currency', c.currency)
         ELSE NULL
@@ -24,6 +25,7 @@ function withRelations(withEmail = false) {
     JOIN  users b ON b.id = t.buyer_id
     JOIN  users s ON s.id = t.seller_id
     LEFT JOIN cars c ON c.id = t.car_id
+    LEFT JOIN reviews r ON r.transaction_id = t.id
   `;
 }
 

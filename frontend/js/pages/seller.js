@@ -27,6 +27,14 @@
         s.completedSales ? `${s.completedSales} ${window.t('seller.completedSales', 'completed sales')}` : null,
       ].filter(Boolean).join(' · ');
 
+      // Average rating next to the verified badge (only once reviews exist).
+      if (s.rating?.count) {
+        document.getElementById('s-badge').insertAdjacentHTML('beforeend',
+          ` <span class="stars" title="${s.rating.avg}/5">★</span> <b>${esc(s.rating.avg)}</b>` +
+          ` <span style="color:var(--text3);font-size:.8rem">(${s.rating.count} ${esc(window.t('seller.reviews', 'reviews'))})</span>`);
+      }
+      loadReviews();
+
       const cars = await API.getCars({ sellerId: id, limit: 48 }).catch(() => []);
       const grid = document.getElementById('seller-grid');
       if (cars.length) {
@@ -42,5 +50,22 @@
       hide(spinner); show(document.getElementById('seller-notfound'));
     }
   }
+  async function loadReviews() {
+    try {
+      const reviews = await API.getSellerReviews(id);
+      if (!reviews.length) return;   // section stays hidden until there's something to show
+      const stars = n => `<span class="stars" aria-label="${n}/5">${'★'.repeat(n)}${'☆'.repeat(5 - n)}</span>`;
+      document.getElementById('reviews-list').innerHTML = reviews.map(r => `
+        <div class="review-card">
+          <div class="review-head">
+            <span>${stars(r.rating)} <b style="color:var(--text)">${esc(r.buyer_name)}</b>${r.car_title ? ` · ${esc(r.car_title)}` : ''}</span>
+            <span>${new Date(r.created_at).toLocaleDateString()}</span>
+          </div>
+          ${r.comment ? `<div class="review-body">${esc(r.comment)}</div>` : ''}
+        </div>`).join('');
+      show(document.getElementById('reviews-section'));
+    } catch { /* non-critical — leave the section hidden */ }
+  }
+
   load();
 })();

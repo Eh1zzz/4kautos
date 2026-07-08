@@ -167,6 +167,24 @@ export async function connectDB() {
     )
   `);
 
+  // Post-purchase reviews: one per transaction, buyer → seller, gated on the
+  // transaction being completed (enforced by the route; UNIQUE stops repeats).
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS reviews (
+      id             INT          AUTO_INCREMENT PRIMARY KEY,
+      transaction_id INT          NOT NULL UNIQUE,
+      buyer_id       INT          NOT NULL,
+      seller_id      INT          NOT NULL,
+      rating         TINYINT      NOT NULL,
+      comment        VARCHAR(600),
+      created_at     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CHECK (rating BETWEEN 1 AND 5),
+      FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE,
+      FOREIGN KEY (buyer_id)  REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
   // Saved cars (server-synced hearts — localStorage stays the anonymous store).
   await pool.query(`
     CREATE TABLE IF NOT EXISTS saved_cars (
