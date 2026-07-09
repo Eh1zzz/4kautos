@@ -38,6 +38,9 @@
     "supertest": "^7.2.2"
   },
   "jest": {
+    "setupFiles": [
+      "<rootDir>/backend/tests/setup.js"
+    ],
     "testMatch": [
       "**/backend/tests/**/*.test.js"
     ]
