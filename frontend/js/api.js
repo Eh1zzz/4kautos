@@ -60,11 +60,16 @@ const API = {
     return data;
   },
   resendVerification(email) { return req('POST', '/auth/resend', { email }); },
-  async login(email, password) {
-    const data = await req('POST', '/auth/login', { email, password });
+  async login(email, password, totp) {
+    const data = await req('POST', '/auth/login', totp ? { email, password, totp } : { email, password });
     if (data.token) { setToken(data.token); localStorage.setItem('4k_user', JSON.stringify(data.user)); API.syncSaved(); }
     return data;
   },
+  // Admin two-factor (TOTP)
+  twoFAStatus()      { return req('GET',  '/auth/2fa/status'); },
+  twoFASetup()       { return req('POST', '/auth/2fa/setup'); },
+  twoFAEnable(code)  { return req('POST', '/auth/2fa/enable',  { code }); },
+  twoFADisable(code) { return req('POST', '/auth/2fa/disable', { code }); },
   forgotPassword(email)          { return req('POST', '/auth/forgot', { email }); },
   resetPassword(token, password) { return req('POST', '/auth/reset', { token, password }); },
   getMe()                        { return req('GET', '/auth/me'); },

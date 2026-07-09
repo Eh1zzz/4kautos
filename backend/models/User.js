@@ -74,6 +74,27 @@ export async function setLocation(id, location) {
   return findById(numId);
 }
 
+/* ── Admin two-factor (TOTP) ── */
+export async function getTotp(id) {
+  const numId = parseInt(id, 10);
+  if (isNaN(numId)) return null;
+  const [rows] = await pool.query('SELECT totp_secret, totp_enabled FROM users WHERE id = ?', [numId]);
+  return rows[0] || null;
+}
+
+// Store a (not-yet-enabled) secret during setup.
+export async function setTotpSecret(id, secret) {
+  await pool.query('UPDATE users SET totp_secret = ?, totp_enabled = 0 WHERE id = ?', [secret, parseInt(id, 10)]);
+}
+
+export async function enableTotp(id) {
+  await pool.query('UPDATE users SET totp_enabled = 1 WHERE id = ?', [parseInt(id, 10)]);
+}
+
+export async function disableTotp(id) {
+  await pool.query('UPDATE users SET totp_secret = NULL, totp_enabled = 0 WHERE id = ?', [parseInt(id, 10)]);
+}
+
 export async function create(name, email, hashedPassword, role) {
   const [result] = await pool.query(
     'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',

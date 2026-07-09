@@ -3,10 +3,12 @@ import crypto from 'crypto';
 import jwt    from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import { findByEmail, create, setResetToken, findByResetToken, updatePassword,
-         setVerifyToken, findByVerifyToken, markEmailVerified, findById as findUserById, setLocation } from '../models/User.js';
+         setVerifyToken, findByVerifyToken, markEmailVerified, findById as findUserById, setLocation,
+         getTotp, setTotpSecret, enableTotp, disableTotp } from '../models/User.js';
+import { generateSecret, otpauthURL, verifyCode } from '../utils/totp.js';
 import { isValidEmail } from '../utils/validation.js';
 import { authLimiter } from '../middleware/security.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, authorize } from '../middleware/auth.js';
 import { sendPasswordReset, sendVerifyEmail, isEmailConfigured } from '../utils/email.js';
 import { baseUrl } from '../utils/url.js';
 
@@ -103,6 +105,18 @@ router.post('/login', authLimiter, async (req, res) => {
 
     const match = await bcrypt.compare(password, user.password);
     if (!match) { if (lockEnabled()) noteLoginFail(lockKey); return res.status(401).json({ message: 'Invalid email or password' }); }
+
+    // Admin two-factor: once enabled, the password alone isn't enough — a valid
+    // TOTP code must accompany it. Password-OK-but-no-code returns totpRequired
+    // (not a failure); a wrong code counts against the lockout.
+    if (user.role === 'admin' && user.totp_enabled) {
+      const code = req.body.totp;
+      if (!code) return res.status(200).json({ totpRequired: true });
+      if (!verifyCode(user.totp_secret, code)) {
+        if (lockEnabled()) noteLoginFail(lockKey);
+        return res.status(401).json({ message: 'Invalid authentication code' });
+      }
+    }
 
     if (lockEnabled()) LOGIN_FAILS.delete(lockKey); // successful auth clears the counter
 
@@ -234,6 +248,53 @@ router.patch('/me', authenticate, async (req, res) => {
     console.error('auth/me update:', err.message);
     res.status(500).json({ message: 'Could not save your location' });
   }
+});
+
+/* ── Admin two-factor (TOTP) ─────────────────────────────────
+   setup → (scan/enter secret) → enable (confirm a code). Disable needs a
+   current code. Enabling only flips on after a code is confirmed, so a
+   mis-scanned secret can never lock the admin out. */
+
+// GET /auth/2fa/status — is 2FA on for this admin?
+router.get('/2fa/status', authenticate, authorize('admin'), async (req, res) => {
+  const t = await getTotp(req.user.id);
+  res.json({ enabled: !!t?.totp_enabled });
+});
+
+// POST /auth/2fa/setup — generate a fresh secret (stored, not yet enabled) and
+// return the otpauth URI + secret for the authenticator app.
+router.post('/2fa/setup', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const secret = generateSecret();
+    await setTotpSecret(req.user.id, secret);
+    const me = await findUserById(req.user.id);
+    res.json({ secret, otpauth: otpauthURL(secret, me?.email || `admin-${req.user.id}`) });
+  } catch (err) { console.error('2fa setup:', err.message); res.status(500).json({ message: 'Could not start 2FA setup' }); }
+});
+
+// POST /auth/2fa/enable { code } — confirm a code to switch 2FA on.
+router.post('/2fa/enable', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const t = await getTotp(req.user.id);
+    if (!t?.totp_secret) return res.status(400).json({ message: 'Start 2FA setup first' });
+    if (t.totp_enabled)  return res.json({ message: 'Two-factor is already on' });
+    if (!verifyCode(t.totp_secret, req.body.code))
+      return res.status(400).json({ message: 'That code isn’t valid — check the app and try again' });
+    await enableTotp(req.user.id);
+    res.json({ message: 'Two-factor authentication enabled' });
+  } catch (err) { console.error('2fa enable:', err.message); res.status(500).json({ message: 'Could not enable 2FA' }); }
+});
+
+// POST /auth/2fa/disable { code } — turn 2FA off (requires a current code).
+router.post('/2fa/disable', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const t = await getTotp(req.user.id);
+    if (!t?.totp_enabled) return res.json({ message: 'Two-factor is already off' });
+    if (!verifyCode(t.totp_secret, req.body.code))
+      return res.status(400).json({ message: 'That code isn’t valid — enter a current code to disable' });
+    await disableTotp(req.user.id);
+    res.json({ message: 'Two-factor authentication disabled' });
+  } catch (err) { console.error('2fa disable:', err.message); res.status(500).json({ message: 'Could not disable 2FA' }); }
 });
 
 export default router;

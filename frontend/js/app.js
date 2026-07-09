@@ -58,6 +58,10 @@ document.addEventListener('click', e => {
                 <button type="button" class="pw-toggle" data-pw="login-password" aria-label="Show password">${EYE_SVG}</button>
               </div>
             </div>
+            <div class="form-group hidden" id="login-totp-group">
+              <label class="form-label" data-i18n="auth.totp">Authentication code</label>
+              <input class="form-input" type="text" inputmode="numeric" autocomplete="one-time-code" id="login-totp" placeholder="6-digit code" maxlength="6">
+            </div>
             <div class="form-error hidden" id="login-error"></div>
             <div class="form-alt hidden" id="login-verify-note" style="margin:.1rem 0 .4rem">
               <a id="resend-verify" style="cursor:pointer;color:var(--accent)" data-i18n="auth.resend">Resend verification email</a>
@@ -135,9 +139,17 @@ document.addEventListener('click', e => {
     const pass  = document.getElementById('login-password').value;
     const errEl = document.getElementById('login-error');
     const verifyNote = document.getElementById('login-verify-note');
+    const totpGroup = document.getElementById('login-totp-group');
+    const totp  = document.getElementById('login-totp').value.trim();
     errEl.classList.add('hidden'); verifyNote.classList.add('hidden');
     try {
-      await API.login(email, pass);
+      const data = await API.login(email, pass, totp || undefined);
+      if (data.totpRequired) {
+        // Admin 2FA: password OK, now collect the authenticator code.
+        totpGroup.classList.remove('hidden');
+        document.getElementById('login-totp').focus();
+        return;
+      }
       closeAuth(); toast(window.t('toast.welcomeBack', 'Welcome back! 🚗'), 'success');
       updateNavAuth(); setTimeout(() => location.reload(), 600);
     } catch(e) {
@@ -1453,6 +1465,7 @@ window.RT = (function () {
       'admin.users': 'Users', 'admin.listings': 'Listings', 'admin.pendingPayouts': 'Pending payouts',
       'admin.intlPayouts': 'Pending international payouts', 'admin.intlPayoutsSub': 'pay via Wise, then mark settled',
       'admin.allListings': 'All Listings', 'admin.contactMsgs': 'Contact messages', 'admin.maintenance': 'Maintenance',
+      'admin.security': 'Security', 'admin.twofaP': "Protect the admin account with two-factor authentication. You'll enter a 6-digit code from your authenticator app at login.", 'admin.twofaEnable': 'Enable 2FA', 'admin.twofaOn': 'Two-factor is ON', 'admin.twofaDisable': 'Disable 2FA', 'admin.twofaDisableHint': 'Enter a current code to turn it off.', 'admin.twofaDisabled': 'Two-factor disabled', 'admin.twofaEnabled': 'Two-factor enabled 🔒', 'admin.twofaStep1': 'In your authenticator app, add an account and enter this key:', 'admin.twofaLink': 'or tap to open in your app', 'admin.twofaConfirm': 'Confirm & enable', 'auth.totp': 'Authentication code',
       'admin.maintenanceP': 'Regenerate responsive image sizes for older uploads so they load fast on phones (creates <code>_400/_800/_1600</code> variants). Safe to run repeatedly; already optimized photos are skipped.',
       'admin.preview': 'Preview changes', 'admin.regen': 'Regenerate now',
       // Add-listing wizard
@@ -1602,6 +1615,7 @@ window.RT = (function () {
       'admin.users': 'Utilisateurs', 'admin.listings': 'Annonces', 'admin.pendingPayouts': 'Versements en attente',
       'admin.intlPayouts': 'Versements internationaux en attente', 'admin.intlPayoutsSub': 'payez via Wise, puis marquez réglé',
       'admin.allListings': 'Toutes les annonces', 'admin.contactMsgs': 'Messages de contact', 'admin.maintenance': 'Maintenance',
+      'admin.security': 'Sécurité', 'admin.twofaP': "Protégez le compte admin avec la double authentification. Vous saisirez un code à 6 chiffres de votre application d'authentification à la connexion.", 'admin.twofaEnable': 'Activer la 2FA', 'admin.twofaOn': 'Double authentification ACTIVE', 'admin.twofaDisable': 'Désactiver la 2FA', 'admin.twofaDisableHint': 'Saisissez un code actuel pour la désactiver.', 'admin.twofaDisabled': 'Double authentification désactivée', 'admin.twofaEnabled': 'Double authentification activée 🔒', 'admin.twofaStep1': "Dans votre application d'authentification, ajoutez un compte et saisissez cette clé :", 'admin.twofaLink': "ou touchez pour ouvrir dans l'app", 'admin.twofaConfirm': 'Confirmer et activer', 'auth.totp': "Code d'authentification",
       'admin.maintenanceP': "Régénère les tailles d'image responsives pour les anciens téléversements afin qu'elles se chargent vite sur mobile (crée les variantes <code>_400/_800/_1600</code>). Sans risque à relancer ; les photos déjà optimisées sont ignorées.",
       'admin.preview': 'Aperçu des changements', 'admin.regen': 'Régénérer maintenant',
       // Assistant d'ajout d'annonce

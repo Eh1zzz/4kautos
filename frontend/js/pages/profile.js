@@ -497,6 +497,55 @@
     ap.onclick  = () => run(true);
   }
 
+  // Admin two-factor (TOTP): status → setup/enable or disable.
+  async function loadTwoFA() {
+    const el = document.getElementById('twofa-content');
+    if (!el) return;
+    el.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div></div>';
+    try {
+      const { enabled } = await API.twoFAStatus();
+      if (enabled) {
+        el.innerHTML = `
+          <div class="twofa-on">🔒 <b>${esc(window.t('admin.twofaOn', 'Two-factor is ON'))}</b></div>
+          <p style="color:var(--text3);font-size:.82rem;margin:.4rem 0 .6rem">${esc(window.t('admin.twofaDisableHint', 'Enter a current code to turn it off.'))}</p>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
+            <input class="form-input" id="twofa-disable-code" inputmode="numeric" maxlength="6" placeholder="6-digit code" style="max-width:160px">
+            <button class="adm-btn danger" id="twofa-disable-btn">${esc(window.t('admin.twofaDisable', 'Disable 2FA'))}</button>
+          </div>`;
+        document.getElementById('twofa-disable-btn').onclick = async () => {
+          try {
+            await API.twoFADisable(document.getElementById('twofa-disable-code').value.trim());
+            toast(window.t('admin.twofaDisabled', 'Two-factor disabled'), 'success'); loadTwoFA();
+          } catch (e) { toast(e.message || 'Failed', 'error'); }
+        };
+      } else {
+        el.innerHTML = `<button class="pay-btn" id="twofa-setup-btn">${esc(window.t('admin.twofaEnable', 'Enable 2FA'))}</button>`;
+        document.getElementById('twofa-setup-btn').onclick = async () => {
+          try {
+            const { secret, otpauth } = await API.twoFASetup();
+            const grouped = secret.replace(/(.{4})/g, '$1 ').trim();
+            el.innerHTML = `
+              <ol style="font-size:.86rem;color:var(--text2);line-height:1.7;padding-left:1.1rem;margin:0 0 .6rem">
+                <li>${esc(window.t('admin.twofaStep1', 'In your authenticator app, add an account and enter this key:'))}</li>
+              </ol>
+              <div class="twofa-secret" style="font-family:var(--font-mono);font-size:1rem;letter-spacing:2px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.6rem .8rem;margin-bottom:.5rem;word-break:break-all">${esc(grouped)}</div>
+              <p style="font-size:.76rem;color:var(--text3);margin:0 0 .7rem"><a href="${esc(otpauth)}" style="color:var(--accent)">${esc(window.t('admin.twofaLink', 'or tap to open in your app'))}</a></p>
+              <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
+                <input class="form-input" id="twofa-enable-code" inputmode="numeric" maxlength="6" placeholder="6-digit code" style="max-width:160px">
+                <button class="pay-btn" id="twofa-enable-btn">${esc(window.t('admin.twofaConfirm', 'Confirm & enable'))}</button>
+              </div>`;
+            document.getElementById('twofa-enable-btn').onclick = async () => {
+              try {
+                await API.twoFAEnable(document.getElementById('twofa-enable-code').value.trim());
+                toast(window.t('admin.twofaEnabled', 'Two-factor enabled 🔒'), 'success'); loadTwoFA();
+              } catch (e) { toast(e.message || 'Invalid code', 'error'); }
+            };
+          } catch (e) { toast(e.message || 'Setup failed', 'error'); }
+        };
+      }
+    } catch (e) { el.innerHTML = `<p class="empty-state">${esc(e.message || 'Failed to load')}</p>`; }
+  }
+
   async function loadAdmin() {
     loadAdminStats();
     loadAdminFlags();
@@ -506,6 +555,7 @@
     loadAdminTransactions();
     loadContactMessages();
     wireBackfill();
+    loadTwoFA();
     // Dashboard stat tiles
     try {
       const [u, c, p, m] = await Promise.all([

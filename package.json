@@ -38,11 +38,9 @@
     "supertest": "^7.2.2"
   },
   "jest": {
-    "transform": {},
-    "setupFiles": [
-      "./backend/tests/setup.js"
-    ],
-    "testTimeout": 30000
+    "testMatch": [
+      "**/backend/tests/**/*.test.js"
+    ]
   },
   "engines": {
     "node": ">=18.18.0"

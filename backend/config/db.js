@@ -262,6 +262,11 @@ export async function connectDB() {
   // estimates and feeds the localized shipping resolver.
   await ensureColumn('users', 'location', 'VARCHAR(160)');
 
+  // Admin two-factor (TOTP). Secret is stored once set up; totp_enabled flips on
+  // only after the admin confirms a code, so a mis-scanned secret can't lock them out.
+  await ensureColumn('users', 'totp_secret',  'VARCHAR(64)');
+  await ensureColumn('users', 'totp_enabled', 'TINYINT(1) NOT NULL DEFAULT 0');
+
   // Idempotency keys for replay-safe money mutations. The PK is the atomic lock:
   // a reserved-but-unfinished row (status_code NULL) means "in progress".
   await pool.query(`
