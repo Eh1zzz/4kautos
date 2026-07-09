@@ -652,13 +652,24 @@ window.carCard = function (c) {
   const metaLine = [
     c.year,
     c.mileage ? `${Number(c.mileage).toLocaleString()} km` : null,
-    c.transmission || (c.condition ? cap(c.condition) : null),
+    c.transmission,               // condition now shown as its own pip
     c.location,
   ].filter(Boolean).map(v => esc(v)).join(' · ');
-  // Price-evaluator badge (only the meaningful verdicts — 'fair' stays unmarked).
-  const VEVAL = { great: 'Great price', good: 'Good price', high: 'Above market' };
+
+  // Condition pip — colored dot + uppercase condition (the Figma micro-detail).
+  const COND_COLOR = { excellent: 'var(--green)', good: 'var(--green)', fair: '#f0b429', poor: 'var(--red)' };
+  const condPip = c.condition
+    ? `<span class="cond-pip"><span class="cond-dot" style="background:${COND_COLOR[c.condition] || 'var(--text3)'}"></span>${esc(cap(c.condition))}</span>` : '';
+
+  // Circular value-grade badge on the image — the real price-vs-market verdict
+  // (great/good/above-market), shown as a grade. Replaces the old text pill so
+  // there's no redundancy; 'fair'/unknown stays unmarked.
+  const VEVAL  = { great: 'Great price', good: 'Good price', high: 'Above market' };
+  const VGRADE = { great: { g: 'A+', cls: 'grade-good' }, good: { g: 'A', cls: 'grade-good' }, high: { g: 'C', cls: 'grade-high' } };
   const vv = c.valuation && c.valuation.verdict;
-  const evalHtml = (vv && VEVAL[vv]) ? `<span class="price-eval eval-${vv}" title="vs. ${c.valuation.sampleSize || 0} similar listings">${VEVAL[vv]}</span>` : '';
+  const grade = vv && VGRADE[vv];
+  const gradeBadge = grade
+    ? `<div class="score-badge ${grade.cls}" title="${VEVAL[vv]} · vs ${c.valuation.sampleSize || 0} similar listings"><span class="score-g">${grade.g}</span><span class="score-l">VALUE</span></div>` : '';
 
   return `
     <div class="car-card reveal" data-id="${esc(c.id)}" tabindex="0" role="link" aria-label="${esc(title)}">
@@ -669,15 +680,18 @@ window.carCard = function (c) {
           ${badge}
         </div>
         <button class="card-saves ${saved ? 'saved' : ''}" title="Save" data-save="${esc(c.id)}">${saved ? '♥' : '♡'}</button>
+        ${gradeBadge}
       </div>
       <div class="card-body">
-        <div class="card-title">${esc(title)}</div>
+        <div class="card-card-head">
+          <div class="card-title">${esc(title)}</div>
+          ${condPip}
+        </div>
         ${metaLine ? `<div class="card-meta">${metaLine}</div>` : ''}
         ${c.seller?.verified ? `<div class="card-verified" title="Identity-verified seller"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V5z"/><path d="m9 12 2 2 4-4"/></svg><span data-i18n="card.verified">${esc(T('card.verified', 'Verified seller'))}</span></div>` : ''}
         <div class="card-footer">
           <div class="card-price-wrap">
             ${priceHtml}
-            ${evalHtml}
             ${landedHtml}
           </div>
         </div>
