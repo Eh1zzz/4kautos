@@ -526,10 +526,12 @@ const Money = (function () {
 window.Money = Money;
 
 /* ── LANDED COST (price + Nigerian import duty + shipping) ── */
-// Duty percentages mirror backend/routes/clearance.js — keep them in sync.
 const Landed = (function () {
-  // Effective import charges (% of CIF) by destination — mirrors
-  // backend/utils/locale.js (indicative; Nigeria ≈ the detailed duty model).
+  // Effective import charges (% of CIF) by destination. The pct values here are
+  // an offline fallback only — hydrate() refreshes them from the authoritative
+  // GET /clearance/destinations on boot, so the card estimates can't silently
+  // drift from the backend's duty model. Aliases stay client-side (used to map a
+  // free-text location string to a country; the API doesn't carry them).
   const DEST = {
     'Nigeria': { pct: 48, aliases: ['nigeria', 'lagos', 'abuja', 'kano', 'ibadan', 'port harcourt', 'benin city', 'enugu'] },
     'Ghana':   { pct: 35, aliases: ['ghana', 'accra', 'kumasi', 'tema'] },
@@ -539,6 +541,21 @@ const Landed = (function () {
     'Cameroon': { pct: 35, aliases: ['cameroon', 'douala', 'yaound'] },
     'Senegal': { pct: 40, aliases: ['senegal', 'dakar'] },
   };
+  // Refresh pct values from the backend (fallback stays if the call fails).
+  async function hydrate() {
+    try {
+      const rows = await API.getDestinations();
+      if (!Array.isArray(rows)) return;
+      let changed = false;
+      for (const d of rows) {
+        const pct = Number(d.effectiveDutyPct);
+        if (DEST[d.country] && Number.isFinite(pct) && DEST[d.country].pct !== pct) {
+          DEST[d.country].pct = pct; changed = true;
+        }
+      }
+      if (changed) Money.repriceAll?.(); // re-render any landed figures already on the page
+    } catch { /* offline / endpoint down → keep the fallback pcts */ }
+  }
   function country(loc) {
     const s = (loc || '').toLowerCase();
     for (const [c, d] of Object.entries(DEST)) if (d.aliases.some(a => s.includes(a))) return c;
@@ -566,7 +583,7 @@ const Landed = (function () {
     const totalUsd = priceUsd + duty + ship;
     return { priceUsd, dutyUsd: duty, shippingUsd: ship, totalUsd, totalNgn: totalUsd * rate, inCountry, destCountry };
   }
-  return { calc, dutyPct, shippingUsd, country };
+  return { calc, dutyPct, shippingUsd, country, hydrate };
 })();
 window.Landed = Landed;
 
@@ -1722,6 +1739,7 @@ window.RT = (function () {
 
 /* ── BOOT ─────────────────────────────────── */
 Money.load();                       // fetch live FX, then reprice
+Landed.hydrate();                   // refresh duty pcts from the backend (no drift)
 document.addEventListener('DOMContentLoaded', () => Money.repriceAll());
 
 /* Progressive animation layer (anime.js v4). Optional & self-contained —

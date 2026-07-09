@@ -99,6 +99,7 @@ const API = {
   getSimilar(id, limit = 4) { return req('GET', `/cars/${id}/similar?limit=${limit}`); },
   getValuation(id)  { return req('GET', `/cars/${id}/valuation`); },
   getCustoms(id, destination) { return req('GET', `/cars/${id}/customs${destination ? '?destination=' + encodeURIComponent(destination) : ''}`); },
+  getDestinations()  { return req('GET', '/clearance/destinations'); },
   getSeller(id)        { return req('GET', `/sellers/${id}`); },
   getSellerReviews(id) { return req('GET', `/sellers/${id}/reviews`); },
   createReview(transactionId, rating, comment) { return req('POST', '/reviews', { transactionId, rating, comment }); },
