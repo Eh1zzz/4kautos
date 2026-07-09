@@ -1284,6 +1284,7 @@ body.menu-open{overflow:hidden}
 .verified-tick{color:var(--green);font-size:.8rem}
 .agent-meta{font-size:.72rem;color:var(--text3);margin-top:2px}
 .agent-total{text-align:right;display:flex;flex-direction:column;align-items:flex-end;line-height:1.1}
+.agent-card:hover{border-color:var(--border-hi)}
 .agent-services{display:flex;flex-wrap:wrap;gap:.35rem;margin:.75rem 0}
 .svc-chip{font-size:.68rem;color:var(--text2);background:var(--surface3);padding:2px 8px;border-radius:4px}
 .agent-foot{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem 1rem;font-size:.75rem;color:var(--text3);border-top:1px solid var(--border);padding-top:.7rem}
@@ -1674,8 +1675,13 @@ html.has-cursor-warn,html.has-cursor-warn *{cursor:none!important}
 .page-prose ul{margin:0 0 1rem 1.2rem;color:var(--text2);line-height:1.8}
 .page-prose a{color:var(--accent)}
 .value-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.25rem;margin-top:1.5rem}
-.value-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem}
-.value-card h4{font-family:var(--font-display);font-size:1.05rem;margin-bottom:.4rem}
+.value-card{position:relative;overflow:hidden;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;transition:border-color var(--speed),transform var(--speed),box-shadow var(--speed)}
+/* racing signature: a short red top-tick that extends on hover, matching the
+   interactive card treatment used across the rest of the site */
+.value-card::before{content:"";position:absolute;top:0;left:0;width:32px;height:2px;background:var(--hot);transition:width var(--speed)}
+.value-card:hover{border-color:var(--border-hi);transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+.value-card:hover::before{width:72px}
+.value-card h4{font-family:var(--font-display);font-size:1.05rem;letter-spacing:.4px;margin-bottom:.4rem}
 .value-card p{font-size:.88rem;color:var(--text2);line-height:1.6}
 
 /* ══════════════════════════════════════════
