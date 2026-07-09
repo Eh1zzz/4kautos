@@ -1154,6 +1154,24 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:3rem 2re
 .ops-tile-s{font-size:.72rem;color:var(--text2);margin-top:2px}
 .ops-section{margin-top:1.5rem}
 .ops-section-title{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:.6rem}
+
+/* ══════════════════════════════════════════
+   PHASE 6 · ADMIN OPS-CONSOLE TREATMENT
+   Scoped to #tab-admin so the buyer/seller dashboards stay as-is. Signature
+   racing accents: a red→violet marker down each panel header, a gradient
+   top-line on the metric tiles, and dot-led section titles.
+═══════════════════════════════════════════ */
+#tab-admin .panel-head{position:relative;padding-left:1.65rem}
+#tab-admin .panel-head::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--hot),var(--accent))}
+#tab-admin .panel-head h3{letter-spacing:1.2px}
+#tab-admin .stat-tile,#tab-admin .ops-tile{position:relative;overflow:hidden}
+#tab-admin .stat-tile::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--hot),var(--accent) 70%,var(--accent-lt))}
+#tab-admin .stat-ico{background:linear-gradient(135deg,rgba(220,18,18,.16),rgba(139,124,255,.16));color:var(--hot)}
+#tab-admin .stat-num{font-size:1.75rem;letter-spacing:-.5px}
+#tab-admin .ops-tile{border-left:2px solid transparent;transition:border-color var(--speed),background var(--speed)}
+#tab-admin .ops-tile:hover{border-left-color:var(--hot);background:var(--surface)}
+#tab-admin .ops-section-title{display:flex;align-items:center;gap:.5rem}
+#tab-admin .ops-section-title::before{content:"";width:6px;height:6px;background:var(--hot);border-radius:50%;flex:none}
 .ops-bar{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--surface2);border:1px solid var(--border)}
 .ops-seg{height:100%;transition:width var(--speed-slow) var(--ease)}
 .ops-legend{display:flex;flex-wrap:wrap;gap:.5rem 1.1rem;margin-top:.6rem}
