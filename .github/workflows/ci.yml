@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+
+    env:
+      DATABASE_URL: mysql://root:root@127.0.0.1:3306/4kautos
+      DATABASE_URL_TEST: mysql://root:root@127.0.0.1:3306/4kautos_test
+      JWT_SECRET: ci-test-secret-at-least-32-characters-long
+      NODE_ENV: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create databases
+        run: |
+          mysql -h 127.0.0.1 -uroot -proot -e "CREATE DATABASE IF NOT EXISTS \`4kautos\`; CREATE DATABASE IF NOT EXISTS \`4kautos_test\`;"
+
+      - name: Backend tests (Jest)
+        run: npm test
+
+      - name: Seed the app database
+        run: node backend/seed.js
+        env:
+          NODE_ENV: development   # seed is a dev/ops task, not the test env
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Frontend smoke tests (Playwright)
+        run: npx playwright test
+        env:
+          NODE_ENV: development   # the app server under test runs as a normal instance
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
