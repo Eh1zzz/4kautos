@@ -1136,7 +1136,10 @@ document.addEventListener('keydown', e => {
         <div class="news-note" id="news-note"></div>
       </div>
     </div>`;
-  document.body.appendChild(newsBand);
+  // The newsletter subscribe band belongs on public/marketing pages, not the
+  // logged-in dashboard (it's noise there — the admin/seller isn't a lead).
+  const isDashboard = /\/profile\.html(\?|#|$)/.test(location.pathname);
+  if (!isDashboard) document.body.appendChild(newsBand);
   document.body.appendChild(footer);
   window.applyI18n?.(newsBand);   // translate the just-injected band
   // Populate the footer logo (the page-load logo pass already ran).
