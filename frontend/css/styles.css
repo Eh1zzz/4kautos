@@ -1198,6 +1198,19 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:3rem 2re
   #tab-admin>.panel,#tab-admin>.admin-stats{margin-bottom:0}
   #tab-admin>.panel-wide,#tab-admin>.admin-stats{grid-column:1 / -1}
 }
+/* Transaction-activity chart (hand-rolled SVG) */
+.admin-chart{position:relative;width:100%}
+.chart-svg{width:100%;height:auto;display:block;overflow:visible}
+.chart-line{fill:none;stroke:var(--accent);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.chart-dot{fill:var(--surface);stroke:var(--accent);stroke-width:2}
+.chart-grid{stroke:var(--border);stroke-dasharray:3 4}
+.chart-ytick{fill:var(--text3);font-size:11px;text-anchor:end;font-family:var(--font-mono)}
+.chart-xtick{fill:var(--text3);font-size:11px;text-anchor:middle;font-family:var(--font-mono)}
+.chart-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:.85rem;pointer-events:none}
+.chart-range{display:flex;gap:2px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:2px}
+.chart-range button{font-size:.68rem;font-weight:700;letter-spacing:.5px;padding:4px 10px;border-radius:6px;color:var(--text3);background:none;border:none;cursor:pointer;transition:color var(--speed),background var(--speed);font-family:var(--font-mono)}
+.chart-range button.active{background:var(--surface);color:var(--hot)}
+.chart-range button:hover{color:var(--text)}
 .ops-bar{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--surface2);border:1px solid var(--border)}
 .ops-seg{height:100%;transition:width var(--speed-slow) var(--ease)}
 .ops-legend{display:flex;flex-wrap:wrap;gap:.5rem 1.1rem;margin-top:.6rem}

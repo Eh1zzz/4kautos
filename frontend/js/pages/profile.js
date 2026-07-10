@@ -556,6 +556,17 @@
     loadContactMessages();
     wireBackfill();
     loadTwoFA();
+    _chartTxs = null; loadAdminChart('ALL');   // fresh chart data each admin load
+    const rangeEl = document.getElementById('chart-range');
+    if (rangeEl && !rangeEl.__wired) {
+      rangeEl.__wired = true;
+      rangeEl.addEventListener('click', e => {
+        const btn = e.target.closest('button[data-range]');
+        if (!btn) return;
+        rangeEl.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+        loadAdminChart(btn.dataset.range);
+      });
+    }
     // (The former separate stat-tile row was redundant with the KPI cards above;
     //  Users/Listings/Pending-payouts already live in loadAdminStats' ops-tiles.)
     const usersEl = document.getElementById('admin-users');
@@ -657,6 +668,66 @@
       const frow = (label, n) => `<div class="ops-frow"><span class="ops-flabel">${esc(label)}</span><span class="ops-ftrack"><span class="ops-fbar" style="width:${(n / fmax * 100).toFixed(0)}%"></span></span><span class="ops-fn">${n}</span></div>`;
       document.getElementById('ops-funnel').innerHTML = frow('Initiated', f.initiated) + frow('In escrow', f.inEscrow) + frow('Completed', f.completed);
     } catch (e) { tiles.innerHTML = `<p class="empty-state">Failed: ${esc(e.message)}</p>`; }
+  }
+
+  /* ── Transaction-activity chart (hand-rolled SVG, no library) ── */
+  let _chartTxs = null;
+  async function loadAdminChart(range = 'ALL') {
+    const box = document.getElementById('admin-chart');
+    if (!box) return;
+    try {
+      if (!_chartTxs) _chartTxs = await API.adminTransactions();
+      box.innerHTML = chartSvg(buildChartSeries(_chartTxs, range));
+    } catch { box.innerHTML = '<p class="empty-state" style="padding:1.5rem">Could not load the chart.</p>'; }
+  }
+  function buildChartSeries(txs, range) {
+    const now = Date.now(), DAY = 86400000;
+    let start, bucketMs;
+    if (range === '1M') { start = now - 30 * DAY; bucketMs = DAY; }
+    else if (range === '6M') { start = now - 182 * DAY; bucketMs = 7 * DAY; }
+    else if (range === '1Y') { start = now - 365 * DAY; bucketMs = 30 * DAY; }
+    else { // ALL — span from the earliest transaction to now, ~24 buckets
+      const ds = txs.map(t => +new Date(t.created_at)).filter(Number.isFinite);
+      start = ds.length ? Math.min(...ds) : now - 30 * DAY;
+      bucketMs = Math.max(DAY, Math.ceil((now - start) / 24));
+    }
+    const buckets = [];
+    for (let t = start; t <= now + 1; t += bucketMs) buckets.push({ t, value: 0 });
+    if (!buckets.length) buckets.push({ t: start, value: 0 });
+    for (const tx of txs) {
+      const d = +new Date(tx.created_at);
+      if (!Number.isFinite(d) || d < start) continue;
+      const i = Math.min(buckets.length - 1, Math.floor((d - start) / bucketMs));
+      if (buckets[i]) buckets[i].value++;
+    }
+    const fmt = t => new Date(t).toLocaleDateString(undefined, bucketMs < 20 * DAY ? { month: 'short', day: 'numeric' } : { month: 'short', year: '2-digit' });
+    return buckets.map(b => ({ label: fmt(b.t), value: b.value }));
+  }
+  function chartSvg(points) {
+    const W = 640, H = 220, pad = 34, padB = 30;
+    const n = points.length;
+    const max = Math.max(1, ...points.map(p => p.value));
+    const plotH = H - pad - padB, plotW = W - pad * 2;
+    const x = i => pad + (n <= 1 ? plotW / 2 : (i / (n - 1)) * plotW);
+    const y = v => pad + plotH - (v / max) * plotH;
+    const line = points.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.value).toFixed(1)}`).join(' ');
+    const base = pad + plotH;
+    const area = n ? `M${x(0).toFixed(1)},${base} ${points.map((p, i) => `L${x(i).toFixed(1)},${y(p.value).toFixed(1)}`).join(' ')} L${x(n - 1).toFixed(1)},${base} Z` : '';
+    const seenTick = new Set();   // don't repeat a y-label when max is small (e.g. 1)
+    const grid = [1, .5, 0].map(f => {
+      const gy = pad + plotH - f * plotH;
+      const val = Math.round(f * max);
+      const label = seenTick.has(val) ? '' : (seenTick.add(val), `<text x="${pad - 6}" y="${(gy + 4).toFixed(1)}" class="chart-ytick">${val}</text>`);
+      return `<line x1="${pad}" y1="${gy.toFixed(1)}" x2="${W - pad}" y2="${gy.toFixed(1)}" class="chart-grid"/>${label}`;
+    }).join('');
+    const step = Math.max(1, Math.ceil(n / 6));
+    const xlabels = points.map((p, i) => (i % step === 0 || i === n - 1) ? `<text x="${x(i).toFixed(1)}" y="${H - 10}" class="chart-xtick">${esc(p.label)}</text>` : '').join('');
+    const dots = n > 40 ? '' : points.map((p, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(p.value).toFixed(1)}" r="2.4" class="chart-dot"/>`).join('');
+    const total = points.reduce((a, p) => a + p.value, 0);
+    return `<svg viewBox="0 0 ${W} ${H}" class="chart-svg" role="img" aria-label="Transaction activity over time">
+      <defs><linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".3"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
+      ${grid}${area ? `<path d="${area}" fill="url(#chartFill)"/>` : ''}${line ? `<path d="${line}" class="chart-line"/>` : ''}${dots}${xlabels}
+    </svg>${total === 0 ? '<div class="chart-empty">No transactions in this range yet</div>' : ''}`;
   }
 
   let _adminMap, _adminMapMarkers = [];
