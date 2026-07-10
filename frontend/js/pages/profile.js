@@ -567,9 +567,12 @@
       document.getElementById('admin-user-count').textContent = users.length + ' total';
       usersEl.innerHTML = users.map(u => `
         <div class="tx-row admin-row">
-          <div>
-            <div class="tx-car">${esc(u.name)}<span class="role-chip role-${esc(u.role)}">${esc(u.role)}</span>${u.verified ? '<span class="verif-chip">✓ verified</span>' : ''}</div>
-            <div class="tx-meta">${esc(u.email)} · joined ${u.created_at ? new Date(u.created_at).toLocaleDateString() : ''}</div>
+          <div class="row-lead">
+            ${avatarOf(u.name)}
+            <div>
+              <div class="tx-car">${esc(u.name)}<span class="role-chip role-${esc(u.role)}">${esc(u.role)}</span>${u.verified ? '<span class="verif-chip">✓ verified</span>' : ''}</div>
+              <div class="tx-meta">${esc(u.email)} · joined ${u.created_at ? new Date(u.created_at).toLocaleDateString() : ''}</div>
+            </div>
           </div>
           <div class="admin-actions">
             ${!u.verified ? `<button class="adm-btn" data-act="admin-verify" data-id="${esc(u.id)}">Verify</button>` : ''}
@@ -734,6 +737,12 @@
     } catch (e) { el.innerHTML = `<p class="empty-state">Failed: ${esc(e.message)}</p>`; }
   }
 
+  // Gradient-initials avatar for data-table rows (we have no user photos).
+  function avatarOf(name) {
+    const initials = String(name || '?').trim().split(/\s+/).map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
+    return `<span class="row-ava">${esc(initials)}</span>`;
+  }
+
   async function loadAdminTransactions() {
     const el = document.getElementById('admin-tx');
     if (!el) return;
@@ -747,11 +756,14 @@
         const amt = (t.amount != null && t.amount !== '') ? `${esc(t.currency || 'NGN')} ${Number(t.amount).toLocaleString()}` : '—';
         const payout = t.payout_status ? ` · payout ${esc(t.payout_status)}` : '';
         return `<div class="tx-row admin-row">
-          <div>
-            <div class="tx-car">${esc(t.car?.title || 'Listing')} <span class="tx-status">${esc((t.status || '').replace(/_/g, ' '))}</span></div>
-            <div class="tx-meta">${esc(t.buyer?.name || '?')} → ${esc(t.seller?.name || '?')} · #${esc(t.id)} · ${t.created_at ? new Date(t.created_at).toLocaleDateString() : ''}${payout}</div>
+          <div class="row-lead">
+            ${avatarOf(t.buyer?.name)}
+            <div>
+              <div class="tx-car">${esc(t.car?.title || 'Listing')} <span class="tx-status status-${esc(t.status || '')}">${esc((t.status || '').replace(/_/g, ' '))}</span></div>
+              <div class="tx-meta">${esc(t.buyer?.name || '?')} → ${esc(t.seller?.name || '?')} · #${esc(t.id)} · ${t.created_at ? new Date(t.created_at).toLocaleDateString() : ''}${payout}</div>
+            </div>
           </div>
-          <div class="admin-actions"><span style="font-weight:700">${amt}</span></div>
+          <div class="admin-actions"><span class="tx-amt">${amt}</span></div>
         </div>`;
       }).join('') : '<div class="empty-state" style="padding:2rem"><p>No transactions yet.</p></div>';
     } catch (e) { el.innerHTML = `<p class="empty-state">Failed: ${esc(e.message)}</p>`; }

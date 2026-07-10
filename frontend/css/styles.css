@@ -1775,6 +1775,11 @@ html.has-cursor-warn,html.has-cursor-warn *{cursor:none!important}
 .role-seller{background:rgba(34,211,238,.13);color:var(--accent2)}
 .role-buyer{background:var(--surface3);color:var(--text2)}
 .verif-chip{font-size:.62rem;color:var(--green);margin-left:7px}
+/* Data-table row lead: gradient-initials avatar + text (Darkone table style) */
+.row-lead{display:flex;align-items:center;gap:.75rem;min-width:0}
+.row-lead>div{min-width:0}
+.row-ava{width:38px;height:38px;border-radius:50%;background:var(--grad);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:.8rem;flex:none;letter-spacing:.5px}
+.tx-amt{font-family:var(--font-mono);font-weight:700;font-size:.9rem;color:var(--text);white-space:nowrap}
 
 /* Mobile browsers zoom in when an input smaller than 16px gets focus and never
    zoom back out (the chat box, search and filters all hit this). Force text
