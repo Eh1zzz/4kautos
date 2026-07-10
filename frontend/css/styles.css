@@ -1365,10 +1365,11 @@ body.menu-open{overflow:hidden}
 .section-label{color:var(--accent)}
 .section-label::before{background:var(--grad)}
 
-/* ── Primary buttons: gradient + glow ── */
+/* ── Primary buttons: gradient + glow + racing uppercase-tracked label ── */
 .nav-btn-accent,.search-btn,.cta-btn-primary,.form-submit,.filter-apply{
   background:var(--grad);color:#fff;border:none;
   box-shadow:0 6px 22px rgba(124,92,255,.32);
+  text-transform:uppercase;letter-spacing:1.4px;
 }
 .nav-btn-accent:hover,.search-btn:hover,.cta-btn-primary:hover,.form-submit:hover,.filter-apply:hover{
   filter:brightness(1.07);transform:translateY(-2px);
