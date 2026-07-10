@@ -556,18 +556,8 @@
     loadContactMessages();
     wireBackfill();
     loadTwoFA();
-    // Dashboard stat tiles
-    try {
-      const [u, c, p, m] = await Promise.all([
-        API.adminUsers().catch(() => []),
-        API.adminCars().catch(() => []),
-        API.adminPendingPayouts().catch(() => []),
-        API.adminContactMessages().catch(() => []),
-      ]);
-      const setTile = (id, n) => { const el = document.getElementById(id); if (el) el.textContent = n; };
-      setTile('stat-users', u.length); setTile('stat-listings-admin', c.length);
-      setTile('stat-payouts', p.length); setTile('stat-messages', m.length);
-    } catch {}
+    // (The former separate stat-tile row was redundant with the KPI cards above;
+    //  Users/Listings/Pending-payouts already live in loadAdminStats' ops-tiles.)
     const usersEl = document.getElementById('admin-users');
     const carsEl  = document.getElementById('admin-cars');
     usersEl.innerHTML = carsEl.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div></div>';
@@ -622,14 +612,30 @@
     try {
       const s = await API.adminStats();
       document.getElementById('ops-fx').textContent = `FX $1 = ₦${Math.round(s.fx.usdToNgn).toLocaleString('en-US')}`;
-      const tile = (label, value, sub) => `<div class="ops-tile"><div class="ops-tile-v">${esc(String(value))}</div><div class="ops-tile-l">${esc(label)}</div>${sub ? `<div class="ops-tile-s">${esc(sub)}</div>` : ''}</div>`;
+      // Darkone-style KPI cards: a coloured icon square + big number + label + context.
+      const KPI = {
+        escrow:    { c: 'var(--accent)',    ico: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>' },
+        completed: { c: 'var(--green)',     ico: '<circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/>' },
+        payouts:   { c: 'var(--hot)',       ico: '<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/>' },
+        today:     { c: 'var(--accent-lt)', ico: '<circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/>' },
+        listings:  { c: 'var(--accent)',    ico: '<path d="M5 17H3v-4l2-5h14l2 5v4h-2"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/>' },
+        users:     { c: 'var(--green)',     ico: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>' },
+      };
+      const tile = (key, label, value, sub) => {
+        const k = KPI[key];
+        return `<div class="ops-tile kpi">
+          <span class="kpi-ico" style="color:${k.c};background:color-mix(in srgb, ${k.c} 15%, transparent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${k.ico}</svg></span>
+          <div class="ops-tile-v">${esc(String(value))}</div>
+          <div class="ops-tile-l">${esc(label)}</div>
+          ${sub ? `<div class="ops-tile-s">${esc(sub)}</div>` : ''}</div>`;
+      };
       tiles.innerHTML =
-        tile('In escrow', usd(s.escrow.inEscrowUsd), `${s.funnel.inEscrow} live`) +
-        tile('Completed', usd(s.escrow.completedUsd), `${s.funnel.completed} deals`) +
-        tile('Pending payouts', usd(s.escrow.pendingPayoutUsd), `${s.escrow.pendingPayoutCount} queued`) +
-        tile('Today', s.transactions.today, 'new transactions') +
-        tile('Listings', s.counts.listings, `${s.counts.featured} featured`) +
-        tile('Users', s.counts.users, `${s.counts.buyers} buyers · ${s.counts.sellers} sellers`);
+        tile('escrow', 'In escrow', usd(s.escrow.inEscrowUsd), `${s.funnel.inEscrow} live`) +
+        tile('completed', 'Completed', usd(s.escrow.completedUsd), `${s.funnel.completed} deals`) +
+        tile('payouts', 'Pending payouts', usd(s.escrow.pendingPayoutUsd), `${s.escrow.pendingPayoutCount} queued`) +
+        tile('today', 'Today', s.transactions.today, 'new transactions') +
+        tile('listings', 'Listings', s.counts.listings, `${s.counts.featured} featured`) +
+        tile('users', 'Users', s.counts.users, `${s.counts.buyers} buyers · ${s.counts.sellers} sellers`);
 
       // Escrow liquidity — proportional segmented bar.
       const liq = [
