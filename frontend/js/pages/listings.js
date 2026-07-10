@@ -184,16 +184,17 @@
     const layout = document.querySelector('.listings-layout');
     const sidebar = document.querySelector('.filter-sidebar');
     if (!layout || !sidebar) return;
+    const BINO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" style="vertical-align:-2px"><circle cx="6.5" cy="14" r="4"/><circle cx="17.5" cy="14" r="4"/><path d="M10.5 13.5h3"/><path d="M6.5 10.5V6.5A1.5 1.5 0 0 1 8 5h.4A1.5 1.5 0 0 1 10 6.5V11"/><path d="M17.5 10.5V6.5A1.5 1.5 0 0 0 16 5h-.4A1.5 1.5 0 0 0 14 6.5V11"/></svg>';
     const btn = document.createElement('button');
     btn.className = 'filters-toggle';
     btn.type = 'button';
     btn.setAttribute('aria-expanded', 'false');
-    btn.textContent = window.t('listings.filtersBtn', '🔍 Filters');
+    btn.innerHTML = `${BINO} ${esc(window.t('listings.filtersBtn', 'Filters'))}`;
     layout.prepend(btn);
     const setOpen = (open) => {
       sidebar.classList.toggle('open', open);
       btn.setAttribute('aria-expanded', String(open));
-      btn.textContent = open ? window.t('listings.hideFilters', '✕ Hide filters') : window.t('listings.filtersBtn', '🔍 Filters');
+      btn.innerHTML = open ? esc(window.t('listings.hideFilters', '✕ Hide filters')) : `${BINO} ${esc(window.t('listings.filtersBtn', 'Filters'))}`;
     };
     btn.addEventListener('click', () => setOpen(!sidebar.classList.contains('open')));
     // Collapse again after applying so the results are immediately visible.
@@ -255,4 +256,11 @@
   document.getElementById('view-map').addEventListener('click', showMap);
 
   renderBrandStrip('#brand-strip');
+  // When a text search is active, put the matching cars first — move the
+  // brand-icon strip below the results (it sits above them by default).
+  if (urlP.get('q')) {
+    const strip = document.getElementById('brand-strip');
+    const grid = document.getElementById('listings-grid');
+    if (strip && grid) grid.insertAdjacentElement('afterend', strip);
+  }
   loadListings(1);
